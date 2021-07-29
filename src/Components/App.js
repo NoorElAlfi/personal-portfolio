@@ -15,7 +15,7 @@ const { Header, Content, Footer } = Layout;
 
 function App() {
   return (
-    <Layout>
+    <Layout style={{ height: "100%" }}>
       <Header style={{ position: "fixed", zIndex: 1, width: "100%" }}>
         <div className="logo" />
         <Menu theme="dark" mode="horizontal">
@@ -37,20 +37,22 @@ function App() {
           </Menu.Item>
         </Menu>
       </Header>
-      <Content
-        className="site-layout"
-        style={{ padding: "0 50px", marginTop: 64 }}
-      >
-        <div
-          className="site-layout-background"
-          style={{ padding: 24, minHeight: 380 }}
+      <Layout>
+        <Content
+          className="site-layout"
+          style={{ padding: "0 50px", marginTop: 64 }}
         >
-          <Aboutme />
-          <Skills />
-          <Experience />
-          <Projects />
-        </div>
-      </Content>
+          <div
+            className="site-layout-background"
+            style={{ padding: 24, minHeight: 1650, height: "100vh" }}
+          >
+            <Aboutme />
+            <Skills />
+            <Experience />
+            <Projects />
+          </div>
+        </Content>
+      </Layout>
       <Footer style={{ textAlign: "center" }}>
         Noor ElAlfi ©2021 Created by Noor ElAlfi
       </Footer>
