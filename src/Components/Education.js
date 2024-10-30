@@ -7,18 +7,18 @@ function Education() {
       institution: "Queen's University",
       degree: "NSERC CREATE Cybersecurity Program, Research-Based Masters of Science",
       gpa: "GPA 3.9/4.3",
-      duration: "2021 - Present"
+      duration: "2022 - Present"
     },
     {
       institution: "Queen's University",
       degree: "Bachelor of Computing (Hons.) with a specialization in Computer Science with Professional Internship",
       gpa: "GPA 3.32/4.3",
-      duration: "2017 - 2021"
+      duration: "2017 - 2022"
     }
   ];
 
   return (
-    <section className="py-12">
+    <section className="py-2">
       <h2 className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-8 text-center">Education</h2>
       <div className="space-y-6 max-w-4xl mx-auto">
         {educationList.map((edu, index) => (

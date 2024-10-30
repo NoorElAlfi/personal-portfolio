@@ -4,12 +4,12 @@ import React from 'react';
 function Projects() {
   const projects = [
     {
-      title: "Cybersecurity Autonomy Gym",
-      description: "Developed a virtual environment using vSphere and Docker for red/blue team training, enabling testing of autonomous defensive strategies. Implemented RL models and automated deployment scripts to streamline simulation setup."
+      title: "Emulated Cyber Operations Research Gym",
+      description: "Developed a virtual environment using Docker for red/blue team training, enabling testing of autonomous offensive and defensive strategies. Implemented a dynamic environment that allows RL agents to train and develop offensive/defensive strategies."
     },
     {
       title: "SySeVR Vulnerability Detection Pipeline",
-      description: "Designed custom scripts and data pipelines to assess the effectiveness of SySeVR in identifying software vulnerabilities. Enabled integration with CI/CD systems for continuous testing."
+      description: "Designed custom scripts and data pipelines to assess the effectiveness of SySeVR in identifying software vulnerabilities. Developed scripts to automate dataset generation and analysis for software vulnerability detection research and experimentation with SySeVR."
     },
     {
       title: "Big Data Exposed",
@@ -18,7 +18,7 @@ function Projects() {
   ];
 
   return (
-    <section className="py-12">
+    <section className="py-2">
       <h2 className="text-3xl font-semibold text-gray-900 mb-8 text-center">Projects</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
         {projects.map((project, index) => (
