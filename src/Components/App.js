@@ -1,62 +1,32 @@
-import "../App.css";
-import { Layout, Menu } from "antd";
-import "antd/dist/antd.css";
-import Aboutme from "./Aboutme";
-import {
-  GithubOutlined,
-  MailOutlined,
-  LinkedinOutlined,
-} from "@ant-design/icons";
-import logo from "../Img/logo.png";
-import Skills from "./Skills";
-import Experience from "./Experience";
-import Projects from "./Projects";
-const { Header, Content, Footer } = Layout;
+
+import React, { useState } from 'react';
+import AboutMe from './AboutMe';
+import Skills from './Skills';
+import Experience from './Experience';
+import Projects from './Projects';
+import Education from './Education';
+import Navbar from './Navbar';
+import '../App.css';
 
 function App() {
+  const [darkMode, setDarkMode] = useState(false);
+
   return (
-    <Layout style={{ height: "100%" }}>
-      <Header style={{ position: "fixed", zIndex: 1, width: "100%" }}>
-        <div className="logo" />
-        <Menu theme="dark" mode="horizontal">
-          <img src={logo} alt="Noor Logo" width="66" height="52" />
-          <Menu.Item key="1" style={{ float: "right" }}>
-            <a href="https://www.linkedin.com/in/noor-el-alfi-527a1a20a/">
-              <LinkedinOutlined style={{ fontSize: "26px" }} />
-            </a>
-          </Menu.Item>
-          <Menu.Item key="2" style={{ float: "right" }}>
-            <a href="mailto:noor.alfi@gmail.com">
-              <MailOutlined style={{ fontSize: "26px" }} />
-            </a>
-          </Menu.Item>
-          <Menu.Item key="3" style={{ float: "right" }}>
-            <a href="https://github.com/NoorElAlfi">
-              <GithubOutlined style={{ fontSize: "26px" }} />
-            </a>
-          </Menu.Item>
-        </Menu>
-      </Header>
-      <Layout>
-        <Content
-          className="site-layout"
-          style={{ padding: "0 50px", marginTop: 64 }}
-        >
-          <div
-            className="site-layout-background"
-            style={{ padding: 24, minHeight: 1650, height: "100vh" }}
-          >
-            <Aboutme />
-            <Skills />
-            <Experience />
-            <Projects />
-          </div>
-        </Content>
-      </Layout>
-      <Footer style={{ textAlign: "center" }}>
-        Noor ElAlfi ©2021 Created by Noor ElAlfi
-      </Footer>
-    </Layout>
+    <div className={`${darkMode ? 'dark' : ''} bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100`}>
+      <header className="bg-gray-900 text-white p-4 fixed top-0 left-0 right-0 z-10 shadow-lg">
+        <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
+      </header>
+      <main className="container mx-auto pt-24 px-4 space-y-12">
+        <AboutMe />
+        <Education />
+        <Skills />
+        <Experience />
+        <Projects />
+      </main>
+      <footer className="bg-gray-900 text-white p-4 text-center mt-8">
+        Noor El Alfi ©2024 - Created with React & Tailwind CSS
+      </footer>
+    </div>
   );
 }
 

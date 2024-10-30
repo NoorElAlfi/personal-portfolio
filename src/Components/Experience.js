@@ -1,98 +1,38 @@
-import React, { useState } from "react";
-import { Card, Divider } from "antd";
 
-const tabList = [
-  {
-    key: "tab0",
-    tab: "General Info",
-  },
-  {
-    key: "tab1",
-    tab: "Experience",
-  },
-];
-
-const contentList = {
-  tab0: (
-    <>
-      <p>Software Developer Intern</p>
-      <p>05/2020 - 09/2021</p>
-    </>
-  ),
-  tab1: (
-    <>
-      <p>
-        IBM Coach(LMS): Question Generation Algorithm & frontend development
-      </p>
-      <p>
-        Nextgene(Genetic variant pipeline): Database webapp & Bioinformatics
-        pipeline
-      </p>
-    </>
-  ),
-};
-
-const tabList2 = [
-  {
-    key: "tab2",
-    tab: "General Info",
-  },
-  {
-    key: "tab3",
-    tab: "Relevant Classes",
-  },
-];
-
-const contentList2 = {
-  tab2: (
-    <>
-      <p>Kingston, Ontario</p>
-      <p>Bachelor of Computing (Hons.)</p>
-      <p>09/2017 - 05/2022</p>
-    </>
-  ),
-  tab3: (
-    <>
-      <p>
-        Algorithms, Data Structures, Data analytics, Database management,
-        Software architecture, Artificial Intelligence, and Fundamentals of
-        Software development
-      </p>
-    </>
-  ),
-};
+import React from 'react';
 
 function Experience() {
-  const [key, setKey] = useState("tab0");
-  const [key2, setKey2] = useState("tab2");
+  const experiences = [
+    {
+      title: "Security Technology Research Student - BlackBerry",
+      duration: "09/2023 - 12/2023",
+      description: "Conducted research into 5G and software security, focusing on vulnerability analysis and pipeline development. Implemented testing frameworks and pipelines for automated security assessments, enhancing vulnerability identification accuracy."
+    },
+    {
+      title: "Research Intern - L1NNA Laboratory",
+      duration: "05/2022 - 08/2022",
+      description: "Developed custom Python libraries for cyber operations simulations, contributing to open-source cyber environments. Optimized red/blue team strategies in virtualized environments for research and educational purposes."
+    },
+    {
+      title: "Head Teaching Assistant - Queen's University",
+      duration: "01/2023 - 04/2023",
+      description: "Managed 8 TAs, guided students through complex topics in computer science, provided mentorship, and led technical workshops. Developed instructional material that simplified challenging cybersecurity concepts for students."
+    },
+  ];
 
   return (
-    <div>
-      <Divider orientation="left">Experience</Divider>
-      <Card
-        style={{ width: "100%" }}
-        title="Queen's Centre for Advanced Computing"
-        tabList={tabList}
-        activeTabKey={key}
-        onTabChange={(key) => {
-          setKey(key);
-        }}
-      >
-        {contentList[key]}
-      </Card>
-      <br />
-      <Card
-        style={{ width: "100%" }}
-        title="Queen's University"
-        tabList={tabList2}
-        activeTabKey={key2}
-        onTabChange={(key2) => {
-          setKey2(key2);
-        }}
-      >
-        {contentList2[key2]}
-      </Card>
-    </div>
+    <section className="py-12">
+      <h2 className="text-3xl font-semibold text-gray-900 mb-8 text-center">Experience</h2>
+      <div className="space-y-6 max-w-4xl mx-auto">
+        {experiences.map((exp, index) => (
+          <div key={index} className="p-6 border border-gray-200 rounded-lg shadow-md bg-white">
+            <h3 className="text-xl font-bold text-blue-600">{exp.title}</h3>
+            <p className="text-sm text-gray-500">{exp.duration}</p>
+            <p className="mt-2 text-gray-700">{exp.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
