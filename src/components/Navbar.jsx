@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import Logo from './Logo';
+import logo from '../assets/logo.png';
 
 const navLinkClass = ({ isActive }) =>
   `text-sm font-medium transition-colors ${
@@ -30,7 +30,7 @@ function Navbar({ darkMode, setDarkMode }) {
   return (
     <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
       <Link to="/" className="flex items-center gap-2">
-        <Logo className="h-8 w-8" />
+        <img src={logo} alt="Noor El Alfi" className="h-8 w-8 rounded-lg" />
         <span className="font-semibold text-slate-900 dark:text-white">Noor El Alfi</span>
       </Link>
 

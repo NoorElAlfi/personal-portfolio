@@ -14,7 +14,7 @@ const projects = [
     title: 'LucidHover',
     tag: 'VS Code Extension, Published',
     description:
-      'A VS Code extension that hovers any function and explains it in the context of the whole repo — role, callers/callees, blast radius — via a fully local LLM through Ollama. Python sidecar parses with tree-sitter, builds a call graph, ranks functions by PageRank importance, and caches explanations in SQLite. Published to the VS Code Marketplace under Apache-2.0.',
+      'A VS Code extension that hovers any function and explains it in the context of the whole repo (role, callers/callees, blast radius) via a fully local LLM through Ollama. Python sidecar parses with tree-sitter, builds a call graph, ranks functions by PageRank importance, and caches explanations in SQLite. Published to the VS Code Marketplace under Apache-2.0.',
     link: { to: '/blog/lucidhover', label: 'Read the write-up' },
     external: { href: 'https://github.com/NoorElAlfi/lucidHover', label: 'GitHub' },
   },
@@ -40,8 +40,12 @@ const projects = [
   {
     title: 'GPS Privacy Audit (Big Data Exposed)',
     tag: "Queen's CAC",
-    description:
-      'Built a custom logging system for GPS data visualization, integrated with the open-source navigation tool OsmAnd, and developed data-processing methods for large-scale spatial data analysis. Findings are credited in the acknowledgements of a peer-reviewed publication (Environment and Planning F, 2025/2026).',
+    description: (
+      <>
+        Built a custom logging system for GPS data visualization, integrated with the open-source navigation tool OsmAnd, and developed data-processing methods for large-scale spatial data analysis. Findings are credited in the acknowledgements of a peer-reviewed publication in{' '}
+        <a href="https://journals.sagepub.com/doi/epub/10.1177/26349825251365637" target="_blank" rel="noopener noreferrer" className="font-medium text-brand-600 hover:underline dark:text-brand-400">Environment and Planning F, 2025/2026</a>.
+      </>
+    ),
   },
 ];
 

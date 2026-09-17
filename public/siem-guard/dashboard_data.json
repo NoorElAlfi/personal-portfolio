@@ -1,0 +1,609 @@
+{
+  "corpora": {
+    "validation": {
+      "meta": {
+        "generated_from": "Session_34_results.json",
+        "timestamp": "2026-09-17T04:32:56.635543+00:00",
+        "pipeline_run_timestamp": "2026-09-07T06:21:37.315172",
+        "dataset_total_logs": 500
+      },
+      "accuracy": {
+        "parsing_by_type": {
+          "ssh": 0.95875,
+          "http": 1.0,
+          "ftp": 1.0,
+          "dns": 1.0,
+          "packages": 1.0
+        },
+        "parsing_overall": 0.97525,
+        "behavioral_f1": {
+          "ssh": 1.0,
+          "http": 0.0,
+          "ftp": 0.0
+        },
+        "supply_chain_f1": 1.0,
+        "adversarial_coverage": 0.6666666666666667
+      },
+      "bottleneck": {
+        "wall_clock_seconds": 955.4629931000527,
+        "phase_share": {
+          "parsing": 0.49387869525861605,
+          "behavioral": 0.23722989245711643,
+          "adversarial": 0.2378944364579393,
+          "supply_chain": 0.030988821036315443
+        },
+        "parsing_seconds_by_type": {
+          "ssh": 120.93073690007441,
+          "http": 163.20705520000774,
+          "ftp": 108.47278980002739,
+          "dns": 25.656255200039595,
+          "packages": 53.61597929999698
+        }
+      },
+      "false_positives": {
+        "confusion_by_type": {
+          "ssh": {
+            "tp": 12,
+            "fp": 0,
+            "tn": 48,
+            "fn": 0
+          },
+          "http": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 12,
+            "fn": 0
+          },
+          "ftp": {
+            "tp": 0,
+            "fp": 0,
+            "tn": 8,
+            "fn": 0
+          },
+          "supply_chain": {
+            "tp": 8,
+            "fp": 0,
+            "tn": 10,
+            "fn": 0
+          }
+        },
+        "flagged_but_normal": {},
+        "score_distribution": null
+      },
+      "coverage_gaps": {
+        "techniques": [
+          {
+            "id": "T1110",
+            "name": "Brute Force",
+            "tactic": "Credential Access",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1078",
+            "name": "Valid Accounts",
+            "tactic": "Persistence",
+            "coverage": 0.0,
+            "is_real_rule": true
+          },
+          {
+            "id": "T1040",
+            "name": "Network Sniffing",
+            "tactic": "Credential Access",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1048",
+            "name": "Exfiltration Over Alternative Protocol",
+            "tactic": "Exfiltration",
+            "coverage": 1.0,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1195",
+            "name": "Supply Chain Compromise",
+            "tactic": "Initial Access",
+            "coverage": 0.0,
+            "is_real_rule": true
+          },
+          {
+            "id": "T1003",
+            "name": "OS Credential Dumping",
+            "tactic": "Credential Access",
+            "coverage": 1.0,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1059",
+            "name": "Command and Scripting Interpreter",
+            "tactic": "Execution",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1140",
+            "name": "Deobfuscate/Decode Files or Information",
+            "tactic": "Defense Evasion",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1036",
+            "name": "Masquerading",
+            "tactic": "Defense Evasion",
+            "coverage": 0.4,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1202",
+            "name": "Indirect Command Execution",
+            "tactic": "Defense Evasion",
+            "coverage": 1.0,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1564",
+            "name": "Hide Artifacts",
+            "tactic": "Defense Evasion",
+            "coverage": 0.6,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1027",
+            "name": "Obfuscated Files or Information",
+            "tactic": "Defense Evasion",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1574",
+            "name": "Hijack Execution Flow",
+            "tactic": "Privilege Escalation",
+            "coverage": 0.4,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1218",
+            "name": "System Binary Proxy Execution",
+            "tactic": "Defense Evasion",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1566",
+            "name": "Phishing",
+            "tactic": "Initial Access",
+            "coverage": 0.8,
+            "is_real_rule": false
+          }
+        ],
+        "gap_threshold": 0.8,
+        "real_rule_technique_ids": [
+          "T1078",
+          "T1195"
+        ],
+        "caveat": "Only T1078 and T1195 run against a real, deterministic rule matcher (Session 26). The other 13 of 15 MITRE techniques' \u201cdetection rate\u201d comes from an unseeded RNG stub (AdversarialTestingAgent._simulate_detection in detectors.py), reseeded from system entropy on every run -- it is not a measurement of SIEM Guard's actual detection capability. See docs/Session_26_results.md and docs/Session_27_results.md."
+      },
+      "improvements": {
+        "current": {
+          "parsing_accuracy": 0.97525,
+          "http_fp_rate": 0.0,
+          "ssh_fp_rate": 0.0,
+          "typosquat_recall": 1.0,
+          "typosquat_f1": 1.0,
+          "mitre_coverage": 0.6666666666666667
+        },
+        "projected": {
+          "parsing_accuracy": 0.945,
+          "http_fp_rate": 0.065,
+          "ssh_fp_rate": 0.0,
+          "typosquat_recall": 0.45,
+          "typosquat_f1": 0.585,
+          "mitre_coverage": 0.7866666666666667
+        },
+        "approaches": [
+          {
+            "name": "Contamination Parameter Calibration",
+            "track": "FP Reduction",
+            "effort_hours": 2,
+            "session": "13"
+          },
+          {
+            "name": "Temporal Validation Window",
+            "track": "FP Reduction",
+            "effort_hours": 6,
+            "session": "13"
+          },
+          {
+            "name": "Adaptive ICL + Cache (LILAC)",
+            "track": "Parsing",
+            "effort_hours": 24,
+            "session": "13"
+          },
+          {
+            "name": "Package Name Normalization",
+            "track": "Supply Chain",
+            "effort_hours": 50,
+            "session": "13"
+          }
+        ]
+      },
+      "detail": {
+        "parsing": {
+          "ssh": {
+            "lines": 300,
+            "failed_lines": 6
+          },
+          "http": {
+            "lines": 60,
+            "failed_lines": 0
+          },
+          "ftp": {
+            "lines": 40,
+            "failed_lines": 0
+          },
+          "dns": {
+            "lines": 20,
+            "failed_lines": 0
+          },
+          "packages": {
+            "lines": 80,
+            "failed_lines": 0
+          }
+        },
+        "adversarial": {
+          "techniques_tested": 15,
+          "gaps": 5
+        }
+      },
+      "parsing_failed_llm": {
+        "overall": {
+          "total_lines": 0,
+          "failed_llm": 0,
+          "rate": 0.0,
+          "by_origin": {}
+        },
+        "by_log_type": {
+          "ssh": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          },
+          "http": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          },
+          "ftp": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          },
+          "dns": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          },
+          "packages": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          }
+        }
+      },
+      "caveats": {
+        "mitre_coverage": "Only T1078 and T1195 run against a real, deterministic rule matcher (Session 26). The other 13 of 15 MITRE techniques' \u201cdetection rate\u201d comes from an unseeded RNG stub (AdversarialTestingAgent._simulate_detection in detectors.py), reseeded from system entropy on every run -- it is not a measurement of SIEM Guard's actual detection capability. See docs/Session_26_results.md and docs/Session_27_results.md.",
+        "failed_llm": "A line couldn't be reliably parsed or attributed, either because a repetitive batch confused the model into transposing values between near-duplicate lines (see docs/Session_34_results.md) or because the parse call itself failed (timeout, malformed JSON) -- these are two independent mechanisms; the batch-transposition explanation does not apply to the backoff-exhaustion cases."
+      }
+    },
+    "generalization": {
+      "meta": {
+        "generated_from": "Session_34_results.json",
+        "timestamp": "2026-09-17T04:32:56.635598+00:00",
+        "pipeline_run_timestamp": "2026-09-07T06:37:35.231976",
+        "dataset_total_logs": 520
+      },
+      "accuracy": {
+        "parsing_by_type": {
+          "ssh": 1.0,
+          "http": 0.9966101694915255,
+          "ftp": 1.0,
+          "dns": 1.0,
+          "packages": 0.9076923076923077
+        },
+        "parsing_overall": 0.9876923076923078,
+        "behavioral_f1": {
+          "ssh": 1.0,
+          "http": 1.0,
+          "ftp": 1.0
+        },
+        "supply_chain_f1": 1.0,
+        "adversarial_coverage": 0.7599999999999999
+      },
+      "bottleneck": {
+        "wall_clock_seconds": 1302.494949300075,
+        "phase_share": {
+          "parsing": 0.49999254703431023,
+          "behavioral": 0.30813210217487147,
+          "adversarial": 0.17313762600090482,
+          "supply_chain": 0.01872991416440076
+        },
+        "parsing_seconds_by_type": {
+          "ssh": 44.350875600008294,
+          "http": 322.2937585999025,
+          "ftp": 183.00283080001827,
+          "dns": 31.543589500011876,
+          "packages": 70.04671269992832
+        }
+      },
+      "false_positives": {
+        "confusion_by_type": {
+          "ssh": {
+            "tp": 15,
+            "fp": 0,
+            "tn": 35,
+            "fn": 0
+          },
+          "http": {
+            "tp": 4,
+            "fp": 0,
+            "tn": 16,
+            "fn": 0
+          },
+          "ftp": {
+            "tp": 3,
+            "fp": 0,
+            "tn": 10,
+            "fn": 0
+          },
+          "supply_chain": {
+            "tp": 6,
+            "fp": 0,
+            "tn": 12,
+            "fn": 0
+          }
+        },
+        "flagged_but_normal": {},
+        "score_distribution": null
+      },
+      "coverage_gaps": {
+        "techniques": [
+          {
+            "id": "T1110",
+            "name": "Brute Force",
+            "tactic": "Credential Access",
+            "coverage": 0.6,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1078",
+            "name": "Valid Accounts",
+            "tactic": "Persistence",
+            "coverage": 0.2,
+            "is_real_rule": true
+          },
+          {
+            "id": "T1040",
+            "name": "Network Sniffing",
+            "tactic": "Credential Access",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1048",
+            "name": "Exfiltration Over Alternative Protocol",
+            "tactic": "Exfiltration",
+            "coverage": 1.0,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1195",
+            "name": "Supply Chain Compromise",
+            "tactic": "Initial Access",
+            "coverage": 0.4,
+            "is_real_rule": true
+          },
+          {
+            "id": "T1003",
+            "name": "OS Credential Dumping",
+            "tactic": "Credential Access",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1059",
+            "name": "Command and Scripting Interpreter",
+            "tactic": "Execution",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1140",
+            "name": "Deobfuscate/Decode Files or Information",
+            "tactic": "Defense Evasion",
+            "coverage": 1.0,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1036",
+            "name": "Masquerading",
+            "tactic": "Defense Evasion",
+            "coverage": 1.0,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1202",
+            "name": "Indirect Command Execution",
+            "tactic": "Defense Evasion",
+            "coverage": 0.6,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1564",
+            "name": "Hide Artifacts",
+            "tactic": "Defense Evasion",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1027",
+            "name": "Obfuscated Files or Information",
+            "tactic": "Defense Evasion",
+            "coverage": 0.8,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1574",
+            "name": "Hijack Execution Flow",
+            "tactic": "Privilege Escalation",
+            "coverage": 0.6,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1218",
+            "name": "System Binary Proxy Execution",
+            "tactic": "Defense Evasion",
+            "coverage": 1.0,
+            "is_real_rule": false
+          },
+          {
+            "id": "T1566",
+            "name": "Phishing",
+            "tactic": "Initial Access",
+            "coverage": 1.0,
+            "is_real_rule": false
+          }
+        ],
+        "gap_threshold": 0.8,
+        "real_rule_technique_ids": [
+          "T1078",
+          "T1195"
+        ],
+        "caveat": "Only T1078 and T1195 run against a real, deterministic rule matcher (Session 26). The other 13 of 15 MITRE techniques' \u201cdetection rate\u201d comes from an unseeded RNG stub (AdversarialTestingAgent._simulate_detection in detectors.py), reseeded from system entropy on every run -- it is not a measurement of SIEM Guard's actual detection capability. See docs/Session_26_results.md and docs/Session_27_results.md."
+      },
+      "improvements": {
+        "current": {
+          "parsing_accuracy": 0.9876923076923078,
+          "http_fp_rate": 0.0,
+          "ssh_fp_rate": 0.0,
+          "typosquat_recall": 1.0,
+          "typosquat_f1": 1.0,
+          "mitre_coverage": 0.7599999999999999
+        },
+        "projected": {
+          "parsing_accuracy": 0.945,
+          "http_fp_rate": 0.065,
+          "ssh_fp_rate": 0.0,
+          "typosquat_recall": 0.45,
+          "typosquat_f1": 0.585,
+          "mitre_coverage": 0.7866666666666667
+        },
+        "approaches": [
+          {
+            "name": "Contamination Parameter Calibration",
+            "track": "FP Reduction",
+            "effort_hours": 2,
+            "session": "13"
+          },
+          {
+            "name": "Temporal Validation Window",
+            "track": "FP Reduction",
+            "effort_hours": 6,
+            "session": "13"
+          },
+          {
+            "name": "Adaptive ICL + Cache (LILAC)",
+            "track": "Parsing",
+            "effort_hours": 24,
+            "session": "13"
+          },
+          {
+            "name": "Package Name Normalization",
+            "track": "Supply Chain",
+            "effort_hours": 50,
+            "session": "13"
+          }
+        ]
+      },
+      "detail": {
+        "parsing": {
+          "ssh": {
+            "lines": 238,
+            "failed_lines": 0
+          },
+          "http": {
+            "lines": 118,
+            "failed_lines": 0
+          },
+          "ftp": {
+            "lines": 67,
+            "failed_lines": 0
+          },
+          "dns": {
+            "lines": 32,
+            "failed_lines": 0
+          },
+          "packages": {
+            "lines": 65,
+            "failed_lines": 6
+          }
+        },
+        "adversarial": {
+          "techniques_tested": 15,
+          "gaps": 5
+        }
+      },
+      "parsing_failed_llm": {
+        "overall": {
+          "total_lines": 0,
+          "failed_llm": 0,
+          "rate": 0.0,
+          "by_origin": {}
+        },
+        "by_log_type": {
+          "ssh": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          },
+          "http": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          },
+          "ftp": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          },
+          "dns": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          },
+          "packages": {
+            "total_lines": 0,
+            "failed_llm": 0,
+            "rate": 0.0,
+            "by_origin": {}
+          }
+        }
+      },
+      "caveats": {
+        "mitre_coverage": "Only T1078 and T1195 run against a real, deterministic rule matcher (Session 26). The other 13 of 15 MITRE techniques' \u201cdetection rate\u201d comes from an unseeded RNG stub (AdversarialTestingAgent._simulate_detection in detectors.py), reseeded from system entropy on every run -- it is not a measurement of SIEM Guard's actual detection capability. See docs/Session_26_results.md and docs/Session_27_results.md.",
+        "failed_llm": "A line couldn't be reliably parsed or attributed, either because a repetitive batch confused the model into transposing values between near-duplicate lines (see docs/Session_34_results.md) or because the parse call itself failed (timeout, malformed JSON) -- these are two independent mechanisms; the batch-transposition explanation does not apply to the backoff-exhaustion cases."
+      }
+    }
+  },
+  "default_corpus": "validation"
+}

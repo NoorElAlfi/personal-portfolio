@@ -13,15 +13,15 @@ function Hero() {
       </h1>
 
       <p className="max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-        I'm a QA automation engineer working toward agentic AI and AI-security roles, backed by a
-        cybersecurity/AI research foundation — my research sits at the intersection of security,
-        reinforcement learning, and AI. I currently test enterprise software for one of Canada's
-        largest telecom providers, and I'm completing a research-based M.Sc. in Cybersecurity at
-        Queen's University (NSERC CREATE program, thesis defense pending), building an emulated
-        cyber-operations gym that trains reinforcement-learning agents for autonomous cyber
-        operations. Outside of work, I build local, agentic LLM tooling — VS Code extensions,
-        prompt-optimization pipelines — and previously did adversarial red-teaming against
-        frontier LLMs at Scale AI.
+        I'm currently a QA Automation Engineer working toward agentic AI and AI-security roles,
+        backed by a cybersecurity/AI research foundation: my research sits at the intersection of
+        security, reinforcement learning, and AI. I test enterprise software for one of
+        Canada's largest telecom providers, and I'm completing a research-based M.Sc. in
+        Cybersecurity at Queen's University (NSERC CREATE program, thesis defense pending),
+        building an emulated cyber-operations gym that trains reinforcement-learning agents for
+        autonomous cyber operations. Outside of work, I build local, agentic LLM tooling (VS Code
+        extensions, prompt-optimization pipelines) and previously did adversarial red-teaming
+        against frontier LLMs at Scale AI.
       </p>
 
       <div className="flex flex-wrap items-center justify-center gap-3 pt-2">

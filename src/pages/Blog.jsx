@@ -8,7 +8,7 @@ function Blog() {
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">Blog</h1>
         <p className="mx-auto mt-2 max-w-xl text-slate-500 dark:text-slate-400">
-          Technical write-ups on personal projects — approach, what broke, and what actually worked.
+          Technical write-ups on personal projects: approach, what broke, and what actually worked.
         </p>
       </div>
       <div className="mx-auto max-w-3xl space-y-5">

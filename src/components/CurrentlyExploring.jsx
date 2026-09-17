@@ -11,18 +11,18 @@ const items = [
   {
     title: 'AI Safety & Security',
     description:
-      "Where adversarial ML and cyber-operations research meet: continuing the jailbreak/red-teaming work from Scale AI, the autonomous cyber-agent \"gym\" research from the EMU thesis, and a new project idea — a local tool that reads a coding agent's full session, not one tool call at a time, and flags multi-step attack-shaped sequences and goal drift, the way a SOC analyst reviews a session log rather than approving commands one by one.",
+      "Where adversarial ML and cyber-operations research meet: continuing the jailbreak/red-teaming work from Scale AI, the autonomous cyber-agent \"gym\" research from the EMU thesis, and a new project idea: a local tool that reads a coding agent's full session, not one tool call at a time, and flags multi-step attack-shaped sequences and goal drift, the way a SOC analyst reviews a session log rather than approving commands one by one.",
   },
   {
     title: 'Self-Supervised Learning (JEPA)',
     description:
-      "Learning Joint-Embedding Predictive Architectures and starting a new project applying one to compression — training a model to predict compression ratio and classify codec directly from learned embeddings, across multiple compression algorithms.",
+      "Learning Joint-Embedding Predictive Architectures and starting a new project applying one to compression: training a model to predict compression ratio and classify codec directly from learned embeddings, across multiple compression algorithms.",
   },
 ];
 
 function CurrentlyExploring() {
   return (
-    <Section id="currently-exploring" title="Currently Exploring" subtitle="Active curiosity, not claimed expertise — things I'm reading about and tinkering with right now.">
+    <Section id="currently-exploring" title="Currently Exploring" subtitle="Active curiosity, not claimed expertise: things I'm reading about and tinkering with right now.">
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <Card key={item.title} className="border-dashed">

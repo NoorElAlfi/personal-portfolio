@@ -1,0 +1,921 @@
+<meta charset="utf-8">
+<title>SIEM Guard Console</title>
+<script>
+  // Follow the portfolio's own light/dark choice (shared via localStorage on
+  // the same origin) instead of just the OS-level preference, so this page
+  // doesn't jar against whichever mode the visitor already picked.
+  try {
+    var siteTheme = localStorage.getItem('theme');
+    if (siteTheme === 'dark' || siteTheme === 'light') document.documentElement.setAttribute('data-theme', siteTheme);
+  } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    color-scheme: light;
+    --plane:      #f9f9f7;
+    --surface:    #fcfcfb;
+    --surface-2:  #f3f2ee;
+    --ink:        #0b0b0b;
+    --ink-2:      #52514e;
+    --ink-muted:  #898781;
+    --grid:       #e1e0d9;
+    --baseline:   #c3c2b7;
+    --border:     rgba(11,11,11,0.10);
+    --border-strong: rgba(11,11,11,0.18);
+    --accent:     #4f46e5;
+    --accent-soft: rgba(79,70,229,0.12);
+    --slot-aqua:  #06b6d4;
+    --slot-aqua-soft: rgba(6,182,212,0.14);
+    --good:       #0ca30c;
+    --warning:    #fab219;
+    --serious:    #ec835a;
+    --critical:   #d03b3b;
+    --shadow: 0 1px 2px rgba(11,11,11,0.04), 0 8px 24px -12px rgba(11,11,11,0.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --plane:      #0d0d0d;
+      --surface:    #1a1a19;
+      --surface-2:  #202020;
+      --ink:        #ffffff;
+      --ink-2:      #c3c2b7;
+      --ink-muted:  #898781;
+      --grid:       #2c2c2a;
+      --baseline:   #383835;
+      --border:     rgba(255,255,255,0.10);
+      --border-strong: rgba(255,255,255,0.18);
+      --accent:     #818cf8;
+      --accent-soft: rgba(129,140,248,0.16);
+      --slot-aqua:  #22d3ee;
+      --slot-aqua-soft: rgba(34,211,238,0.18);
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --plane:      #0d0d0d;
+    --surface:    #1a1a19;
+    --surface-2:  #202020;
+    --ink:        #ffffff;
+    --ink-2:      #c3c2b7;
+    --ink-muted:  #898781;
+    --grid:       #2c2c2a;
+    --baseline:   #383835;
+    --border:     rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.18);
+    --accent:     #818cf8;
+    --accent-soft: rgba(129,140,248,0.16);
+    --slot-aqua:  #22d3ee;
+    --slot-aqua-soft: rgba(34,211,238,0.18);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--plane);
+    color:var(--ink);
+    font-family:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .mono{ font-family:"JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  .app{ max-width:1360px; margin:0 auto; padding-bottom:64px; }
+
+  /* ---------- header ---------- */
+  header.top{
+    position:sticky; top:0; z-index:40;
+    background:color-mix(in srgb, var(--plane) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--border);
+    padding:14px 20px;
+    display:flex; align-items:center; gap:16px; justify-content:space-between; flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .mark{
+    width:26px;height:26px;border-radius:7px;flex:none;object-fit:cover;
+  }
+  .back-link{
+    display:inline-block; margin:14px 20px 0; font-size:12.5px; font-weight:500;
+    color:var(--accent); text-decoration:none;
+  }
+  .back-link:hover{ text-decoration:underline; }
+  .brand h1{ font-size:15px; font-weight:700; letter-spacing:0.02em; margin:0; }
+  .brand .eyebrow{ font-size:11px; color:var(--ink-muted); letter-spacing:0.08em; text-transform:uppercase; }
+  .header-right{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .badge{
+    font-size:11px; color:var(--ink-2); background:var(--surface-2); border:1px solid var(--border);
+    padding:4px 9px; border-radius:20px; white-space:nowrap;
+  }
+  .toggle{
+    display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius:20px; padding:3px; gap:2px;
+  }
+  .toggle button{
+    border:none; background:transparent; color:var(--ink-2); font:inherit; font-size:12px; font-weight:600;
+    padding:6px 14px; border-radius:16px; cursor:pointer; transition:background .15s, color .15s;
+  }
+  .toggle button.active{ background:var(--accent); color:#fff; }
+
+  /* ---------- layout: rail + content ---------- */
+  .shell{ display:flex; align-items:flex-start; gap:0; }
+  nav.rail{
+    position:sticky; top:64px; width:186px; flex:none; padding:24px 12px 24px 20px;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  nav.rail a{
+    display:flex; align-items:center; gap:9px; text-decoration:none; color:var(--ink-2);
+    font-size:12.5px; font-weight:500; padding:8px 10px; border-radius:8px; transition:background .15s,color .15s;
+  }
+  nav.rail a .num{
+    width:18px;height:18px;border-radius:5px;background:var(--surface-2);border:1px solid var(--border);
+    display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ink-muted);flex:none;
+  }
+  nav.rail a:hover{ background:var(--surface-2); color:var(--ink); }
+  nav.rail a.on{ color:var(--ink); }
+  nav.rail a.on .num{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+  main{ flex:1; min-width:0; padding:24px 20px 0 16px; display:flex; flex-direction:column; gap:20px; }
+
+  /* ---------- headline strip ---------- */
+  .headline{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+  }
+  .stat-tile{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px;
+    box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px; min-width:0;
+  }
+  .stat-tile .label{ font-size:11px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.06em; }
+  .stat-tile .value{ font-size:26px; font-weight:600; line-height:1; display:flex; align-items:baseline; gap:8px; }
+  .stat-tile .delta{ font-size:11.5px; font-weight:600; }
+  .stat-tile .delta.up{ color:var(--good); }
+  .stat-tile .delta.down{ color:var(--good); }
+  .stat-tile .delta.flat{ color:var(--ink-muted); font-weight:500; }
+
+  /* ---------- panels ---------- */
+  section.panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:20px 22px 22px; box-shadow:var(--shadow); scroll-margin-top:80px;
+  }
+  .panel-head{ display:flex; align-items:flex-start; gap:12px; margin-bottom:16px; }
+  .panel-head .chip{
+    width:26px;height:26px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ink-muted);flex:none;
+  }
+  .panel-head h2{ font-size:15px; font-weight:700; margin:0 0 2px; }
+  .panel-head p{ font-size:12.5px; color:var(--ink-2); margin:0; max-width:62ch; }
+
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  .chart-box{ position:relative; }
+  .chart-box.h260{ height:260px; }
+  .chart-box.h300{ height:300px; }
+  .chart-box.h360{ height:360px; }
+
+  .caption{ font-size:11.5px; color:var(--ink-muted); margin-top:10px; line-height:1.5; }
+  .caption .illust{
+    display:inline-flex; align-items:center; gap:5px; background:rgba(250,178,25,0.14); color:#a86a00;
+    border:1px solid rgba(250,178,25,0.35); padding:1px 8px; border-radius:12px; font-weight:700;
+    font-size:10.5px; letter-spacing:.03em; text-transform:uppercase; margin-right:6px;
+  }
+  :root:not([data-theme="light"]) .caption .illust, :root[data-theme="dark"] .caption .illust{ color:#ffcf6b; }
+
+  .detail-card{
+    margin-top:14px; border:1px dashed var(--border-strong); border-radius:10px; padding:12px 14px;
+    background:var(--surface-2); font-size:12.5px; display:none;
+  }
+  .detail-card.show{ display:block; }
+  .detail-card dl{ display:grid; grid-template-columns:auto 1fr; gap:4px 14px; margin:6px 0 0; }
+  .detail-card dt{ color:var(--ink-muted); }
+  .detail-card dd{ margin:0; font-weight:600; }
+  .detail-card .close{
+    float:right; cursor:pointer; color:var(--ink-muted); font-size:11px; border:none; background:none; font-family:inherit;
+  }
+
+  /* ---------- heatmap ---------- */
+  .heatmap{ display:grid; grid-template-columns:120px repeat(4,1fr); gap:3px; font-size:11.5px; }
+  .heatmap .hcell, .heatmap .hlabel, .heatmap .hcorner{
+    padding:9px 8px; border-radius:6px; display:flex; align-items:center; justify-content:center; text-align:center;
+    min-height:38px;
+  }
+  .heatmap .hcorner{ background:transparent; }
+  .heatmap .hlabel{ color:var(--ink-muted); font-weight:600; justify-content:flex-start; background:transparent; }
+  .heatmap .rowlabel{ justify-content:flex-start; font-weight:600; color:var(--ink); background:transparent; }
+  .heatmap .hcell{ color:#fff; font-family:"JetBrains Mono",monospace; font-weight:600; cursor:default; position:relative; }
+  .heatmap .hcell[data-v="0"]{ color:var(--ink-muted); }
+
+  /* ---------- mitre bars ---------- */
+  .mrow{ display:grid; grid-template-columns:190px 1fr 52px; align-items:center; gap:10px; padding:5px 0; }
+  .mrow .mname{ font-size:12px; }
+  .mrow .mname .tactic{ display:block; font-size:10px; color:var(--ink-muted); }
+  .mrow .mtrack{ background:var(--surface-2); border-radius:4px; height:14px; overflow:hidden; }
+  .mrow .mfill{ height:100%; border-radius:4px; }
+  .mrow .mval{ font-size:11.5px; font-weight:700; text-align:right; }
+  .mrow.gap .mname{ font-weight:700; }
+  .gapline{ position:relative; margin:2px 0 10px; height:1px; background:var(--baseline); }
+  .gapline::after{
+    content:"80% gap threshold"; position:absolute; right:0; top:-16px; font-size:10px; color:var(--ink-muted);
+  }
+  .rule-badge{
+    display:inline-block; margin-left:6px; font-size:9px; font-weight:700; letter-spacing:0.02em;
+    padding:1px 6px; border-radius:8px; text-transform:uppercase; vertical-align:1px;
+  }
+  .rule-badge.real{ color:#1a7f4b; background:rgba(26,127,75,0.14); }
+  :root:not([data-theme="light"]) .rule-badge.real, :root[data-theme="dark"] .rule-badge.real{ color:#5fd39a; background:rgba(95,211,154,0.16); }
+  .rule-badge.stub{ color:#9a6b00; background:rgba(237,161,0,0.14); }
+  :root:not([data-theme="light"]) .rule-badge.stub, :root[data-theme="dark"] .rule-badge.stub{ color:#ffcf6b; background:rgba(255,207,107,0.16); }
+  .mitre-caveat{ font-size:11px; color:var(--ink-muted); margin:8px 0 14px; }
+
+  /* ---------- failed-llm badges (Session 36) ---------- */
+  .failed-llm-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .failed-llm-badge{
+    display:inline-flex; align-items:center; font-size:10.5px; font-weight:600;
+    font-family:"JetBrains Mono", monospace; padding:3px 9px; border-radius:12px;
+    cursor:default;
+  }
+  .failed-llm-badge.clean{ color:var(--ink-muted); background:var(--surface-2); }
+  .failed-llm-badge.dropped{ color:#9a6b00; background:rgba(237,161,0,0.14); }
+  :root:not([data-theme="light"]) .failed-llm-badge.dropped, :root[data-theme="dark"] .failed-llm-badge.dropped{ color:#ffcf6b; background:rgba(255,207,107,0.16); }
+
+  /* ---------- roadmap ---------- */
+  .approach-list{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+  .approach{
+    display:grid; grid-template-columns:1fr auto auto; gap:14px; align-items:center;
+    padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface-2);
+  }
+  .approach .aname{ font-size:12.5px; font-weight:600; }
+  .approach .atrack{ font-size:10.5px; color:var(--ink-muted); }
+  .approach .adetail{ font-size:11px; color:var(--ink-2); }
+  .approach .ahours{
+    font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:700; color:var(--accent);
+    background:var(--accent-soft); padding:3px 9px; border-radius:8px; white-space:nowrap;
+  }
+  .legend-row{ display:flex; gap:16px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+  .legend-item{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-2); }
+  .legend-swatch{ width:10px;height:10px;border-radius:3px; }
+
+  .export-btn{
+    font-family:inherit; font-size:11px; font-weight:600; color:var(--ink-2); background:var(--surface-2);
+    border:1px solid var(--border); border-radius:8px; padding:5px 10px; cursor:pointer;
+  }
+  .export-btn:hover{ color:var(--ink); border-color:var(--border-strong); }
+  .panel-actions{ margin-left:auto; display:flex; gap:8px; align-self:flex-start; }
+
+  footer.foot{ padding:28px 20px 0; font-size:11px; color:var(--ink-muted); text-align:center; }
+
+  @media (max-width: 900px){
+    .grid-2{ grid-template-columns:1fr; }
+    .headline{ grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width: 720px){
+    .shell{ flex-direction:column; }
+    nav.rail{
+      position:sticky; top:57px; width:100%; flex-direction:row; overflow-x:auto; padding:10px 14px;
+      background:var(--plane); border-bottom:1px solid var(--border); gap:6px;
+    }
+    nav.rail a{ flex:none; padding:6px 10px; }
+    main{ padding:18px 14px 0; }
+    .headline{ grid-template-columns:1fr 1fr; }
+    .heatmap{ grid-template-columns:88px repeat(4,1fr); font-size:10.5px; }
+    .mrow{ grid-template-columns:120px 1fr 40px; }
+    .mrow .mname .tactic{ display:none; }
+  }
+</style>
+
+<div class="app">
+  <a class="back-link" href="/blog/siem-guard">&larr; Back to the SIEM Guard write-up</a>
+  <header class="top">
+    <div class="brand">
+      <img class="mark" src="/logo.png" alt="Noor El Alfi" />
+      <div>
+        <h1>SIEM Guard</h1>
+        <div class="eyebrow">Results Console</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="badge mono" id="runBadge">loading&hellip;</span>
+      <div class="toggle" id="corpusToggle" role="group" aria-label="Corpus" hidden></div>
+      <div class="toggle" role="group" aria-label="Data mode">
+        <button id="btn-current" class="active" onclick="setMode('current')">Current</button>
+        <button id="btn-projected" onclick="setMode('projected')" title="A pre-implementation estimate from an internal planning pass, frozen before that work began. Not a second measured run: it won't change no matter which results file the dashboard is rebuilt from.">Projected</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="rail" id="rail">
+      <a href="#s1" class="navlink on"><span class="num">1</span>Accuracy Overview</a>
+      <a href="#s2" class="navlink"><span class="num">2</span>Bottleneck Analysis</a>
+      <a href="#s3" class="navlink"><span class="num">3</span>False Positives</a>
+      <a href="#s4" class="navlink"><span class="num">4</span>Coverage Gaps</a>
+      <a href="#s5" class="navlink"><span class="num">5</span>Improvements Roadmap</a>
+    </nav>
+
+    <main>
+      <div class="headline" id="headline"></div>
+      <p class="caption" id="mitreHeadlineCaveat"></p>
+      <p class="caption" id="headlineModeCaption" hidden>Showing an internal priority-matrix estimate: a pre-implementation projection, not a second measured run. It does not update when the dashboard is rebuilt from new results.</p>
+
+      <!-- SECTION 1 -->
+      <section class="panel" id="s1">
+        <div class="panel-head">
+          <span class="chip">1</span>
+          <div>
+            <h2>Accuracy Overview</h2>
+            <p>Field-extraction accuracy by log type, plus detection quality (F1 / coverage) across every downstream detector. Click any bar for the underlying counts.</p>
+          </div>
+          <div class="panel-actions"><button class="export-btn" onclick="exportChart('chartParsing','parsing-accuracy')">Export PNG</button></div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="chart-box h260"><canvas id="chartParsing"></canvas></div>
+            <div class="detail-card" id="detailParsing"></div>
+            <div class="failed-llm-row" id="failedLlmBadges"></div>
+            <p class="caption" id="failedLlmCaveat"></p>
+          </div>
+          <div>
+            <div class="chart-box h260"><canvas id="chartDetection"></canvas></div>
+            <div class="detail-card" id="detailDetection"></div>
+          </div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--good)"></span>&ge;80% good</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--warning)"></span>60&ndash;80% watch</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--critical)"></span>&lt;60% critical</div>
+        </div>
+      </section>
+
+      <!-- SECTION 2 -->
+      <section class="panel" id="s2">
+        <div class="panel-head">
+          <span class="chip">2</span>
+          <div>
+            <h2>Bottleneck Analysis</h2>
+            <p id="bottleneckIntro">Where the wall-clock time actually goes: click a slice to drill into that phase.</p>
+          </div>
+          <div class="panel-actions"><button class="export-btn" onclick="exportChart('chartPhase','wall-clock-share')">Export PNG</button></div>
+        </div>
+        <div class="grid-2">
+          <div class="chart-box h300"><canvas id="chartPhase"></canvas></div>
+          <div>
+            <div class="chart-box h300"><canvas id="chartParseTime"></canvas></div>
+            <p class="caption" id="phaseCaption">Showing: parsing time by log type.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3 -->
+      <section class="panel" id="s3">
+        <div class="panel-head">
+          <span class="chip">3</span>
+          <div>
+            <h2>False Positive Analysis</h2>
+            <p>Outcome composition per detector (row-normalized to that type's entity count): HTTP is the FP hotspot; supply-chain's problem is missed detections, not false alarms.</p>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <div class="heatmap" id="heatmap"></div>
+            <p class="caption">Cells show % of that type's entities landing in each outcome. Darker = larger share.</p>
+          </div>
+          <div>
+            <div class="chart-box h260"><canvas id="chartHistogram"></canvas></div>
+            <p class="caption" id="histogramCaption"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4 -->
+      <section class="panel" id="s4">
+        <div class="panel-head">
+          <span class="chip">4</span>
+          <div>
+            <h2>Coverage Gaps</h2>
+            <p>Adversarial-testing detection rate across all 15 MITRE ATT&amp;CK techniques exercised, sorted worst-first. Four techniques sit below the 80% target.</p>
+          </div>
+        </div>
+        <p class="mitre-caveat" id="mitreCaveat"></p>
+        <div id="mitreList"></div>
+      </section>
+
+      <!-- SECTION 5 -->
+      <section class="panel" id="s5">
+        <div class="panel-head">
+          <span class="chip">5</span>
+          <div>
+            <h2>Improvements Roadmap</h2>
+            <p>An internal priority matrix selected four approaches for implementation. "Projected" below is that document's own pre-implementation estimate: not a second measured run, and it won't change as later results are loaded.</p>
+          </div>
+          <div class="panel-actions"><button class="export-btn" onclick="exportChart('chartRoadmap','before-after')">Export PNG</button></div>
+        </div>
+        <div class="chart-box h300"><canvas id="chartRoadmap"></canvas></div>
+        <p class="mitre-caveat" id="roadmapMitreCaveat" style="margin-top:6px"></p>
+        <h3 style="font-size:12.5px;margin:22px 0 0;color:var(--ink-2)">Implementation order &middot; 82 hours total</h3>
+        <div class="approach-list" id="approachList"></div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="foot" id="footNote">SIEM Guard Results Console &middot; real pipeline output, not illustrative</footer>
+</div>
+
+<script>
+let DATA = null;
+// Session 37: a results file can carry one corpus (legacy flat shape) or two
+// (validation + generalization, e.g. sessions/34/Session_34_results.json).
+// CORPORA holds every corpus build_dashboard_data.py produced, keyed by name
+// ("default" for the legacy single-corpus shape); the toggle below switches
+// which one DATA points at without re-fetching.
+let CORPORA = {};
+let currentCorpusKey = null;
+
+const APPROACH_DETAILS = {
+  "Contamination Parameter Calibration": "HTTP FP: 33% → 15-20%",
+  "Temporal Validation Window": "Stacks with #1 → HTTP FP 5-8%",
+  "Adaptive ICL + Cache (LILAC)": "Parsing accuracy: 58.6% → 92-97%",
+  "Package Name Normalization": "Typosquat recall: 25% → 45%",
+};
+
+function withTotal(d){ return { ...d, total: d.tp + d.fp + d.tn + d.fn }; }
+
+// dashboard_data.json's caveat strings carry internal doc/session references
+// (repo-only file paths, session numbers) that mean nothing off-repo -- strip
+// them here, once, so every consumer downstream gets portfolio-clean text.
+function sanitizeCaveat(s){
+  if(!s) return s;
+  return s
+    .replace(/\s*See docs\/[^.]+\.md(?:\s+and\s+docs\/[^.]+\.md)?\./gi, '')
+    .replace(/\s*\(see docs\/[^)]+\)/gi, '')
+    .replace(/\s*\(Session\s*\d+\)/gi, '')
+    .trim();
+}
+
+function deriveData(raw){
+  const cbt = raw.false_positives.confusion_by_type;
+  return {
+    ...raw,
+    caveats: {
+      mitre_coverage: sanitizeCaveat(raw.caveats && raw.caveats.mitre_coverage),
+      failed_llm: sanitizeCaveat(raw.caveats && raw.caveats.failed_llm),
+    },
+    coverage_gaps: { ...raw.coverage_gaps, caveat: sanitizeCaveat(raw.coverage_gaps && raw.coverage_gaps.caveat) },
+    detection_detail: {
+      ssh: withTotal(cbt.ssh), http: withTotal(cbt.http), ftp: withTotal(cbt.ftp),
+      supply_chain: withTotal(cbt.supply_chain),
+      adversarial: { techniques: raw.detail.adversarial.techniques_tested, gaps: raw.detail.adversarial.gaps },
+    },
+    parsing_detail: raw.detail.parsing,
+    false_positives: {
+      ...raw.false_positives,
+      confusion_by_type: {
+        ssh: withTotal(cbt.ssh), http: withTotal(cbt.http), ftp: withTotal(cbt.ftp),
+        supply_chain: withTotal(cbt.supply_chain),
+      },
+    },
+    improvements: {
+      ...raw.improvements,
+      approaches: raw.improvements.approaches.map(a => ({ ...a, detail: APPROACH_DETAILS[a.name] || '' })),
+    },
+  };
+}
+
+async function loadDashboardData(){
+  // dashboard_data.json lives at the repo root (next to final_results.json,
+  // regenerated by scripts/build_dashboard_data.py); this page lives one
+  // level down in dashboard/.
+  const res = await fetch('../dashboard_data.json');
+  if(!res.ok) throw new Error(`dashboard_data.json: HTTP ${res.status}`);
+  const raw = await res.json();
+
+  if(raw.corpora){
+    CORPORA = raw.corpora;
+    currentCorpusKey = (raw.default_corpus && CORPORA[raw.default_corpus]) ? raw.default_corpus : Object.keys(CORPORA)[0];
+  } else {
+    CORPORA = { default: raw };
+    currentCorpusKey = 'default';
+  }
+  DATA = deriveData(CORPORA[currentCorpusKey]);
+}
+
+function renderCorpusToggle(){
+  const el = document.getElementById('corpusToggle');
+  if(!el) return;
+  const keys = Object.keys(CORPORA);
+  if(keys.length < 2){ el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = keys.map(k => {
+    const label = k.charAt(0).toUpperCase() + k.slice(1);
+    return `<button class="${k===currentCorpusKey?'active':''}" onclick="setCorpus('${k}')">${label}</button>`;
+  }).join('');
+}
+
+function setCorpus(key){
+  if(!CORPORA[key] || key === currentCorpusKey) return;
+  currentCorpusKey = key;
+  DATA = deriveData(CORPORA[key]);
+  initDashboard();
+}
+window.setCorpus = setCorpus; // referenced by the inline onclick built in renderCorpusToggle
+
+/* ---------------- theme-aware chart chrome ---------------- */
+function isDark(){
+  const explicit = document.documentElement.getAttribute('data-theme');
+  if (explicit === 'dark') return true;
+  if (explicit === 'light') return false;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+const DARK = isDark();
+const INK = DARK ? '#c3c2b7' : '#52514e';
+const GRID = DARK ? '#2c2c2a' : '#e1e0d9';
+const SURFACE = DARK ? '#1a1a19' : '#fcfcfb';
+const GOOD='#0ca30c', WARNING='#fab219', CRITICAL='#d03b3b';
+const ACCENT = DARK ? '#3987e5' : '#2a78d6';
+const AQUA = DARK ? '#199e70' : '#1baf7a';
+
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size = 11.5;
+Chart.defaults.color = INK;
+
+function statusColor(v){ return v >= 0.8 ? GOOD : v >= 0.6 ? WARNING : CRITICAL; }
+function pct(v, d){ return (v*100).toFixed(d===undefined?1:d) + '%'; }
+
+const tooltipBase = {
+  backgroundColor: SURFACE, titleColor: DARK? '#fff':'#0b0b0b', bodyColor: INK,
+  borderColor: DARK? 'rgba(255,255,255,.12)':'rgba(11,11,11,.10)', borderWidth:1,
+  padding:10, cornerRadius:8, displayColors:false,
+  titleFont:{weight:'600', size:12}, bodyFont:{size:11.5}
+};
+
+/* ---------------- Section 1: Accuracy ---------------- */
+// Chart instances live outside initDashboard() so a corpus switch (setCorpus)
+// can destroy the previous corpus's charts before rebuilding on the same
+// canvases -- Chart.js throws "Canvas is already in use" otherwise.
+let chartParsing, chartDetection, chartPhase, chartParseTime, chartHistogram, chartRoadmap;
+
+function initDashboard(){
+[chartParsing, chartDetection, chartPhase, chartParseTime, chartHistogram, chartRoadmap].forEach(c => { if(c) c.destroy(); });
+chartParsing = chartDetection = chartPhase = chartParseTime = chartHistogram = chartRoadmap = null;
+
+renderCorpusToggle();
+
+const badge = document.getElementById('runBadge');
+const runTs = DATA.meta.pipeline_run_timestamp ? DATA.meta.pipeline_run_timestamp.slice(0,10) : DATA.meta.generated_from;
+const totalLogs = DATA.meta.dataset_total_logs;
+const corpusLabel = Object.keys(CORPORA).length > 1 ? ` · ${currentCorpusKey}` : '';
+badge.textContent = `${runTs} run` + (totalLogs ? ` · ${totalLogs} logs` : '') + corpusLabel + ` · wall clock ${Math.round(DATA.bottleneck.wall_clock_seconds)}s`;
+
+const parsingLabels = ['ssh','http','ftp','dns','packages'];
+const parsingVals = parsingLabels.map(k => DATA.accuracy.parsing_by_type[k]);
+chartParsing = new Chart(document.getElementById('chartParsing'), {
+  type: 'bar',
+  data: { labels: parsingLabels.map(l=>l.toUpperCase()), datasets: [{
+    data: parsingVals, backgroundColor: parsingVals.map(statusColor), borderRadius:4, maxBarThickness:36
+  }]},
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    onClick:(evt, els)=>{
+      if(!els.length) return;
+      const t = parsingLabels[els[0].index];
+      const d = DATA.parsing_detail[t];
+      const box = document.getElementById('detailParsing');
+      box.innerHTML = `<button class="close" onclick="this.parentElement.classList.remove('show')">close &times;</button>
+        <strong>${t.toUpperCase()} parsing</strong>
+        <dl>
+          <dt>Field accuracy</dt><dd>${pct(DATA.accuracy.parsing_by_type[t])}</dd>
+          <dt>Lines parsed</dt><dd>${d.lines}</dd>
+          <dt>Failed lines</dt><dd>${d.failed_lines}</dd>
+        </dl>`;
+      box.classList.add('show');
+    },
+    plugins:{ legend:{display:false}, title:{display:true, text:'Parsing accuracy by log type', align:'start',
+        color: INK, font:{size:12.5, weight:'600'}, padding:{bottom:10}},
+      tooltip:{...tooltipBase, callbacks:{ label: c => 'Field accuracy: ' + pct(c.parsed.y) } } },
+    scales:{
+      y:{ min:0, max:1, ticks:{ callback:v=>Math.round(v*100)+'%', color:INK }, grid:{color:GRID} },
+      x:{ grid:{display:false}, ticks:{color:INK, font:{family:"'JetBrains Mono', monospace"}} }
+    }
+  }
+});
+
+// Session 36: per-log-type "lines dropped from analysis" badges. A line
+// becomes failed_llm either because a repetitive batch confused the model
+// into transposing values between near-duplicate lines (Session 34), or
+// because the parse call itself kept failing (timeout/malformed JSON) --
+// the tooltip below covers both so a 0%-origin-specific reader doesn't
+// misattribute every badge to the transposition mechanism.
+const failedLlmBadgesEl = document.getElementById('failedLlmBadges');
+const failedLlmCaveatEl = document.getElementById('failedLlmCaveat');
+if(failedLlmCaveatEl) failedLlmCaveatEl.textContent = DATA.caveats.failed_llm || '';
+if(failedLlmBadgesEl && DATA.parsing_failed_llm){
+  const byType = DATA.parsing_failed_llm.by_log_type || {};
+  failedLlmBadgesEl.innerHTML = parsingLabels.map(t => {
+    const d = byType[t] || {total_lines:0, failed_llm:0, rate:0, by_origin:{}};
+    const pct = (d.rate || 0) * 100;
+    const pctLabel = pct > 0 && pct < 0.1 ? '<0.1' : (Math.round(pct * 10) / 10);
+    const cls = d.failed_llm > 0 ? 'dropped' : 'clean';
+    const transposed = (d.by_origin && d.by_origin.batch_transposition_retry_exhausted) || 0;
+    const backoff = (d.by_origin && d.by_origin.backoff_retry_exhausted) || 0;
+    const title = `${d.failed_llm} of ${d.total_lines} ${t.toUpperCase()} lines dropped from analysis: `
+      + `${transposed} from a repetitive batch confusing the model (a known failure mode), `
+      + `${backoff} from the parse call itself failing (timeout/malformed JSON). `
+      + (DATA.caveats.failed_llm || '');
+    return `<span class="failed-llm-badge ${cls}" title="${title.replace(/"/g,'&quot;')}">`
+      + `${t.toUpperCase()}: ${d.failed_llm}/${d.total_lines} dropped (${pctLabel}%)</span>`;
+  }).join('');
+}
+
+const detectionLabels = ['SSH F1','HTTP F1','FTP F1','Supply-chain F1','Adversarial coverage'];
+const detectionKeys = ['ssh','http','ftp','supply_chain','adversarial'];
+const detectionVals = [DATA.accuracy.behavioral_f1.ssh, DATA.accuracy.behavioral_f1.http, DATA.accuracy.behavioral_f1.ftp, DATA.accuracy.supply_chain_f1, DATA.accuracy.adversarial_coverage];
+chartDetection = new Chart(document.getElementById('chartDetection'), {
+  type:'bar',
+  data:{ labels:detectionLabels, datasets:[{ data:detectionVals, backgroundColor:detectionVals.map(statusColor), borderRadius:4, maxBarThickness:36 }]},
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    onClick:(evt,els)=>{
+      if(!els.length) return;
+      const key = detectionKeys[els[0].index];
+      const box = document.getElementById('detailDetection');
+      let html = `<button class="close" onclick="this.parentElement.classList.remove('show')">close &times;</button>`;
+      if(key === 'adversarial'){
+        const adv = DATA.detection_detail.adversarial;
+        html += `<strong>Adversarial coverage</strong><dl><dt>Techniques tested</dt><dd>${adv.techniques}</dd><dt>Below 80% gap</dt><dd>${adv.gaps}</dd></dl><p class="mitre-caveat" style="margin:8px 0 0">${DATA.caveats.mitre_coverage}</p>`;
+      } else {
+        const d = DATA.detection_detail[key];
+        html += `<strong>${key.toUpperCase()} behavioral detection</strong><dl>
+          <dt>True positives</dt><dd>${d.tp}</dd><dt>False positives</dt><dd>${d.fp}</dd>
+          <dt>False negatives</dt><dd>${d.fn}</dd><dt>True negatives</dt><dd>${d.tn}</dd></dl>`;
+      }
+      box.innerHTML = html; box.classList.add('show');
+    },
+    plugins:{ legend:{display:false}, title:{display:true, text:'Detection quality (F1 / coverage)', align:'start',
+        color:INK, font:{size:12.5, weight:'600'}, padding:{bottom:10}},
+      tooltip:{...tooltipBase, callbacks:{ label:c=>pct(c.parsed.x) }}},
+    scales:{ x:{ min:0, max:1, ticks:{ callback:v=>Math.round(v*100)+'%', color:INK }, grid:{color:GRID} },
+      y:{ grid:{display:false}, ticks:{color:INK} } }
+  }
+});
+
+/* ---------------- Section 2: Bottleneck ---------------- */
+const phaseLabels = ['Parsing','Behavioral','Adversarial','Supply chain'];
+const phaseKeys = ['parsing','behavioral','adversarial','supply_chain'];
+const phaseShares = phaseKeys.map(k=>DATA.bottleneck.phase_share[k]);
+const phaseColors = [ACCENT, AQUA, '#eda100', '#e87ba4'];
+const bottleneckIntro = document.getElementById('bottleneckIntro');
+if(bottleneckIntro){
+  const topPhaseIdx = phaseShares.indexOf(Math.max(...phaseShares));
+  bottleneckIntro.textContent = `Where the ${Math.round(DATA.bottleneck.wall_clock_seconds).toLocaleString()}s of wall-clock time actually goes. ${phaseLabels[topPhaseIdx]} dominates at ${pct(phaseShares[topPhaseIdx])}: click a slice to drill into that phase.`;
+}
+chartPhase = new Chart(document.getElementById('chartPhase'), {
+  type:'doughnut',
+  data:{ labels:phaseLabels, datasets:[{ data:phaseShares, backgroundColor:phaseColors, borderColor:SURFACE, borderWidth:3 }]},
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'62%',
+    onClick:(evt,els)=>{ if(!els.length) return; showPhase(phaseKeys[els[0].index]); },
+    plugins:{
+      title:{display:true, text:`Wall-clock share by phase (${Math.round(DATA.bottleneck.wall_clock_seconds).toLocaleString()}s total)`, align:'start', color:INK, font:{size:12.5,weight:'600'}, padding:{bottom:10}},
+      legend:{ position:'bottom', labels:{ color:INK, boxWidth:10, boxHeight:10, padding:14, font:{size:11.5} } },
+      tooltip:{...tooltipBase, callbacks:{ label:c=> c.label+': '+pct(c.parsed) } }
+    }
+  }
+});
+
+const parsingSecondsByType = DATA.bottleneck.parsing_seconds_by_type;
+const parsingTimeTotal = Object.values(parsingSecondsByType).reduce((a,b)=>a+b, 0);
+const parsingTypesSorted = Object.keys(parsingSecondsByType).sort((a,b)=>parsingSecondsByType[b]-parsingSecondsByType[a]);
+
+function renderParseTime(){
+  const labels = parsingTypesSorted;
+  const vals = labels.map(k=>parsingSecondsByType[k]);
+  if(chartParseTime) chartParseTime.destroy();
+  chartParseTime = new Chart(document.getElementById('chartParseTime'), {
+    type:'bar',
+    data:{ labels:labels.map(l=>l.toUpperCase()), datasets:[{ data:vals, backgroundColor:ACCENT, borderRadius:4, maxBarThickness:30 }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, title:{display:true, text:'Parsing time by log type (seconds)', align:'start', color:INK, font:{size:12.5,weight:'600'}, padding:{bottom:10}},
+        tooltip:{...tooltipBase, callbacks:{ label:c=> c.parsed.x.toFixed(1)+'s ('+pct(c.parsed.x/parsingTimeTotal)+' of parsing time)' }}},
+      scales:{ x:{ ticks:{color:INK}, grid:{color:GRID} }, y:{ grid:{display:false}, ticks:{color:INK, font:{family:"'JetBrains Mono', monospace"}} } }
+    }
+  });
+}
+renderParseTime();
+showPhase('parsing');
+
+function showPhase(key){
+  const cap = document.getElementById('phaseCaption');
+  if(key === 'parsing'){
+    const top = parsingTypesSorted[0];
+    const topShare = parsingSecondsByType[top] / parsingTimeTotal;
+    cap.textContent = `Showing: parsing time by log type (${top.toUpperCase()} alone is ${pct(topShare)} of all parsing time, the single largest lever in the pipeline).`;
+    renderParseTime();
+    return;
+  }
+  const names = {behavioral:'Behavioral detection', adversarial:'Adversarial testing', supply_chain:'Supply-chain scanning'};
+  const secs = DATA.bottleneck.phase_share[key] * DATA.bottleneck.wall_clock_seconds;
+  cap.innerHTML = `Showing: <strong>${names[key]}</strong>: ${secs.toFixed(1)}s total (${pct(DATA.bottleneck.phase_share[key])} of wall clock). This phase has no further type-level timing breakdown available; only parsing is instrumented per log type today.`;
+  if(chartParseTime) chartParseTime.destroy();
+}
+
+/* ---------------- Section 3: heatmap + illustrative histogram ---------------- */
+const hmTypes = ['ssh','http','ftp','supply_chain'];
+const hmLabels = ['SSH','HTTP','FTP','Supply chain'];
+function seqColor(pctVal){
+  // sequential blue ramp, 0-100 -> light to dark
+  const stops = ['#cde2fb','#9ec5f4','#5598e7','#2a78d6','#184f95'];
+  const i = Math.min(stops.length-1, Math.floor(pctVal/100*stops.length));
+  return stops[i];
+}
+function buildHeatmap(){
+  const el = document.getElementById('heatmap');
+  let html = `<div class="hcorner"></div>
+    <div class="hlabel">TP</div><div class="hlabel">FP</div><div class="hlabel">TN</div><div class="hlabel">FN</div>`;
+  hmTypes.forEach((t,i)=>{
+    const d = DATA.false_positives.confusion_by_type[t];
+    html += `<div class="rowlabel">${hmLabels[i]}</div>`;
+    ['tp','fp','tn','fn'].forEach(k=>{
+      const share = d[k]/d.total*100;
+      const bg = share===0 ? 'transparent' : seqColor(share);
+      const border = share===0 ? '1px solid var(--border)' : 'none';
+      html += `<div class="hcell" data-v="${share===0?'0':'1'}" style="background:${bg};${border?('border:'+border+';'):''}" title="${hmLabels[i]}, ${k.toUpperCase()}: ${d[k]}/${d.total} (${share.toFixed(0)}%)">${share.toFixed(0)}%</div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+buildHeatmap();
+
+const scoreDist = DATA.false_positives.score_distribution;
+const histCaption = document.getElementById('histogramCaption');
+let histLabels, histNormal, histAnomalous, histIllustrative;
+if(scoreDist){
+  histLabels = scoreDist.bins;
+  histNormal = scoreDist.normal;
+  histAnomalous = scoreDist.anomalous;
+  histIllustrative = false;
+  histCaption.innerHTML = 'Real Isolation Forest anomaly scores, logged via <code class="mono">BehavioralDetector.score_log</code> / <code class="mono">Anomaly.raw_score</code> (detectors.py).';
+} else {
+  histLabels = ['0.0','0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8','0.9','1.0'];
+  histNormal = [2,5,11,18,24,20,12,6,2,1,0];
+  histAnomalous = [0,0,1,2,4,8,13,19,22,17,9];
+  histIllustrative = true;
+  histCaption.innerHTML = '<span class="illust">Illustrative</span>This run predates raw-score logging, so no real score distribution exists for it yet. This panel approximates the contamination-mismatch pattern found during the project\'s false-positive investigation: it is not a measurement. A later pipeline run with raw-score logging enabled would replace it with real data.';
+}
+chartHistogram = new Chart(document.getElementById('chartHistogram'), {
+  type:'bar',
+  data:{
+    labels: histLabels,
+    datasets:[
+      { label: histIllustrative?'Normal (illustrative)':'Normal', data: histNormal, backgroundColor: DARK? 'rgba(57,135,229,0.55)':'rgba(42,120,214,0.55)', borderRadius:3, barPercentage:0.9, categoryPercentage:0.9 },
+      { label: histIllustrative?'Anomalous (illustrative)':'Anomalous', data: histAnomalous, backgroundColor: DARK? 'rgba(230,103,103,0.6)':'rgba(211,72,72,0.6)', borderRadius:3, barPercentage:0.9, categoryPercentage:0.9 }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      title:{display:true, text: histIllustrative?'Anomaly score overlap (illustrative)':'Anomaly score overlap', align:'start', color:INK, font:{size:12.5,weight:'600'}, padding:{bottom:10}},
+      legend:{ position:'bottom', labels:{color:INK, boxWidth:10, boxHeight:10, font:{size:11}} },
+      tooltip:{...tooltipBase}
+    },
+    scales:{ x:{ stacked:false, grid:{display:false}, ticks:{color:INK} }, y:{ grid:{color:GRID}, ticks:{color:INK} } }
+  }
+});
+
+/* ---------------- Section 4: MITRE coverage ---------------- */
+function buildMitre(){
+  const caveatEl = document.getElementById('mitreCaveat');
+  if(caveatEl) caveatEl.textContent = DATA.coverage_gaps.caveat || '';
+  const el = document.getElementById('mitreList');
+  const sorted = [...DATA.coverage_gaps.techniques].sort((a,b)=>a.coverage-b.coverage);
+  let html = `<div class="gapline"></div>`;
+  sorted.forEach(t=>{
+    const gap = t.coverage < DATA.coverage_gaps.gap_threshold;
+    const real = !!t.is_real_rule;
+    const badge = real
+      ? `<span class="rule-badge real" title="Deterministic rule matcher -- this percentage is a real measurement.">real rule</span>`
+      : `<span class="rule-badge stub" title="Detection rate comes from an unseeded RNG stub, not a real rule -- reseeded from system entropy on every run.">RNG stub</span>`;
+    html += `<div class="mrow ${gap?'gap':''}">
+      <div class="mname">${t.id} &middot; ${t.name}${badge}<span class="tactic">${t.tactic}</span></div>
+      <div class="mtrack"><div class="mfill" style="width:${t.coverage*100}%; background:${statusColor(t.coverage)}"></div></div>
+      <div class="mval mono" style="color:${statusColor(t.coverage)}">${Math.round(t.coverage*100)}%</div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+buildMitre();
+
+/* ---------------- Section 5: roadmap ---------------- */
+const roadmapMetrics = ['parsing_accuracy','http_fp_rate','typosquat_recall','typosquat_f1','mitre_coverage'];
+const roadmapLabels = ['Parsing accuracy','HTTP FP rate','Typosquat recall','Typosquat F1','MITRE coverage †'];
+chartRoadmap = new Chart(document.getElementById('chartRoadmap'), {
+  type:'bar',
+  data:{
+    labels:roadmapLabels,
+    datasets:[
+      { label:'Current', data: roadmapMetrics.map(m=>DATA.improvements.current[m]), backgroundColor:ACCENT, borderRadius:4, maxBarThickness:28 },
+      { label:'Projected', data: roadmapMetrics.map(m=>DATA.improvements.projected[m]), backgroundColor:AQUA, borderRadius:4, maxBarThickness:28 }
+    ]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ position:'bottom', labels:{color:INK, boxWidth:10, boxHeight:10, font:{size:11.5}} },
+      tooltip:{...tooltipBase, callbacks:{ label:c=> c.dataset.label+': '+pct(c.parsed.y) }}
+    },
+    scales:{ y:{ min:0, max:1, ticks:{callback:v=>Math.round(v*100)+'%', color:INK}, grid:{color:GRID} },
+      x:{ grid:{display:false}, ticks:{color:INK} } }
+  }
+});
+
+const roadmapMitreCaveat = document.getElementById('roadmapMitreCaveat');
+if(roadmapMitreCaveat) roadmapMitreCaveat.innerHTML = `&dagger; ${DATA.caveats.mitre_coverage}`;
+
+function buildApproaches(){
+  const el = document.getElementById('approachList');
+  el.innerHTML = DATA.improvements.approaches.map(a => `
+    <div class="approach">
+      <div><div class="aname">${a.name}</div><div class="atrack">${a.track}</div><div class="adetail">${a.detail}</div></div>
+      <div class="ahours mono">${a.effort_hours}h</div>
+    </div>`).join('');
+}
+buildApproaches();
+
+/* ---------------- headline strip + mode toggle ---------------- */
+const headlineDefs = [
+  { key:'parsing_accuracy', label:'Parsing accuracy', higherBetter:true },
+  { key:'http_fp_rate', label:'HTTP FP rate', higherBetter:false },
+  { key:'typosquat_recall', label:'Typosquat recall', higherBetter:true },
+  { key:'mitre_coverage', label:'MITRE coverage', higherBetter:true }
+];
+let mode = 'current';
+function renderHeadline(){
+  const el = document.getElementById('headline');
+  el.innerHTML = headlineDefs.map(h=>{
+    const cur = DATA.improvements.current[h.key];
+    const val = DATA.improvements[mode][h.key];
+    const color = h.key==='http_fp_rate' ? (val<=0.1?GOOD:val<=0.2?WARNING:CRITICAL) : statusColor(val);
+    let deltaHtml = '<span class="delta flat">baseline</span>';
+    if(mode === 'projected'){
+      const diff = val - cur;
+      const good = h.higherBetter ? diff > 0 : diff < 0;
+      const arrow = diff === 0 ? '' : (diff>0 ? '&uarr; ' : '&darr; ');
+      deltaHtml = diff===0 ? '<span class="delta flat">unchanged</span>' : `<span class="delta ${good?'up':'down'}">${arrow}${Math.abs(diff*100).toFixed(1)}pt vs current (projected)</span>`;
+    }
+    const titleAttr = h.key==='mitre_coverage' ? ` title="${DATA.caveats.mitre_coverage.replace(/"/g,'&quot;')}"` : '';
+    const labelSuffix = h.key==='mitre_coverage' ? ' &dagger;' : '';
+    return `<div class="stat-tile"${titleAttr}>
+      <div class="label">${h.label}${labelSuffix}</div>
+      <div class="value" style="color:${color}">${pct(val)}</div>
+      ${deltaHtml}
+    </div>`;
+  }).join('');
+}
+function setMode(m){
+  mode = m;
+  document.getElementById('btn-current').classList.toggle('active', m==='current');
+  document.getElementById('btn-projected').classList.toggle('active', m==='projected');
+  document.getElementById('headlineModeCaption').hidden = m!=='projected';
+  renderHeadline();
+}
+window.setMode = setMode; // referenced by the inline onclick on the header toggle buttons
+renderHeadline();
+const mitreHeadlineCaveat = document.getElementById('mitreHeadlineCaveat');
+if(mitreHeadlineCaveat) mitreHeadlineCaveat.innerHTML = `&dagger; ${DATA.caveats.mitre_coverage}`;
+
+} // end initDashboard()
+
+/* ---------------- nav scroll-spy (independent of dashboard_data.json) ---------------- */
+const sections = ['s1','s2','s3','s4','s5'].map(id=>document.getElementById(id));
+const links = Array.from(document.querySelectorAll('.navlink'));
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      links.forEach(l=>l.classList.remove('on'));
+      const link = document.querySelector(`.navlink[href="#${e.target.id}"]`);
+      if(link) link.classList.add('on');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s=>io.observe(s));
+
+/* ---------------- PNG export ---------------- */
+function exportChart(canvasId, name){
+  const canvas = document.getElementById(canvasId);
+  const url = canvas.toDataURL('image/png', 1.0);
+  const w = window.open();
+  if(w){
+    w.document.write(`<title>${name}</title><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="${url}" style="max-width:100%;"><p style="position:fixed;bottom:12px;left:12px;color:#aaa;font-family:sans-serif;font-size:12px">Right-click &rarr; Save image as&hellip;</p></body>`);
+  }
+}
+
+/* ---------------- boot ---------------- */
+loadDashboardData().then(initDashboard).catch(err=>{
+  console.error('Failed to load dashboard_data.json', err);
+  document.getElementById('runBadge').textContent = 'load failed';
+  document.getElementById('headline').innerHTML = `<div class="stat-tile" style="grid-column:1/-1">
+    <div class="label">dashboard_data.json failed to load</div>
+    <div class="value" style="color:var(--critical);font-size:14px">${err.message}</div>
+    <div class="delta flat">This page needs to be served over HTTP (not opened directly as a file) so it can fetch its data file.</div>
+  </div>`;
+});
+</script>

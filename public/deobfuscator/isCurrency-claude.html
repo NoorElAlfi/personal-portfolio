@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>pipeline visualizer: isCurrency</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b1120; --panel: #171b21; --text: #e6e9ef; --muted: #8b93a1;
+  --border: #262c35; --accent: #818cf8; --edge: #818cf8;
+  --ph-orig: #ffb454; --ph-target: #ff8fab; --ph-callee: #9d7bff;
+  --ph-final: #22d3ee; --ph-rejected: #ff6767;
+  --ok: #57d38c; --bad: #ff6767;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: "Inter", -apple-system, Segoe UI, Roboto, sans-serif;
+  margin: 0; padding: 0 24px 64px; }
+header { position: sticky; top: 0; background: var(--bg); padding: 20px 0 12px; border-bottom: 1px solid var(--border);
+  z-index: 10; }
+.back-link{ display:inline-block; margin: 14px 0 -4px; font-size: 12.5px; font-weight: 500; color: var(--accent); text-decoration: none; }
+.back-link:hover{ text-decoration: underline; }
+.brand-row{ display:flex; align-items:center; gap:10px; margin-top: 8px; }
+.brand-row img{ width: 24px; height: 24px; border-radius: 6px; }
+h1 { margin: 0 0 6px; font-size: 22px; }
+.split-badge { font-size: 12px; background: var(--panel); border: 1px solid var(--border); padding: 2px 8px;
+  border-radius: 10px; color: var(--muted); vertical-align: middle; }
+.subtitle { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+nav a { color: var(--accent); text-decoration: none; margin-right: 18px; font-size: 13px; }
+nav a:hover { text-decoration: underline; }
+section { margin: 36px 0; }
+h2 { font-size: 18px; border-left: 3px solid var(--accent); padding-left: 10px; }
+h3 { font-size: 15px; margin: 4px 0 10px; }
+h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 14px 0 6px; }
+.muted { color: var(--muted); font-size: 13px; }
+code { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; }
+pre.code { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px;
+  overflow-x: auto; font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: 12.5px; line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word; }
+pre.code.big { max-height: 420px; overflow-y: auto; }
+.ph-orig { color: var(--ph-orig); font-weight: 600; }
+.ph-target { color: var(--ph-target); font-weight: 600; }
+.ph-callee { color: var(--ph-callee); font-weight: 600; }
+.ph-final { color: var(--ph-final); font-weight: 600; }
+.ph-rejected { color: var(--ph-rejected); font-weight: 600; text-decoration: underline wavy; }
+table.kv { border-collapse: collapse; font-size: 13px; margin: 6px 0 16px; }
+table.kv th, table.kv td { border: 1px solid var(--border); padding: 4px 10px; text-align: left; }
+table.kv th { background: var(--panel); color: var(--muted); font-weight: 600; }
+.order-table, .per-id-table { width: 100%; }
+.proposed { color: var(--ph-final); }
+.scope-graph { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; max-width: 100%; }
+.node rect:first-child { fill: #1d232c; stroke: var(--border); stroke-width: 1.5; }
+.node.placeholder rect:first-child { stroke: var(--ph-target); }
+.node-title { fill: var(--text); font: 600 13px "JetBrains Mono", ui-monospace, Consolas, monospace; }
+.node-sub { fill: var(--muted); font: 11px "JetBrains Mono", ui-monospace, Consolas, monospace; }
+.node-imp { fill: var(--muted); font: 10px "JetBrains Mono", ui-monospace, Consolas, monospace; }
+.imp-track { fill: #262c35; }
+.imp-fill { fill: var(--accent); }
+.scope-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px;
+  margin-bottom: 18px; }
+.two-col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+.badge { font-size: 11px; background: #262c35; border-radius: 8px; padding: 2px 8px; margin-left: 8px; }
+.badge.ph { color: var(--ph-target); }
+.imp { float: right; font-size: 12px; color: var(--muted); }
+.meta { font-size: 12px; color: var(--muted); }
+.err { color: var(--bad); }
+.valid-badge { font-weight: 700; padding: 2px 10px; border-radius: 6px; }
+.valid-badge.ok { background: rgba(87,211,140,.15); color: var(--ok); }
+.valid-badge.bad { background: rgba(255,103,103,.15); color: var(--bad); }
+.valid-badge.muted { background: rgba(139,147,161,.15); color: var(--muted); }
+tr.bin-0 td:nth-child(5) { color: var(--bad); }
+tr.bin-4 td:nth-child(5) { color: var(--ok); }
+.trace-summary { margin-top: 10px; }
+</style>
+</head><body>
+<header>
+  <a class="back-link" href="/blog/codebase-deobfuscator">&larr; Back to the codebase deobfuscator write-up</a>
+  <div class="brand-row"><img src="/logo.png" alt="Noor El Alfi" />
+  <h1 style="margin:0">isCurrency <span class="split-badge">heldout</span></h1></div>
+  <p class="subtitle">
+    validatorjs/validator.js / <code>src\lib\isCurrency.js</code> &middot;
+    obfuscator: javascript-obfuscator &middot;
+    clean_ok: True &middot; complexity_bin: 3 &middot;
+    model: claude-sonnet-5 &middot;
+    17 ground-truth identifiers, 7 scopes
+  </p>
+  <nav>
+    <a href="#stage1">1. Source</a>
+    <a href="#stage2">2-3. Scope graph &amp; order</a>
+    <a href="#stage4">4. Per-scope naming</a>
+    <a href="#stage5">5. Final candidate</a>
+    <a href="#stage6">6. Oracle verdict</a>
+  </nav>
+</header>
+
+<main>
+<section id="stage1">
+  <h2>1. Cleaned source (placeholders highlighted)</h2>
+  <pre class="code big">function _0xa3d8() {
+  const _0x24971 = [&#x27;\\d{&#x27;, &#x27;digits_after_decimal&#x27;, &#x27;forEach&#x27;, &#x27;|\\d{&#x27;, &#x27;[1-9]\\d*&#x27;, &#x27;[1-9]\\d{0,2}(\\&#x27;, &#x27;thousands_separator&#x27;, &#x27;\\d{3})*&#x27;, &#x27;allow_decimal&#x27;, &#x27;require_decimal&#x27;, &#x27;allow_negatives&#x27;, &#x27;negative_sign_after_digits&#x27;, &#x27;( (?!\\-))?&#x27;, &#x27;allow_space_after_symbol&#x27;, &#x27;( (?!$))?&#x27;, &#x27;symbol_after_digits&#x27;, &#x27;parens_for_negatives&#x27;, &#x27;(\\(&#x27;, &#x27;\\)|&#x27;, &#x27;negative_sign_before_digits&#x27;, &#x27;DpiiJ&#x27;, &#x27;^(?!-? )(?=.*\\d)&#x27;];
+  _0xa3d8 = function () {
+    return _0x24971;
+  };
+  return _0xa3d8();
+}
+import merge from &#x27;./util/merge&#x27;;
+import assertString from &#x27;./util/assertString&#x27;;
+function <span class="ph-orig" title="_0x20ca90">_0x20ca90</span>(<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>) {
+  const _0x925ac = {
+    DpiiJ: function (_0xb1e95, _0x58269) {
+      return _0xb1e95 + _0x58269;
+    }
+  };
+  let <span class="ph-orig" title="_0xc3bcaa">_0xc3bcaa</span> = &#x27;\\d{&#x27; + <span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.digits_after_decimal[0] + &#x27;}&#x27;;
+  <span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.digits_after_decimal.forEach((<span class="ph-orig" title="_0x661398">_0x661398</span>, <span class="ph-orig" title="_0xe87f87">_0xe87f87</span>) =&gt; {
+    if (<span class="ph-orig" title="_0xe87f87">_0xe87f87</span> !== 0) <span class="ph-orig" title="_0xc3bcaa">_0xc3bcaa</span> = <span class="ph-orig" title="_0xc3bcaa">_0xc3bcaa</span> + &#x27;|\\d{&#x27; + <span class="ph-orig" title="_0x661398">_0x661398</span> + &#x27;}&#x27;;
+  });
+  const <span class="ph-orig" title="_0x7abcdb">_0x7abcdb</span> = &#x27;(&#x27; + <span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.symbol.replace(/\W/, <span class="ph-orig" title="_0x37657f">_0x37657f</span> =&gt; &#x27;\\&#x27; + <span class="ph-orig" title="_0x37657f">_0x37657f</span>) + &#x27;)&#x27; + (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.require_symbol ? &#x27;&#x27; : &#x27;?&#x27;);
+  const <span class="ph-orig" title="_0x01de88">_0x01de88</span> = &#x27;-?&#x27;;
+  const <span class="ph-orig" title="_0x28adf6">_0x28adf6</span> = &#x27;[1-9]\\d*&#x27;;
+  const <span class="ph-orig" title="_0x0f853a">_0x0f853a</span> = &#x27;[1-9]\\d{0,2}(\\&#x27; + <span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.thousands_separator + &#x27;\\d{3})*&#x27;;
+  const <span class="ph-orig" title="_0x635daa">_0x635daa</span> = [&#x27;0&#x27;, &#x27;[1-9]\\d*&#x27;, <span class="ph-orig" title="_0x0f853a">_0x0f853a</span>];
+  const <span class="ph-orig" title="_0x8779e1">_0x8779e1</span> = &#x27;(&#x27; + <span class="ph-orig" title="_0x635daa">_0x635daa</span>.join(&#x27;|&#x27;) + &#x27;)?&#x27;;
+  const <span class="ph-orig" title="_0xf97589">_0xf97589</span> = &#x27;(\\&#x27; + <span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.decimal_separator + &#x27;(&#x27; + <span class="ph-orig" title="_0xc3bcaa">_0xc3bcaa</span> + &#x27;))&#x27; + (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.require_decimal ? &#x27;&#x27; : &#x27;?&#x27;);
+  let <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> = <span class="ph-orig" title="_0x8779e1">_0x8779e1</span> + (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.allow_decimal || <span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.require_decimal ? <span class="ph-orig" title="_0xf97589">_0xf97589</span> : &#x27;&#x27;);
+  if (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.allow_negatives &amp;&amp; !<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.parens_for_negatives) {
+    if (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.negative_sign_after_digits) <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> += &#x27;-?&#x27;;else if (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.negative_sign_before_digits) {
+      <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> = &#x27;-?&#x27; + <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span>;
+    }
+  }
+  if (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.allow_negative_sign_placeholder) <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> = &#x27;( (?!\\-))?&#x27; + <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span>;else {
+    if (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.allow_space_after_symbol) <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> = &#x27; ?&#x27; + <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span>;else if (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.allow_space_after_digits) {
+      <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> += &#x27;( (?!$))?&#x27;;
+    }
+  }
+  <span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.symbol_after_digits ? <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> += <span class="ph-orig" title="_0x7abcdb">_0x7abcdb</span> : <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> = <span class="ph-orig" title="_0x7abcdb">_0x7abcdb</span> + <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span>;
+  if (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.allow_negatives) {
+    if (<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.parens_for_negatives) <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> = &#x27;(\\(&#x27; + <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> + &#x27;\\)|&#x27; + <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> + &#x27;)&#x27;;else if (!(<span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.negative_sign_before_digits || <span class="ph-orig" title="_0x5013c9">_0x5013c9</span>.negative_sign_after_digits)) {
+      <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> = &#x27;-?&#x27; + <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span>;
+    }
+  }
+  return new RegExp(&#x27;^(?!-? )(?=.*\\d)&#x27; + <span class="ph-orig" title="_0x4c88e7">_0x4c88e7</span> + &#x27;$&#x27;);
+}
+const <span class="ph-orig" title="_0x92ac83">_0x92ac83</span> = {
+  symbol: &#x27;$&#x27;,
+  require_symbol: false,
+  allow_space_after_symbol: false,
+  symbol_after_digits: false,
+  allow_negatives: true,
+  parens_for_negatives: false,
+  negative_sign_before_digits: false,
+  negative_sign_after_digits: false,
+  allow_negative_sign_placeholder: false,
+  thousands_separator: &#x27;,&#x27;,
+  decimal_separator: &#x27;.&#x27;,
+  allow_decimal: true,
+  require_decimal: false,
+  digits_after_decimal: [2],
+  allow_space_after_digits: false
+};
+export default function isCurrency(<span class="ph-orig" title="_0xe2fc63">_0xe2fc63</span>, <span class="ph-orig" title="_0x71f29b">_0x71f29b</span>) {
+  assertString(<span class="ph-orig" title="_0xe2fc63">_0xe2fc63</span>);
+  <span class="ph-orig" title="_0x71f29b">_0x71f29b</span> = merge(<span class="ph-orig" title="_0x71f29b">_0x71f29b</span>, <span class="ph-orig" title="_0x92ac83">_0x92ac83</span>);
+  return <span class="ph-orig" title="_0x20ca90">_0x20ca90</span>(<span class="ph-orig" title="_0x71f29b">_0x71f29b</span>).test(<span class="ph-orig" title="_0xe2fc63">_0xe2fc63</span>);
+}</pre>
+</section>
+
+<section id="stage2">
+  <h2>2&ndash;3. Scope graph &amp; leaves-first processing order</h2>
+  <p class="muted">One node per function scope from scope_graph.js's real output, laid out top-to-bottom in the
+  order spine/callgraph.py's <code>leaves_first_order()</code> actually computed for this file (SCC condensation +
+  PageRank tiebreak, Core Rule 6). Arrows point from caller to callee; the PageRank bar is a secondary signal,
+  not the ordering itself.</p>
+  <svg viewBox="0 0 940 680" width="940" height="680" xmlns="http://www.w3.org/2000/svg" class="scope-graph"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"/></marker></defs><path d="M 660,244.0 C 710,244.0 710,52.0 672,52.0" fill="none" stroke="var(--edge)" stroke-width="2" marker-end="url(#arrow)" opacity="0.7"/><path d="M 660,628.0 C 738,628.0 738,148.0 672,148.0" fill="none" stroke="var(--edge)" stroke-width="2" marker-end="url(#arrow)" opacity="0.7"/>
+<g class="node placeholder">
+  <rect x="20" y="20" width="640" height="64" rx="8"/>
+  <text x="34" y="44" class="node-title">#0 fn2: _0x20ca90</text>
+  <text x="34" y="66" class="node-sub">bindings: _0x5013c9, _0xc3bcaa, _0x7abcdb, _0x01de88, _0x28adf6…</text>
+  <rect x="510" y="62" width="120" height="8" rx="4" class="imp-track"/>
+  <rect x="510" y="62" width="120" height="8" rx="4" class="imp-fill"/>
+  <text x="504" y="60" text-anchor="end" class="node-imp">pagerank 0.213</text>
+</g>
+<g class="node">
+  <rect x="20" y="116" width="640" height="64" rx="8"/>
+  <text x="34" y="140" class="node-title">#1 fn1: _0xa3d8</text>
+  <text x="34" y="162" class="node-sub">bindings: (none)</text>
+  <rect x="510" y="158" width="120" height="8" rx="4" class="imp-track"/>
+  <rect x="510" y="158" width="120" height="8" rx="4" class="imp-fill"/>
+  <text x="504" y="156" text-anchor="end" class="node-imp">pagerank 0.213</text>
+</g>
+<g class="node">
+  <rect x="20" y="212" width="640" height="64" rx="8"/>
+  <text x="34" y="236" class="node-title">#2 fn6: isCurrency</text>
+  <text x="34" y="258" class="node-sub">bindings: _0xe2fc63, _0x71f29b</text>
+  <rect x="510" y="254" width="120" height="8" rx="4" class="imp-track"/>
+  <rect x="510" y="254" width="65" height="8" rx="4" class="imp-fill"/>
+  <text x="504" y="252" text-anchor="end" class="node-imp">pagerank 0.115</text>
+</g>
+<g class="node">
+  <rect x="20" y="308" width="640" height="64" rx="8"/>
+  <text x="34" y="332" class="node-title">#3 fn5: (anonymous)</text>
+  <text x="34" y="354" class="node-sub">bindings: _0x37657f</text>
+  <rect x="510" y="350" width="120" height="8" rx="4" class="imp-track"/>
+  <rect x="510" y="350" width="65" height="8" rx="4" class="imp-fill"/>
+  <text x="504" y="348" text-anchor="end" class="node-imp">pagerank 0.115</text>
+</g>
+<g class="node">
+  <rect x="20" y="404" width="640" height="64" rx="8"/>
+  <text x="34" y="428" class="node-title">#4 fn4: (anonymous)</text>
+  <text x="34" y="450" class="node-sub">bindings: _0x661398, _0xe87f87</text>
+  <rect x="510" y="446" width="120" height="8" rx="4" class="imp-track"/>
+  <rect x="510" y="446" width="65" height="8" rx="4" class="imp-fill"/>
+  <text x="504" y="444" text-anchor="end" class="node-imp">pagerank 0.115</text>
+</g>
+<g class="node">
+  <rect x="20" y="500" width="640" height="64" rx="8"/>
+  <text x="34" y="524" class="node-title">#5 fn3: (anonymous)</text>
+  <text x="34" y="546" class="node-sub">bindings: (none)</text>
+  <rect x="510" y="542" width="120" height="8" rx="4" class="imp-track"/>
+  <rect x="510" y="542" width="65" height="8" rx="4" class="imp-fill"/>
+  <text x="504" y="540" text-anchor="end" class="node-imp">pagerank 0.115</text>
+</g>
+<g class="node">
+  <rect x="20" y="596" width="640" height="64" rx="8"/>
+  <text x="34" y="620" class="node-title">#6 fn0: _0xa3d8</text>
+  <text x="34" y="642" class="node-sub">bindings: (none)</text>
+  <rect x="510" y="638" width="120" height="8" rx="4" class="imp-track"/>
+  <rect x="510" y="638" width="65" height="8" rx="4" class="imp-fill"/>
+  <text x="504" y="636" text-anchor="end" class="node-imp">pagerank 0.115</text>
+</g></svg>
+  <table class="kv order-table">
+    <thead><tr><th>order</th><th>scope id</th><th>name</th><th>placeholder-named</th><th>pagerank</th></tr></thead>
+    <tbody><tr><td>0</td><td><a href="#scope-fn2">fn2</a></td><td>_0x20ca90</td><td>yes</td><td>0.213</td></tr><tr><td>1</td><td><a href="#scope-fn1">fn1</a></td><td>_0xa3d8</td><td></td><td>0.213</td></tr><tr><td>2</td><td><a href="#scope-fn6">fn6</a></td><td>isCurrency</td><td></td><td>0.115</td></tr><tr><td>3</td><td><a href="#scope-fn5">fn5</a></td><td>(anonymous)</td><td></td><td>0.115</td></tr><tr><td>4</td><td><a href="#scope-fn4">fn4</a></td><td>(anonymous)</td><td></td><td>0.115</td></tr><tr><td>5</td><td><a href="#scope-fn3">fn3</a></td><td>(anonymous)</td><td></td><td>0.115</td></tr><tr><td>6</td><td><a href="#scope-fn0">fn0</a></td><td>_0xa3d8</td><td></td><td>0.115</td></tr></tbody>
+  </table>
+</section>
+
+<section id="stage4">
+  <h2>4. Per-scope naming, in processing order</h2>
+  
+<section class="scope-card" id="scope-fn2">
+  <h3>#0 <code>fn2</code>: _0x20ca90 <span class="badge ph">placeholder-named scope</span>
+    <span class="imp">pagerank 0.213</span></h3>
+  <div class="two-col">
+    <div>
+      <h4>Scope source</h4>
+      <pre class="code">function <span class="ph-target" title="_0x20ca90">_0x20ca90</span>(<span class="ph-target" title="_0x5013c9">_0x5013c9</span>) {
+  const _0x925ac = {
+    DpiiJ: function (_0xb1e95, _0x58269) {
+      return _0xb1e95 + _0x58269;
+    }
+  };
+  let <span class="ph-target" title="_0xc3bcaa">_0xc3bcaa</span> = &#x27;\\d{&#x27; + <span class="ph-target" title="_0x5013c9">_0x5013c9</span>.digits_after_decimal[0] + &#x27;}&#x27;;
+  <span class="ph-target" title="_0x5013c9">_0x5013c9</span>.digits_after_decimal.forEach((_0x661398, _0xe87f87) =&gt; {
+    if (_0xe87f87 !== 0) <span class="ph-target" title="_0xc3bcaa">_0xc3bcaa</span> = <span class="ph-target" title="_0xc3bcaa">_0xc3bcaa</span> + &#x27;|\\d{&#x27; + _0x661398 + &#x27;}&#x27;;
+  });
+  const <span class="ph-target" title="_0x7abcdb">_0x7abcdb</span> = &#x27;(&#x27; + <span class="ph-target" title="_0x5013c9">_0x5013c9</span>.symbol.replace(/\W/, _0x37657f =&gt; &#x27;\\&#x27; + _0x37657f) + &#x27;)&#x27; + (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.require_symbol ? &#x27;&#x27; : &#x27;?&#x27;);
+  const <span class="ph-target" title="_0x01de88">_0x01de88</span> = &#x27;-?&#x27;;
+  const <span class="ph-target" title="_0x28adf6">_0x28adf6</span> = &#x27;[1-9]\\d*&#x27;;
+  const <span class="ph-target" title="_0x0f853a">_0x0f853a</span> = &#x27;[1-9]\\d{0,2}(\\&#x27; + <span class="ph-target" title="_0x5013c9">_0x5013c9</span>.thousands_separator + &#x27;\\d{3})*&#x27;;
+  const <span class="ph-target" title="_0x635daa">_0x635daa</span> = [&#x27;0&#x27;, &#x27;[1-9]\\d*&#x27;, <span class="ph-target" title="_0x0f853a">_0x0f853a</span>];
+  const <span class="ph-target" title="_0x8779e1">_0x8779e1</span> = &#x27;(&#x27; + <span class="ph-target" title="_0x635daa">_0x635daa</span>.join(&#x27;|&#x27;) + &#x27;)?&#x27;;
+  const <span class="ph-target" title="_0xf97589">_0xf97589</span> = &#x27;(\\&#x27; + <span class="ph-target" title="_0x5013c9">_0x5013c9</span>.decimal_separator + &#x27;(&#x27; + <span class="ph-target" title="_0xc3bcaa">_0xc3bcaa</span> + &#x27;))&#x27; + (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.require_decimal ? &#x27;&#x27; : &#x27;?&#x27;);
+  let <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> = <span class="ph-target" title="_0x8779e1">_0x8779e1</span> + (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.allow_decimal || <span class="ph-target" title="_0x5013c9">_0x5013c9</span>.require_decimal ? <span class="ph-target" title="_0xf97589">_0xf97589</span> : &#x27;&#x27;);
+  if (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.allow_negatives &amp;&amp; !<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.parens_for_negatives) {
+    if (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.negative_sign_after_digits) <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> += &#x27;-?&#x27;;else if (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.negative_sign_before_digits) {
+      <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> = &#x27;-?&#x27; + <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span>;
+    }
+  }
+  if (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.allow_negative_sign_placeholder) <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> = &#x27;( (?!\\-))?&#x27; + <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span>;else {
+    if (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.allow_space_after_symbol) <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> = &#x27; ?&#x27; + <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span>;else if (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.allow_space_after_digits) {
+      <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> += &#x27;( (?!$))?&#x27;;
+    }
+  }
+  <span class="ph-target" title="_0x5013c9">_0x5013c9</span>.symbol_after_digits ? <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> += <span class="ph-target" title="_0x7abcdb">_0x7abcdb</span> : <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> = <span class="ph-target" title="_0x7abcdb">_0x7abcdb</span> + <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span>;
+  if (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.allow_negatives) {
+    if (<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.parens_for_negatives) <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> = &#x27;(\\(&#x27; + <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> + &#x27;\\)|&#x27; + <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> + &#x27;)&#x27;;else if (!(<span class="ph-target" title="_0x5013c9">_0x5013c9</span>.negative_sign_before_digits || <span class="ph-target" title="_0x5013c9">_0x5013c9</span>.negative_sign_after_digits)) {
+      <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> = &#x27;-?&#x27; + <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span>;
+    }
+  }
+  return new RegExp(&#x27;^(?!-? )(?=.*\\d)&#x27; + <span class="ph-target" title="_0x4c88e7">_0x4c88e7</span> + &#x27;$&#x27;);
+}</pre>
+    </div>
+    <div>
+      <h4>Targets to name (11)</h4>
+      <p>_0x5013c9, _0xc3bcaa, _0x7abcdb, _0x01de88, _0x28adf6, _0x0f853a, _0x635daa, _0x8779e1, _0xf97589, _0x4c88e7, _0x20ca90</p>
+      <h4>Callee context (already-recovered names)</h4>
+      <p class="muted">(none -- no callees with already-recovered names)</p>
+      <h4>Proposed renames</h4>
+      <table class="kv"><tbody><tr><td>_0x20ca90</td><td>&rarr;</td><td class='proposed'>buildCurrencyRegex</td></tr><tr><td>_0x5013c9</td><td>&rarr;</td><td class='proposed'>options</td></tr><tr><td>_0xc3bcaa</td><td>&rarr;</td><td class='proposed'>decimalDigitsPattern</td></tr><tr><td>_0x7abcdb</td><td>&rarr;</td><td class='proposed'>symbolPattern</td></tr><tr><td>_0x01de88</td><td>&rarr;</td><td class='proposed'>negativeSignPattern</td></tr><tr><td>_0x28adf6</td><td>&rarr;</td><td class='proposed'>unpaddedIntegerPattern</td></tr><tr><td>_0x0f853a</td><td>&rarr;</td><td class='proposed'>thousandsSeparatedIntegerPattern</td></tr><tr><td>_0x635daa</td><td>&rarr;</td><td class='proposed'>integerPatternAlternatives</td></tr><tr><td>_0x8779e1</td><td>&rarr;</td><td class='proposed'>integerPattern</td></tr><tr><td>_0xf97589</td><td>&rarr;</td><td class='proposed'>decimalPart</td></tr><tr><td>_0x4c88e7</td><td>&rarr;</td><td class='proposed'>currencyPattern</td></tr></tbody></table>
+      <p class="meta">latency: 2498 ms</p>
+    </div>
+  </div>
+</section>
+
+<section class="scope-card" id="scope-fn1">
+  <h3>#1 <code>fn1</code>: _0xa3d8 
+    <span class="imp">pagerank 0.213</span></h3>
+  <div class="two-col">
+    <div>
+      <h4>Scope source</h4>
+      <pre class="code">function () {
+  return _0x24971;
+}</pre>
+    </div>
+    <div>
+      <h4>Targets to name (0)</h4>
+      <p>(none)</p>
+      <h4>Callee context (already-recovered names)</h4>
+      <p class="muted">(none -- no callees with already-recovered names)</p>
+      <h4>Proposed renames</h4>
+      <p class="muted">(no renames proposed)</p>
+      <p class="meta">no LLM call made</p>
+    </div>
+  </div>
+</section>
+
+<section class="scope-card" id="scope-fn6">
+  <h3>#2 <code>fn6</code>: isCurrency 
+    <span class="imp">pagerank 0.115</span></h3>
+  <div class="two-col">
+    <div>
+      <h4>Scope source</h4>
+      <pre class="code">function isCurrency(<span class="ph-target" title="_0xe2fc63">_0xe2fc63</span>, <span class="ph-target" title="_0x71f29b">_0x71f29b</span>) {
+  assertString(<span class="ph-target" title="_0xe2fc63">_0xe2fc63</span>);
+  <span class="ph-target" title="_0x71f29b">_0x71f29b</span> = merge(<span class="ph-target" title="_0x71f29b">_0x71f29b</span>, _0x92ac83);
+  return <span class="ph-callee" title="_0x20ca90">_0x20ca90</span>(<span class="ph-target" title="_0x71f29b">_0x71f29b</span>).test(<span class="ph-target" title="_0xe2fc63">_0xe2fc63</span>);
+}</pre>
+    </div>
+    <div>
+      <h4>Targets to name (2)</h4>
+      <p>_0xe2fc63, _0x71f29b</p>
+      <h4>Callee context (already-recovered names)</h4>
+      <table class="kv"><tbody><tr><td>_0x20ca90</td><td>&rarr;</td><td>buildCurrencyRegex</td></tr></tbody></table>
+      <h4>Proposed renames</h4>
+      <table class="kv"><tbody><tr><td>_0xe2fc63</td><td>&rarr;</td><td class='proposed'>str</td></tr><tr><td>_0x71f29b</td><td>&rarr;</td><td class='proposed'>options</td></tr></tbody></table>
+      <p class="meta">latency: 1245 ms</p>
+    </div>
+  </div>
+</section>
+
+<section class="scope-card" id="scope-fn5">
+  <h3>#3 <code>fn5</code>: (anonymous) 
+    <span class="imp">pagerank 0.115</span></h3>
+  <div class="two-col">
+    <div>
+      <h4>Scope source</h4>
+      <pre class="code"><span class="ph-target" title="_0x37657f">_0x37657f</span> =&gt; &#x27;\\&#x27; + <span class="ph-target" title="_0x37657f">_0x37657f</span></pre>
+    </div>
+    <div>
+      <h4>Targets to name (1)</h4>
+      <p>_0x37657f</p>
+      <h4>Callee context (already-recovered names)</h4>
+      <p class="muted">(none -- no callees with already-recovered names)</p>
+      <h4>Proposed renames</h4>
+      <table class="kv"><tbody><tr><td>_0x37657f</td><td>&rarr;</td><td class='proposed'>char</td></tr></tbody></table>
+      <p class="meta">latency: 3166 ms</p>
+    </div>
+  </div>
+</section>
+
+<section class="scope-card" id="scope-fn4">
+  <h3>#4 <code>fn4</code>: (anonymous) 
+    <span class="imp">pagerank 0.115</span></h3>
+  <div class="two-col">
+    <div>
+      <h4>Scope source</h4>
+      <pre class="code">(<span class="ph-target" title="_0x661398">_0x661398</span>, <span class="ph-target" title="_0xe87f87">_0xe87f87</span>) =&gt; {
+  if (<span class="ph-target" title="_0xe87f87">_0xe87f87</span> !== 0) _0xc3bcaa = _0xc3bcaa + &#x27;|\\d{&#x27; + <span class="ph-target" title="_0x661398">_0x661398</span> + &#x27;}&#x27;;
+}</pre>
+    </div>
+    <div>
+      <h4>Targets to name (2)</h4>
+      <p>_0x661398, _0xe87f87</p>
+      <h4>Callee context (already-recovered names)</h4>
+      <p class="muted">(none -- no callees with already-recovered names)</p>
+      <h4>Proposed renames</h4>
+      <table class="kv"><tbody><tr><td>_0x661398</td><td>&rarr;</td><td class='proposed'>digitCount</td></tr><tr><td>_0xe87f87</td><td>&rarr;</td><td class='proposed'>digitCountFlag</td></tr></tbody></table>
+      <p class="meta">latency: 1409 ms</p>
+    </div>
+  </div>
+</section>
+
+<section class="scope-card" id="scope-fn3">
+  <h3>#5 <code>fn3</code>: (anonymous) 
+    <span class="imp">pagerank 0.115</span></h3>
+  <div class="two-col">
+    <div>
+      <h4>Scope source</h4>
+      <pre class="code">function (_0xb1e95, _0x58269) {
+  return _0xb1e95 + _0x58269;
+}</pre>
+    </div>
+    <div>
+      <h4>Targets to name (0)</h4>
+      <p>(none)</p>
+      <h4>Callee context (already-recovered names)</h4>
+      <p class="muted">(none -- no callees with already-recovered names)</p>
+      <h4>Proposed renames</h4>
+      <p class="muted">(no renames proposed)</p>
+      <p class="meta">no LLM call made</p>
+    </div>
+  </div>
+</section>
+
+<section class="scope-card" id="scope-fn0">
+  <h3>#6 <code>fn0</code>: _0xa3d8 
+    <span class="imp">pagerank 0.115</span></h3>
+  <div class="two-col">
+    <div>
+      <h4>Scope source</h4>
+      <pre class="code">function _0xa3d8() {
+  const _0x24971 = [&#x27;\\d{&#x27;, &#x27;digits_after_decimal&#x27;, &#x27;forEach&#x27;, &#x27;|\\d{&#x27;, &#x27;[1-9]\\d*&#x27;, &#x27;[1-9]\\d{0,2}(\\&#x27;, &#x27;thousands_separator&#x27;, &#x27;\\d{3})*&#x27;, &#x27;allow_decimal&#x27;, &#x27;require_decimal&#x27;, &#x27;allow_negatives&#x27;, &#x27;negative_sign_after_digits&#x27;, &#x27;( (?!\\-))?&#x27;, &#x27;allow_space_after_symbol&#x27;, &#x27;( (?!$))?&#x27;, &#x27;symbol_after_digits&#x27;, &#x27;parens_for_negatives&#x27;, &#x27;(\\(&#x27;, &#x27;\\)|&#x27;, &#x27;negative_sign_before_digits&#x27;, &#x27;DpiiJ&#x27;, &#x27;^(?!-? )(?=.*\\d)&#x27;];
+  _0xa3d8 = function () {
+    return _0x24971;
+  };
+  return _0xa3d8();
+}</pre>
+    </div>
+    <div>
+      <h4>Targets to name (0)</h4>
+      <p>(none)</p>
+      <h4>Callee context (already-recovered names)</h4>
+      <p class="muted">(none -- no callees with already-recovered names)</p>
+      <h4>Proposed renames</h4>
+      <p class="muted">(no renames proposed)</p>
+      <p class="meta">no LLM call made</p>
+    </div>
+  </div>
+</section>
+</section>
+
+<section id="stage5">
+  <h2>5. Final candidate source (after apply_renames.js)</h2>
+  <pre class="code big">function _0xa3d8() {
+  const _0x24971 = [&#x27;\\d{&#x27;, &#x27;digits_after_decimal&#x27;, &#x27;forEach&#x27;, &#x27;|\\d{&#x27;, &#x27;[1-9]\\d*&#x27;, &#x27;[1-9]\\d{0,2}(\\&#x27;, &#x27;thousands_separator&#x27;, &#x27;\\d{3})*&#x27;, &#x27;allow_decimal&#x27;, &#x27;require_decimal&#x27;, &#x27;allow_negatives&#x27;, &#x27;negative_sign_after_digits&#x27;, &#x27;( (?!\\-))?&#x27;, &#x27;allow_space_after_symbol&#x27;, &#x27;( (?!$))?&#x27;, &#x27;symbol_after_digits&#x27;, &#x27;parens_for_negatives&#x27;, &#x27;(\\(&#x27;, &#x27;\\)|&#x27;, &#x27;negative_sign_before_digits&#x27;, &#x27;DpiiJ&#x27;, &#x27;^(?!-? )(?=.*\\d)&#x27;];
+  _0xa3d8 = function () {
+    return _0x24971;
+  };
+  return _0xa3d8();
+}
+import merge from &#x27;./util/merge&#x27;;
+import assertString from &#x27;./util/assertString&#x27;;
+function <span class="ph-final" title="buildCurrencyRegex">buildCurrencyRegex</span>(<span class="ph-final" title="options">options</span>) {
+  const _0x925ac = {
+    DpiiJ: function (_0xb1e95, _0x58269) {
+      return _0xb1e95 + _0x58269;
+    }
+  };
+  let <span class="ph-final" title="decimalDigitsPattern">decimalDigitsPattern</span> = &#x27;\\d{&#x27; + <span class="ph-final" title="options">options</span>.digits_after_decimal[0] + &#x27;}&#x27;;
+  <span class="ph-final" title="options">options</span>.digits_after_decimal.forEach((<span class="ph-final" title="digitCount">digitCount</span>, <span class="ph-final" title="digitCountFlag">digitCountFlag</span>) =&gt; {
+    if (<span class="ph-final" title="digitCountFlag">digitCountFlag</span> !== 0) <span class="ph-final" title="decimalDigitsPattern">decimalDigitsPattern</span> = <span class="ph-final" title="decimalDigitsPattern">decimalDigitsPattern</span> + &#x27;|\\d{&#x27; + <span class="ph-final" title="digitCount">digitCount</span> + &#x27;}&#x27;;
+  });
+  const <span class="ph-final" title="symbolPattern">symbolPattern</span> = &#x27;(&#x27; + <span class="ph-final" title="options">options</span>.symbol.replace(/\W/, <span class="ph-final" title="char">char</span> =&gt; &#x27;\\&#x27; + <span class="ph-final" title="char">char</span>) + &#x27;)&#x27; + (<span class="ph-final" title="options">options</span>.require_symbol ? &#x27;&#x27; : &#x27;?&#x27;);
+  const <span class="ph-final" title="negativeSignPattern">negativeSignPattern</span> = &#x27;-?&#x27;;
+  const <span class="ph-final" title="unpaddedIntegerPattern">unpaddedIntegerPattern</span> = &#x27;[1-9]\\d*&#x27;;
+  const <span class="ph-final" title="thousandsSeparatedIntegerPattern">thousandsSeparatedIntegerPattern</span> = &#x27;[1-9]\\d{0,2}(\\&#x27; + <span class="ph-final" title="options">options</span>.thousands_separator + &#x27;\\d{3})*&#x27;;
+  const <span class="ph-final" title="integerPatternAlternatives">integerPatternAlternatives</span> = [&#x27;0&#x27;, &#x27;[1-9]\\d*&#x27;, <span class="ph-final" title="thousandsSeparatedIntegerPattern">thousandsSeparatedIntegerPattern</span>];
+  const <span class="ph-final" title="integerPattern">integerPattern</span> = &#x27;(&#x27; + <span class="ph-final" title="integerPatternAlternatives">integerPatternAlternatives</span>.join(&#x27;|&#x27;) + &#x27;)?&#x27;;
+  const <span class="ph-final" title="decimalPart">decimalPart</span> = &#x27;(\\&#x27; + <span class="ph-final" title="options">options</span>.decimal_separator + &#x27;(&#x27; + <span class="ph-final" title="decimalDigitsPattern">decimalDigitsPattern</span> + &#x27;))&#x27; + (<span class="ph-final" title="options">options</span>.require_decimal ? &#x27;&#x27; : &#x27;?&#x27;);
+  let <span class="ph-final" title="currencyPattern">currencyPattern</span> = <span class="ph-final" title="integerPattern">integerPattern</span> + (<span class="ph-final" title="options">options</span>.allow_decimal || <span class="ph-final" title="options">options</span>.require_decimal ? <span class="ph-final" title="decimalPart">decimalPart</span> : &#x27;&#x27;);
+  if (<span class="ph-final" title="options">options</span>.allow_negatives &amp;&amp; !<span class="ph-final" title="options">options</span>.parens_for_negatives) {
+    if (<span class="ph-final" title="options">options</span>.negative_sign_after_digits) <span class="ph-final" title="currencyPattern">currencyPattern</span> += &#x27;-?&#x27;;else if (<span class="ph-final" title="options">options</span>.negative_sign_before_digits) {
+      <span class="ph-final" title="currencyPattern">currencyPattern</span> = &#x27;-?&#x27; + <span class="ph-final" title="currencyPattern">currencyPattern</span>;
+    }
+  }
+  if (<span class="ph-final" title="options">options</span>.allow_negative_sign_placeholder) <span class="ph-final" title="currencyPattern">currencyPattern</span> = &#x27;( (?!\\-))?&#x27; + <span class="ph-final" title="currencyPattern">currencyPattern</span>;else {
+    if (<span class="ph-final" title="options">options</span>.allow_space_after_symbol) <span class="ph-final" title="currencyPattern">currencyPattern</span> = &#x27; ?&#x27; + <span class="ph-final" title="currencyPattern">currencyPattern</span>;else if (<span class="ph-final" title="options">options</span>.allow_space_after_digits) {
+      <span class="ph-final" title="currencyPattern">currencyPattern</span> += &#x27;( (?!$))?&#x27;;
+    }
+  }
+  <span class="ph-final" title="options">options</span>.symbol_after_digits ? <span class="ph-final" title="currencyPattern">currencyPattern</span> += <span class="ph-final" title="symbolPattern">symbolPattern</span> : <span class="ph-final" title="currencyPattern">currencyPattern</span> = <span class="ph-final" title="symbolPattern">symbolPattern</span> + <span class="ph-final" title="currencyPattern">currencyPattern</span>;
+  if (<span class="ph-final" title="options">options</span>.allow_negatives) {
+    if (<span class="ph-final" title="options">options</span>.parens_for_negatives) <span class="ph-final" title="currencyPattern">currencyPattern</span> = &#x27;(\\(&#x27; + <span class="ph-final" title="currencyPattern">currencyPattern</span> + &#x27;\\)|&#x27; + <span class="ph-final" title="currencyPattern">currencyPattern</span> + &#x27;)&#x27;;else if (!(<span class="ph-final" title="options">options</span>.negative_sign_before_digits || <span class="ph-final" title="options">options</span>.negative_sign_after_digits)) {
+      <span class="ph-final" title="currencyPattern">currencyPattern</span> = &#x27;-?&#x27; + <span class="ph-final" title="currencyPattern">currencyPattern</span>;
+    }
+  }
+  return new RegExp(&#x27;^(?!-? )(?=.*\\d)&#x27; + <span class="ph-final" title="currencyPattern">currencyPattern</span> + &#x27;$&#x27;);
+}
+const _0x92ac83 = {
+  symbol: &#x27;$&#x27;,
+  require_symbol: false,
+  allow_space_after_symbol: false,
+  symbol_after_digits: false,
+  allow_negatives: true,
+  parens_for_negatives: false,
+  negative_sign_before_digits: false,
+  negative_sign_after_digits: false,
+  allow_negative_sign_placeholder: false,
+  thousands_separator: &#x27;,&#x27;,
+  decimal_separator: &#x27;.&#x27;,
+  allow_decimal: true,
+  require_decimal: false,
+  digits_after_decimal: [2],
+  allow_space_after_digits: false
+};
+export default function isCurrency(<span class="ph-final" title="str">str</span>, <span class="ph-final" title="options">options</span>) {
+  assertString(<span class="ph-final" title="str">str</span>);
+  <span class="ph-final" title="options">options</span> = merge(<span class="ph-final" title="options">options</span>, _0x92ac83);
+  return <span class="ph-final" title="buildCurrencyRegex">buildCurrencyRegex</span>(<span class="ph-final" title="options">options</span>).test(<span class="ph-final" title="str">str</span>);
+}</pre>
+  <p class="muted">No rejected renames (no collisions).</p>
+</section>
+
+<section id="stage6">
+  <h2>6. Oracle verdict</h2>
+  <p>
+    equivalence: <span class="valid-badge ok">VALID</span>
+    (<code>equivalence_method: syntax_only</code>), docker unavailable; syntax-only check (equivalence NOT verified)
+  </p>
+  <p>mean identifier-recovery similarity: <strong>0.576</strong></p>
+  <table class="kv per-id-table">
+    <thead><tr><th>placeholder</th><th>true name</th><th>proposed</th><th>final (post-collision)</th>
+      <th>similarity</th><th>bin</th><th>rejected</th></tr></thead>
+    <tbody><tr class="bin-0"><td>_0x8779e1</td><td>whole_dollar_amount</td><td>integerPattern</td><td>integerPattern</td><td>0.14</td><td>0-20%</td><td></td></tr><tr class="bin-0"><td>_0x92ac83</td><td>default_currency_options</td><td>_0x92ac83</td><td>_0x92ac83</td><td>0.16</td><td>0-20%</td><td></td></tr><tr class="bin-0"><td>_0xe87f87</td><td>index</td><td>digitCountFlag</td><td>digitCountFlag</td><td>0.18</td><td>0-20%</td><td></td></tr><tr class="bin-1"><td>_0x635daa</td><td>valid_whole_dollar_amounts</td><td>integerPatternAlternatives</td><td>integerPatternAlternatives</td><td>0.25</td><td>20-40%</td><td></td></tr><tr class="bin-1"><td>_0x28adf6</td><td>whole_dollar_amount_without_sep</td><td>unpaddedIntegerPattern</td><td>unpaddedIntegerPattern</td><td>0.26</td><td>20-40%</td><td></td></tr><tr class="bin-1"><td>_0x37657f</td><td>m</td><td>char</td><td>char</td><td>0.30</td><td>20-40%</td><td></td></tr><tr class="bin-1"><td>_0x0f853a</td><td>whole_dollar_amount_with_sep</td><td>thousandsSeparatedIntegerPattern</td><td>thousandsSeparatedIntegerPattern</td><td>0.31</td><td>20-40%</td><td></td></tr><tr class="bin-2"><td>_0x01de88</td><td>negative</td><td>negativeSignPattern</td><td>negativeSignPattern</td><td>0.45</td><td>40-60%</td><td></td></tr><tr class="bin-2"><td>_0x4c88e7</td><td>pattern</td><td>currencyPattern</td><td>currencyPattern</td><td>0.52</td><td>40-60%</td><td></td></tr><tr class="bin-3"><td>_0x7abcdb</td><td>symbol</td><td>symbolPattern</td><td>symbolPattern</td><td>0.69</td><td>60-80%</td><td></td></tr><tr class="bin-4"><td>_0xc3bcaa</td><td>decimal_digits</td><td>decimalDigitsPattern</td><td>decimalDigitsPattern</td><td>0.85</td><td>80-100%</td><td></td></tr><tr class="bin-4"><td>_0x661398</td><td>digit</td><td>digitCount</td><td>digitCount</td><td>0.87</td><td>80-100%</td><td></td></tr><tr class="bin-4"><td>_0xf97589</td><td>decimal_amount</td><td>decimalPart</td><td>decimalPart</td><td>0.88</td><td>80-100%</td><td></td></tr><tr class="bin-4"><td>_0x20ca90</td><td>currencyRegex</td><td>buildCurrencyRegex</td><td>buildCurrencyRegex</td><td>0.93</td><td>80-100%</td><td></td></tr><tr class="bin-4"><td>_0xe2fc63</td><td>str</td><td>str</td><td>str</td><td>1.00</td><td>80-100%</td><td></td></tr><tr class="bin-4"><td>_0x5013c9</td><td>options</td><td>options</td><td>options</td><td>1.00</td><td>80-100%</td><td></td></tr><tr class="bin-4"><td>_0x71f29b</td><td>options</td><td>options</td><td>options</td><td>1.00</td><td>80-100%</td><td></td></tr></tbody>
+  </table>
+  <p class="muted trace-summary">4 LLM call(s) this run, 8 in / 294 out tokens, 8318 ms total, 100% ok, <strong>$0.0877</strong> (backend: claude) (this visualizer run only, tag=naming_visualize)</p>
+</section>
+</main>
+</body></html>

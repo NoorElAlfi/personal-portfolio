@@ -28,8 +28,12 @@ const experiences = [
     title: 'Software Developer Intern',
     org: "Queen's Centre for Advanced Computing",
     duration: '05/2020 - 08/2021',
-    description:
-      "Led front-end development of a full-stack genetic variant database web application (React, MongoDB, email-based MFA) under faculty supervision, adopted by Queen's Biology/DNA research labs for real research use. Conducted a privacy audit of GPS sensor data via OsmAnd (Kotlin), identifying data-leakage vectors; credited in the acknowledgements of a peer-reviewed publication (Environment and Planning F, 2025/2026).",
+    description: (
+      <>
+        Led front-end development of a full-stack genetic variant database web application (React, MongoDB, email-based MFA) under faculty supervision, adopted by Queen's Biology/DNA research labs for real research use. Conducted a privacy audit of GPS sensor data via OsmAnd (Kotlin), identifying data-leakage vectors; credited in the acknowledgements of a peer-reviewed publication in{' '}
+        <a href="https://journals.sagepub.com/doi/epub/10.1177/26349825251365637" target="_blank" rel="noopener noreferrer" className="font-medium text-brand-600 hover:underline dark:text-brand-400">Environment and Planning F, 2025/2026</a>.
+      </>
+    ),
   },
   {
     title: 'Head Teaching Assistant',
@@ -48,7 +52,7 @@ function Experience() {
           <Card key={`${exp.title}-${exp.org}`}>
             <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-baseline">
               <h3 className="font-semibold text-slate-900 dark:text-white">
-                {exp.title} <span className="font-normal text-slate-500 dark:text-slate-400">— {exp.org}</span>
+                {exp.title} <span className="font-normal text-slate-500 dark:text-slate-400">at {exp.org}</span>
               </h3>
               <span className="shrink-0 text-sm font-medium text-brand-600 dark:text-brand-400">{exp.duration}</span>
             </div>
