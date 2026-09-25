@@ -91,16 +91,16 @@ Stages run in this fixed order: `collect`, `triage`, `curate`, `write`, `review`
 (week = ISO `YYYY-Www`), and `runs/` is gitignored because it contains private-repo
 evidence.
 
-| Stage     | Kind  | Reads                                                               | Writes                                                                                                                                         |
-| --------- | ----- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `collect` | code  | `agents/repos.txt`, git history / PR state of the listed repos      | `runs/<week>/activity.json`                                                                                                                    |
-| `triage`  | agent | `activity.json`, `content/projects.yml`, `journal/inbox.md`         | `runs/<week>/entries/*.md`, `runs/<week>/inbox.json`                                                                                           |
-| `curate`  | agent | `runs/<week>/entries/*.md`, `journal/inbox.md`                      | `runs/<week>/plan.json`                                                                                                                        |
-| `write`   | agent | `plan.json`, the cited entries (evidence), existing `content/*.yml` | `runs/<week>/proposals/{project_highlights,now_page,blog_post}.json`                                                                           |
-| `review`  | agent | proposal artifacts + the cited entries (evidence)                   | `runs/<week>/review.json`                                                                                                                      |
-| `apply`   | code  | `runs/<week>/proposals/*.json`, `runs/<week>/inbox.json`            | `content/*.yml`, `content/posts/<slug>.mdx`, consumed entries `status: pending -> published`, promoted bullets cleared from `journal/inbox.md` |
-| `verify`  | code  | `content/`, `journal/entries/`                                      | exit code (report on stdout)                                                                                                                   |
-| `publish` | code  | applied working tree                                                | commit + branch + PR (no auto-merge); `runs/<week>/summary.md` via `notify`                                                                    |
+| Stage     | Kind  | Reads                                                               | Writes                                                                                                                                          |
+| --------- | ----- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `collect` | code  | `agents/repos.txt`, git history / PR state of the listed repos      | `runs/<week>/activity.json`                                                                                                                     |
+| `triage`  | agent | `activity.json`, `content/projects.yml`, `journal/inbox.md`         | `runs/<week>/entries/*.md`, `runs/<week>/inbox.json`                                                                                            |
+| `curate`  | agent | `runs/<week>/entries/*.md`, `journal/inbox.md`                      | `runs/<week>/plan.json`                                                                                                                         |
+| `write`   | agent | `plan.json`, the cited entries (evidence), existing `content/*.yml` | `runs/<week>/proposals/{project_highlights,now_page,blog_post}.json`                                                                            |
+| `review`  | agent | proposal artifacts + the cited entries (evidence)                   | `runs/<week>/review.json`                                                                                                                       |
+| `apply`   | code  | `runs/<week>/proposals/*.json`, `runs/<week>/inbox.json`            | `content/*.yml`, `src/pages/blog/<slug>.mdx`, consumed entries `status: pending -> published`, promoted bullets cleared from `journal/inbox.md` |
+| `verify`  | code  | `content/`, `journal/entries/`                                      | exit code (report on stdout)                                                                                                                    |
+| `publish` | code  | applied working tree                                                | commit + branch + PR (no auto-merge); `runs/<week>/summary.md` via `notify`                                                                     |
 
 ### The inbox is input, not a suggestion
 
@@ -251,7 +251,7 @@ outputs per stage — used for offline tests.
    discard by editing/abandoning the branch; nothing is live yet.
 4. **Merge** — merging the PR is the whole release step. It flips nothing extra:
    `apply` already flipped the consumed entries `status: pending -> published` and
-   wrote the new `content/*.yml` / `content/posts/<slug>.mdx` in the same PR. Netlify
+   wrote the new `content/*.yml` / `src/pages/blog/<slug>.mdx` in the same PR. Netlify
    then builds `main` on its own.
 
 A silent week (no publishable activity) produces no PR and no notification.
@@ -274,7 +274,7 @@ if you want a raw tier there.
 `src/pages/blog/`, plus a `content/posts.yml` entry (`slug`, `title`, `summary`,
 `tags`, `file`, `date`, `project`, `source_ids`, `generated: false`); or let the
 pipeline do it: `curate` emits a `blog_post` action and `write` emits
-`proposals/blog_post.json`, which `apply` turns into `content/posts/<slug>.mdx`
+`proposals/blog_post.json`, which `apply` turns into `src/pages/blog/<slug>.mdx`
 plus the `content/posts.yml` entry with `generated: true`.
 
 **Track a repo** — one line per repo in `agents/repos.txt`:
@@ -356,10 +356,11 @@ on it:
    `project_highlight` (singular) while the proposal artifact is
    `proposals/project_highlights.json` with `"kind": "project_highlights"`. The mapping
    is assumed 1:1 per kind, but nothing in C1–C6 states it.
-2. **Where a generated post file lives.** C4 says `apply` writes
-   `content/posts/<slug>.mdx`; C1 says `content/posts.yml`'s `file` is a basename
-   "inside `src/pages/blog/`". Whether the generated `.mdx` is `content/posts/<slug>.mdx`
-   or `src/pages/blog/<slug>.mdx` (and what `file` then holds) is unspecified.
+2. **Where a generated post file lives.** Resolved: `apply` writes
+   `src/pages/blog/<slug>.mdx` — the location `content/posts.yml`'s `file` resolves to
+   and the site loader imports. An earlier version also wrote a copy under
+   `content/posts/`, which duplicated every generated body and drifted from the copy the
+   site renders; the second location was removed.
 3. **Who writes `last_activity` and `highlights`.** C1 marks both as "written by the
    pipeline", but C4 only assigns `content/*.yml` writes to `apply-proposals.mjs`
    (from proposals) — no proposal kind carries `last_activity`, so its writer/derivation

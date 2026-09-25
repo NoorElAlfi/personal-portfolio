@@ -12,7 +12,7 @@
  *      whose date+text already exists, and advance the project's `last_activity`;
  *   2. `proposals/now_page.json`            -> merge items into `content/now.yml`
  *      by `id` (update in place, append new ids at the end);
- *   3. `proposals/blog_post*.json`          -> write `content/posts/<slug>.mdx`
+ *   3. `proposals/blog_post*.json`          -> write `src/pages/blog/<slug>.mdx`
  *      (body only) and insert the registry record into `content/posts.yml`,
  *      newest first;
  *   4. flip every journal entry consumed by (1)-(3) from `status: pending` to
@@ -354,14 +354,12 @@ function applyBlogPost(merge, proposal) {
 
   const artifact = "proposals/blog_post.json";
   const bodyText = body.endsWith("\n") ? body : `${body}\n`;
-  // `content/posts/<slug>.mdx` is the contract C4 location; the site's loader and
-  // its content checks discover post bodies as basenames inside
-  // `src/pages/blog/` (see content/posts.yml `file`). Both are written from the
-  // same text in the same step so they cannot drift.
-  const bodyFiles = [
-    `content/posts/${post.slug}.mdx`,
-    `src/pages/blog/${post.slug}.mdx`,
-  ];
+  // One location only. The registry's `file` is a basename inside
+  // `src/pages/blog/`, which is what the site loader imports and what the content
+  // checks resolve. An earlier version also wrote `content/posts/<slug>.mdx`;
+  // two copies of one body are not a safety net, they are a second source of
+  // truth that drifts the moment anything edits only one of them.
+  const bodyFiles = [`src/pages/blog/${post.slug}.mdx`];
   const registryFile = "content/posts.yml";
   const registry = loadList(root, registryFile, true);
   const sourceIds = post.source_ids ?? [];
