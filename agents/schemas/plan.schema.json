@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portfolio.local/agents/schemas/plan.schema.json",
+  "title": "Curate-stage plan",
+  "description": "runs/<week>/plan.json (contract C3).",
+  "type": "object",
+  "required": ["week", "entry_ids", "actions"],
+  "additionalProperties": false,
+  "properties": {
+    "week": {
+      "type": "string",
+      "pattern": "^\\d{4}-W\\d{2}$"
+    },
+    "entry_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["type", "project", "entry_ids", "rationale"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "const": "project_highlight" },
+              "project": { "type": "string", "minLength": 1 },
+              "entry_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "slug",
+              "title_hint",
+              "entry_ids",
+              "rationale"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "const": "blog_post" },
+              "slug": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              "title_hint": { "type": "string", "minLength": 1 },
+              "entry_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["type", "entry_ids", "rationale"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "const": "now_page" },
+              "entry_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["type", "entry_ids", "rationale"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "const": "noop" },
+              "entry_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "rationale": { "type": "string", "minLength": 1 }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

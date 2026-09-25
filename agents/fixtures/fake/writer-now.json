@@ -1,0 +1,12 @@
+{
+  "kind": "now_page",
+  "week": "2026-W39",
+  "items": [
+    {
+      "id": "local-llm",
+      "title": "Local LLM Tooling",
+      "description": "Editor work, mostly: making the hover path in the VS Code extension cheap enough that the model stays local. Dynamic calls are the open problem.",
+      "source_ids": ["2026-09-25-lucidhover-callgraph-cache"]
+    }
+  ]
+}

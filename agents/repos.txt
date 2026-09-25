@@ -1,0 +1,15 @@
+# Repositories the portfolio pipeline watches.
+#
+# One per line:  <owner>/<name> [private|public]
+# The marker is a hint only: the collect stage reads the real visibility from the
+# GitHub API and records `private: true` on the activity entry. Blank lines and
+# lines starting with `#` are ignored.
+#
+# Kept short on purpose: every repo here costs four API calls per collect run.
+
+NoorElAlfi/lucidHover public
+NoorElAlfi/siem-guard-code public
+NoorElAlfi/siem-guard private
+NoorElAlfi/pokerogue-ai-agent private
+NoorElAlfi/dotfiles private
+NoorElAlfi/personal-portfolio public

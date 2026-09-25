@@ -1,0 +1,18 @@
+{
+  "kind": "blog_post",
+  "week": "2026-W39",
+  "post": {
+    "slug": "call-graph-cache",
+    "title": "Caching a call graph without lying to the editor",
+    "summary": "Why a hover cache has to be keyed on file hashes and invalidated on the cheap path, and what it still cannot resolve.",
+    "tags": [
+      "vscode",
+      "sqlite"
+    ],
+    "date": "2026-09-25",
+    "body_markdown": "Every hover in the extension used to start from nothing: walk the file, walk its imports, resolve the calls, then throw all of it away when the card closed. That is a full traversal of the import graph for a card the user opens for a couple of seconds, and it turned the cheapest question in the editor — what does this function actually do here — into the most expensive thing the extension did.\n\nKeeping the graph in memory is the obvious fix, and it has a familiar failure mode. The moment a file changes on disk the caller list is stale, and a stale caller list is worse than no caller list at all, because it looks authoritative. Anyone who has trusted a rename preview from an hour ago knows the feeling. So the cache had to be invalidated by facts the editor already knows, on a path cheap enough that invalidation actually runs.\n\n## Keying on a hash, not a path\n\nThe cache is keyed on the file hash together with the extension host version. A path alone is not enough: worktrees, save-as and renames all produce the same file under a different name, and a workspace copied alongside itself is common enough. The host version matters because resolution changes when dependency versions change, and a resolution is exactly what is being cached. Rows are stored as resolved edges, so a hover on an unchanged file is a lookup, and a hover on a changed file re-walks one file and replaces its rows. The graph is allowed to be incomplete; it is not allowed to describe code that no longer exists.\n\n## Pruning on open, not on hover\n\nThe first version deleted stale rows eagerly. It was correct, and it was slower than the walk it replaced, because every hover paid for the invalidation of files the user was not looking at. Deleting lazy things eagerly is a good way to turn a cache into a liability. Pruning now happens when the workspace folder opens, and per-file invalidation handles the rest inside a session. The cost lands once, at a moment when the user is already waiting for a window to paint.\n\n## What is still wrong\n\nAn edge that cannot be resolved is stored as unresolved, so the card can say that it does not know instead of reporting no callers. That distinction is the difference between \"nothing calls this\" and \"we could not tell\", and the second one is the truth far more often than the first.\n\nNothing is shared between windows. Two windows on the same repository keep two caches, and a shared store would need a locking story that is not worth writing yet.\n\nThe extension host version in the key means every extension update discards everything. That is blunt, and it is the next thing to fix.\n\nThe general lesson is small and worth keeping: cache what you can invalidate, and put the invalidation on the cheap path. If invalidation is expensive, nobody will call it, and the cache quietly becomes a rumour.",
+    "source_ids": [
+      "2026-09-25-lucidhover-callgraph-cache"
+    ]
+  }
+}

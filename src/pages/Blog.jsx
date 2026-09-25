@@ -1,14 +1,17 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import posts from './blog/postsMeta';
+import React from "react";
+import { Link } from "react-router-dom";
+import { posts } from "../data/posts";
 
 function Blog() {
   return (
     <section className="py-2">
       <div className="mb-10 text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">Blog</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          Blog
+        </h1>
         <p className="mx-auto mt-2 max-w-xl text-slate-500 dark:text-slate-400">
-          Technical write-ups on personal projects: approach, what broke, and what actually worked.
+          Technical write-ups on personal projects: approach, what broke, and
+          what actually worked.
         </p>
       </div>
       <div className="mx-auto max-w-3xl space-y-5">
@@ -21,7 +24,9 @@ function Blog() {
             <h2 className="text-xl font-bold text-slate-900 group-hover:text-brand-600 dark:text-white dark:group-hover:text-brand-400">
               {post.title}
             </h2>
-            <p className="mt-2 text-slate-600 dark:text-slate-300">{post.summary}</p>
+            <p className="mt-2 text-slate-600 dark:text-slate-300">
+              {post.summary}
+            </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {post.tags.map((tag) => (
                 <span

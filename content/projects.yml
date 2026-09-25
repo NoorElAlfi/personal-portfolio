@@ -1,0 +1,112 @@
+# Projects registry. Newest project first.
+# `description` is plain text; inline links use markdown [label](url) ONLY.
+# This file is public-bundle material: it is imported into client code via `?raw`,
+# so records for private repositories must NEVER live here. Keep them in the
+# gitignored `agents/private-projects.yml` (template: agents/private-projects.example.yml).
+- id: emu-cyber-ops-gym
+  title: "EMU: Emulated Cyber Operations Gym"
+  tag: M.Sc. Thesis
+  description: >-
+    Built a cyber attack/defense emulation gym for training reinforcement-learning-driven autonomous cyber agents, later migrated from VMware vSphere to Docker for faster environment setup; integrated Caldera, Velociraptor, Metasploit, and Nmap, with Blue/Red agent logic mapped to MITRE ATT&CK. Ran a 200-trial exploitation characterization experiment across 5 real CVE targets (Apache Druid, Apache Flink, HashiCorp Nomad, ProFTPD, Apache Struts2) and 4 attacker sophistication tiers, with 95%-CI success-rate benchmarking.
+  status: shipped
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: null
+  highlights: []
+  links: []
+
+- id: lucidhover
+  title: LucidHover
+  tag: VS Code Extension, Published
+  description: >-
+    A VS Code extension that hovers any function and explains it in the context of the whole repo (role, callers/callees, blast radius) via a fully local LLM through Ollama. Python sidecar parses with tree-sitter, builds a call graph, ranks functions by PageRank importance, and caches explanations in SQLite. Published to the VS Code Marketplace under Apache-2.0.
+  status: shipped
+  visibility: public
+  repo: NoorElAlfi/lucidHover
+  featured: true
+  started: null
+  last_activity: null
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/lucidhover
+    - label: GitHub
+      href: https://github.com/NoorElAlfi/lucidHover
+
+- id: codebase-deobfuscator
+  title: Codebase Deobfuscator
+  tag: Agentic Workflow Harness
+  description: >-
+    A reusable local-hardware agentic-workflow harness (endpoint, sandbox, oracle contract, eval set, traces), proven out on JavaScript deobfuscation. Runs a real dspy.GEPA(...).compile() prompt-optimization loop (train 0.12→0.48, val 0.13→0.54) against a local Ollama task model, with Docker-sandboxed differential equivalence testing and call-graph ranking ported from LucidHover.
+  status: shipped
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: null
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/codebase-deobfuscator
+
+- id: siem-guard-code
+  title: SIEM Guard
+  tag: Security, LLM Pipelines, Anomaly Detection
+  description: >-
+    A local, LLM-assisted security-log pipeline: an Ollama model turns raw log lines into structured fields (validated replies, a template cache, and a regex baseline kept for comparison), while plain statistics decide what is anomalous — an Isolation Forest score gated by a robust median/MAD z-score for behavioral detection, plus weighted rules for supply-chain indicators in package installs. Everything runs on local hardware, so no log data leaves the machine. Published as a research prototype: code and tests only.
+  status: active
+  visibility: public
+  repo: NoorElAlfi/siem-guard-code
+  featured: false
+  started: null
+  last_activity: 2026-09-20
+  highlights: []
+  links:
+    - label: GitHub
+      href: https://github.com/NoorElAlfi/siem-guard-code
+    - label: Read the write-up
+      to: /blog/siem-guard
+
+- id: digital-forensics-investigation
+  title: Digital Forensics Investigation
+  tag: EE547, Royal Military College of Canada
+  description: >-
+    As part of a 3-person team, investigated a simulated CAF network breach across 8 systems (disk and RAM images) using Volatility and X-Ways Forensics, identifying a misconfigured-TFTP entry point, reconstructing a minute-by-minute attack timeline, and documenting indicators of compromise.
+  status: shipped
+  visibility: public
+  repo: null
+  featured: false
+  started: null
+  last_activity: null
+  highlights: []
+  links: []
+
+- id: sysevr-vulnerability-detection
+  title: SySeVR Vulnerability Detection Pipeline
+  tag: BlackBerry Limited
+  description: >-
+    Designed custom scripts and data pipelines to assess SySeVR's effectiveness at identifying software vulnerabilities, automating dataset generation and analysis for vulnerability-detection research and experimentation.
+  status: shipped
+  visibility: public
+  repo: null
+  featured: false
+  started: null
+  last_activity: null
+  highlights: []
+  links: []
+
+- id: gps-privacy-audit
+  title: GPS Privacy Audit (Big Data Exposed)
+  tag: "Queen's CAC"
+  description: >-
+    Built a custom logging system for GPS data visualization, integrated with the open-source navigation tool OsmAnd, and developed data-processing methods for large-scale spatial data analysis. Findings are credited in the acknowledgements of a peer-reviewed publication in [Environment and Planning F, 2025/2026](https://journals.sagepub.com/doi/epub/10.1177/26349825251365637).
+  status: shipped
+  visibility: public
+  repo: null
+  featured: false
+  started: null
+  last_activity: null
+  highlights: []
+  links: []

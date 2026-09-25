@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portfolio.local/agents/schemas/entry.schema.json",
+  "title": "Journal entry front matter",
+  "description": "YAML front matter of journal/entries/<id>.md (contract C2). The markdown body is not validated here.",
+  "type": "object",
+  "required": [
+    "id",
+    "date",
+    "project",
+    "kind",
+    "visibility",
+    "summary",
+    "status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}-[a-z0-9-]+$",
+      "description": "Unique, and equal to the file name stem."
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "project": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Must match an id in content/projects.yml."
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["shipped", "fixed", "learned", "wrote", "experiment"]
+    },
+    "visibility": {
+      "type": "string",
+      "enum": ["public", "private"]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[^\\r\\n]*$",
+      "description": "One line, at most 200 characters."
+    },
+    "links": {
+      "type": "array",
+      "description": "Each entry has exactly one of repo|commit|pr|url.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["repo"],
+            "additionalProperties": false,
+            "properties": {
+              "repo": {
+                "type": "string",
+                "pattern": "^\\S+/\\S+$",
+                "description": "owner/name"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["commit"],
+            "additionalProperties": false,
+            "properties": {
+              "commit": { "type": "string", "pattern": "^[0-9a-fA-F]{4,40}$" }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["pr"],
+            "additionalProperties": false,
+            "properties": {
+              "pr": {
+                "type": "string",
+                "pattern": "^\\S+#[0-9]+$",
+                "description": "owner/name#number"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["url"],
+            "additionalProperties": false,
+            "properties": {
+              "url": { "type": "string", "pattern": "^https?://\\S+$" }
+            }
+          }
+        ]
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "published", "skipped"]
+    },
+    "sources": {
+      "type": "array",
+      "description": "Machine-collected facts, e.g. \"commit:abc1234: subject\". Only these and the body are citable.",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

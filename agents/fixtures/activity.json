@@ -1,0 +1,85 @@
+{
+  "week": "2026-W39",
+  "collected_at": "2026-09-25T18:04:11.000Z",
+  "since": "2026-09-18",
+  "source": "gh api",
+  "repos": [
+    {
+      "name": "NoorElAlfi/lucidHover",
+      "private": false,
+      "visibility_hint": "public",
+      "default_branch": "main",
+      "error": null,
+      "commits": [
+        {
+          "sha": "1a2b3c4",
+          "date": "2026-09-25",
+          "author": "NoorElAlfi",
+          "message": "cache resolved call graph edges in sqlite keyed on file hash"
+        },
+        {
+          "sha": "7d6e5f4",
+          "date": "2026-09-25",
+          "author": "NoorElAlfi",
+          "message": "prune stale call graph rows when the workspace folder opens"
+        },
+        {
+          "sha": "5c4d3e2",
+          "date": "2026-09-22",
+          "author": "NoorElAlfi",
+          "message": "wip ranking notes"
+        },
+        {
+          "sha": "2b1a09f",
+          "date": "2026-09-21",
+          "author": "NoorElAlfi",
+          "message": "bump dev dependencies"
+        }
+      ],
+      "pulls": [
+        {
+          "number": 41,
+          "title": "Add call graph cache",
+          "merged_at": "2026-09-25T15:41:02Z"
+        }
+      ],
+      "releases": [],
+      "journal_markdown": null
+    },
+    {
+      "name": "NoorElAlfi/siem-guard",
+      "private": true,
+      "visibility_hint": "private",
+      "default_branch": "main",
+      "error": null,
+      "commits": [
+        {
+          "sha": "9f8e7d6",
+          "date": "2026-09-23",
+          "author": "NoorElAlfi",
+          "message": "scope analysis queries by tenant id"
+        }
+      ],
+      "pulls": [
+        {
+          "number": 12,
+          "title": "Tenant scoping for analysis queries",
+          "merged_at": "2026-09-23T21:10:44Z"
+        }
+      ],
+      "releases": [],
+      "journal_markdown": null
+    },
+    {
+      "name": "NoorElAlfi/siem-guard-code",
+      "private": false,
+      "visibility_hint": "public",
+      "default_branch": "main",
+      "error": null,
+      "commits": [],
+      "pulls": [],
+      "releases": [],
+      "journal_markdown": null
+    }
+  ]
+}
