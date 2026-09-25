@@ -11,10 +11,10 @@
 //   - a single JSON document on stdout;
 //   - plain text containing a fenced ```json block or a bare `{...}` object
 //     (e.g. `claude -p --output-format text`, or `omp -p` without `--mode=json`).
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { writeText } from "./util.mjs";
 
-export const DEFAULT_AGENT_CMD = "omp -p --mode=json --no-session";
+export const DEFAULT_AGENT_CMD = "omp -p --mode=json --no-session --no-tools";
 
 /** Top-level keys that only ever appear on a real pipeline artifact. */
 const ARTIFACT_KEYS = [
@@ -342,7 +342,17 @@ export function collectTelemetry(stdout) {
 // process
 // ---------------------------------------------------------------------------
 
-function runAgentProcess(command, { cwd, input }) {
+/**
+ * Wall-clock ceiling for one agent call. A stage that hangs is worse than a
+ * stage that fails: a failure keeps its artifact and resumes with `--from`,
+ * while a hang blocks the whole run. Override with `AGENT_TIMEOUT_MS`.
+ */
+export function resolveAgentTimeout() {
+  const raw = Number(process.env.AGENT_TIMEOUT_MS);
+  return Number.isFinite(raw) && raw > 0 ? raw : 600000;
+}
+
+function runAgentProcess(command, { cwd, input, timeoutMs }) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, {
       cwd,
@@ -352,6 +362,26 @@ function runAgentProcess(command, { cwd, input }) {
     });
     let stdout = "";
     let stderr = "";
+    let timedOut = false;
+    const timer =
+      Number.isFinite(timeoutMs) && timeoutMs > 0
+        ? setTimeout(() => {
+            timedOut = true;
+            // `shell: true` means the direct child is the shell, so killing it
+            // alone can leave the CLI running: kill the whole tree.
+            try {
+              if (process.platform === "win32" && child.pid) {
+                spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], {
+                  stdio: "ignore",
+                });
+              } else {
+                child.kill("SIGKILL");
+              }
+            } catch {
+              /* the child may already be gone */
+            }
+          }, timeoutMs)
+        : null;
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
     child.stdout.on("data", (chunk) => {
@@ -360,8 +390,14 @@ function runAgentProcess(command, { cwd, input }) {
     child.stderr.on("data", (chunk) => {
       stderr += chunk;
     });
-    child.on("error", reject);
-    child.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({ code: timedOut ? 124 : (code ?? 1), stdout, stderr, timedOut });
+    });
     child.stdin.on("error", () => {
       /* the CLI may close stdin early; ignore EPIPE */
     });
@@ -387,11 +423,16 @@ function attemptPath(rawPath) {
 export async function callAgent(options) {
   const { stage, prompt, rawPath, agentCmd, root } = options;
   const command = resolveAgentCommand({ agentCmd, root });
+  const timeoutMs = resolveAgentTimeout();
   let previousStdout = "";
   let lastError = null;
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const run = await runAgentProcess(command, { cwd: root, input: prompt });
+    const run = await runAgentProcess(command, {
+      cwd: root,
+      input: prompt,
+      timeoutMs,
+    });
     if (rawPath) {
       // Raw stdout is preserved BEFORE parsing, and never overwritten by a retry.
       if (attempt > 1) writeText(attemptPath(rawPath), previousStdout);
@@ -412,8 +453,9 @@ export async function callAgent(options) {
       };
     }
 
-    const reason =
-      run.code !== 0
+    const reason = run.timedOut
+      ? `timed out after ${Math.round(timeoutMs / 1000)}s`
+      : run.code !== 0
         ? `exited ${run.code}`
         : `printed output with no artifact (${detailed.error ?? "unknown"})`;
     const stderrTail = run.stderr.trim().slice(0, 2000);

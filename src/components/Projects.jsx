@@ -5,6 +5,20 @@ import Card from "./Card";
 import RichText from "../lib/richText";
 import { projects } from "../data/projects";
 
+const MAX_HIGHLIGHTS = 2;
+
+/**
+ * Newest highlights for a card. The pipeline appends a dated highlight per piece
+ * of shipped work, so a busy project accumulates many; the card shows only the
+ * most recent few, newest first, and the rest stay in `content/projects.yml`.
+ */
+function recentHighlights(project) {
+  return (project.highlights ?? [])
+    .slice()
+    .sort((a, b) => String(b.date ?? "").localeCompare(String(a.date ?? "")))
+    .slice(0, MAX_HIGHLIGHTS);
+}
+
 function Projects() {
   return (
     <Section id="projects" title="Projects">
@@ -20,6 +34,23 @@ function Projects() {
             <p className="mt-2 flex-grow text-sm text-slate-600 dark:text-slate-300">
               <RichText text={project.description} />
             </p>
+            {recentHighlights(project).length > 0 && (
+              <ul className="mt-4 space-y-1.5 border-t border-slate-200 pt-3 text-xs text-slate-600 dark:border-slate-800 dark:text-slate-400">
+                {recentHighlights(project).map((highlight) => (
+                  <li
+                    key={`${highlight.date}-${highlight.text}`}
+                    className="flex gap-2"
+                  >
+                    <span className="shrink-0 font-mono text-[0.7rem] text-slate-400 dark:text-slate-500">
+                      {highlight.date}
+                    </span>
+                    <span>
+                      <RichText text={highlight.text} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
             {project.links?.length > 0 && (
               <div className="mt-4 flex gap-4 text-sm">
                 {project.links.map((link) =>

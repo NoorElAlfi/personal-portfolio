@@ -202,15 +202,31 @@ function applyProjectHighlights(merge, proposal) {
     }
     const { registry, project } = found;
     if (!Array.isArray(project.highlights)) project.highlights = [];
-    const duplicate = project.highlights.some(
-      (existing) =>
-        existing?.date === highlight.date && existing?.text === highlight.text,
+    // Identity is provenance, not wording. A highlight is a restatement of the
+    // journal entries it cites, so if the card already carries one citing any of
+    // the same entries, this is the same fact in different words — re-running
+    // `write` for a week must not grow the card. (Exact date+text matching alone
+    // let repeated runs append seven versions of the same day's work.)
+    const sources = new Set(highlight.source_ids ?? []);
+    const overlapping = (existing) =>
+      (existing?.source_ids ?? []).filter((id) => sources.has(id));
+    const shared = project.highlights.find(
+      (existing) => overlapping(existing).length > 0,
     );
+    const duplicate =
+      Boolean(shared) ||
+      project.highlights.some(
+        (existing) =>
+          existing?.date === highlight.date &&
+          existing?.text === highlight.text,
+      );
     if (duplicate) {
       skipped.push({
         artifact: "proposals/project_highlights.json",
         reason: "duplicate",
-        detail: `${project.id} already has the highlight dated ${highlight.date}`,
+        detail: shared
+          ? `${project.id} already has a highlight citing ${overlapping(shared).join(", ")}`
+          : `${project.id} already has the highlight dated ${highlight.date}`,
       });
     } else {
       project.highlights.push({
@@ -299,6 +315,24 @@ function applyNowPage(merge, proposal) {
       touched = true;
     }
     for (const id of sourceIds) consumed.add(id);
+  }
+
+  // Retirements run last, so a proposal can update and retire in one pass without
+  // depending on the order of the two lists.
+  for (const id of proposal.remove_ids ?? []) {
+    const at = items.findIndex((item) => item?.id === id);
+    if (at === -1) {
+      skipped.push({
+        artifact: "proposals/now_page.json",
+        reason: "unknown_id",
+        detail: `now item ${id} is not on the page`,
+      });
+      continue;
+    }
+    items.splice(at, 1);
+    byId.delete(id);
+    changes.push({ file, action: "now_item", detail: `${id} retired` });
+    touched = true;
   }
 
   if (!touched) return null;
@@ -449,6 +483,56 @@ function publishEntries(root, week, ids) {
   return { published, added, missing };
 }
 
+/**
+ * Hand-written bullets are deleted from `journal/inbox.md` once the entry they
+ * became is published — the loop documented at the top of that file.
+ *
+ * The mapping is read from the entries themselves: `triage` records every inbox
+ * bullet verbatim as a `sources` line of the form `inbox: <bullet text>`, so a
+ * published entry that carries such a line is proof the bullet was promoted and
+ * published. Nothing is cleared on the strength of a run artifact, which means a
+ * re-run that happens to pick a different entry id cannot orphan the mapping, and
+ * a bullet the pipeline did not act on stays visible in the inbox.
+ */
+function consumeInboxBullets(root) {
+  const file = "journal/inbox.md";
+  const text = readText(path.join(root, file));
+  if (text === null) return [];
+  const bullets = text
+    .split(/\r?\n/)
+    .map((line) => line.match(/^[-*]\s+(\S.*)$/))
+    .filter((match) => match !== null)
+    .map((match) => match[1].trim());
+  if (bullets.length === 0) return [];
+
+  const recorded = new Set();
+  for (const dir of [CONTENT_ENTRY_DIR, PRIVATE_ENTRY_DIR]) {
+    for (const name of filesWithExt(path.join(root, dir), ".md")) {
+      const entry = readText(path.join(root, dir, name));
+      if (entry === null) continue;
+      const { data } = splitFrontMatter(entry);
+      if (!data || data.status !== "published") continue;
+      for (const source of data.sources ?? []) {
+        const value = String(source ?? "");
+        if (!value.startsWith("inbox:")) continue;
+        recorded.add(value.slice("inbox:".length).trim());
+      }
+    }
+  }
+
+  const consumed = new Set(bullets.filter((bullet) => recorded.has(bullet)));
+  if (consumed.size === 0) return [];
+  const kept = text
+    .split(/\r?\n/)
+    .filter((line) => {
+      const match = line.match(/^[-*]\s+(\S.*)$/);
+      return !match || !consumed.has(match[1].trim());
+    })
+    .join("\n");
+  if (kept === text) return [];
+  return writeIfChanged(root, file, kept) ? [...consumed] : [];
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2), SPEC);
   if (args.help) {
@@ -536,6 +620,11 @@ function main() {
     const outcome = publishEntries(root, week, merge.consumed);
     report.entries_published = outcome.published;
     report.entries_promoted = outcome.added;
+    const inboxConsumed = consumeInboxBullets(root);
+    if (inboxConsumed.length > 0) {
+      report.inbox_consumed = inboxConsumed;
+      files.add("journal/inbox.md");
+    }
     for (const id of outcome.missing) {
       report.skipped.push({
         artifact: "journal/entries",

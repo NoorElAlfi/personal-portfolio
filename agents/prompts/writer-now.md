@@ -15,6 +15,10 @@ You receive: the plan action that selected you, the journal entries cited by tha
 - Output one JSON object and nothing else. No prose before or after it.
 - Emit only items the cited entries justify. Unchanged items are left out entirely —
   omission means "keep what is already on the page".
+- **Retiring a card:** when the notes say an area is finished, failed, or abandoned, list
+  its `id` in `remove_ids`. Retiring is the correct answer for "this is over" — never
+  soften it into a cheerful rewrite, and never leave a dead card standing. A retirement
+  needs no entry in `items`.
 - `id` is a short kebab-case identifier for the area, stable across weeks (e.g.
   `embedded`, `local-llm`, `siem-guard`). If an item for the same area already exists on
   the page, reuse its `id` exactly; that is how the merge updates it in place.
@@ -41,6 +45,10 @@ You receive: the plan action that selected you, the journal entries cited by tha
       "description": "What is happening in this area right now, in one or two sentences.",
       "source_ids": ["2026-09-25-lucidhover-callgraph-cache"]
     }
-  ]
+  ],
+  "remove_ids": ["an-area-that-is-over"]
 }
 ```
+
+`remove_ids` is optional and may be the only thing you emit when the week's news is that
+an area ended.

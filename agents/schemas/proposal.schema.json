@@ -39,6 +39,11 @@
       "properties": {
         "kind": { "const": "now_page" },
         "week": { "type": "string", "pattern": "^\\d{4}-W\\d{2}$" },
+        "remove_ids": {
+          "type": "array",
+          "description": "Ids of now-page cards to retire because the week's notes say the area is over.",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
         "items": {
           "type": "array",
           "items": {

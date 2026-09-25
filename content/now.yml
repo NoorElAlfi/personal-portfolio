@@ -1,21 +1,16 @@
-# "Currently Exploring" items. `description` is plain text; inline links use markdown [label](url) ONLY.
 - id: embedded
   title: Embedded Systems
-  description: >-
-    Genuine early-stage curiosity, not professional experience: an Arduino RFID reader/writer (MFRC522 over SPI), and a Basys3 FPGA + Raspberry Pi home-security project.
+  description: "Genuine early-stage curiosity, not professional experience: an Arduino RFID reader/writer (MFRC522 over SPI), and a Basys3 FPGA + Raspberry Pi home-security project."
   source_ids: []
   updated: null
-
 - id: ai-safety-security
   title: AI Safety & Security
-  description: >-
-    Where adversarial ML and cyber-operations research meet: continuing the jailbreak/red-teaming work from Scale AI, the autonomous cyber-agent "gym" research from the EMU thesis, and a new project idea: a local tool that reads a coding agent's full session, not one tool call at a time, and flags multi-step attack-shaped sequences and goal drift, the way a SOC analyst reviews a session log rather than approving commands one by one.
+  description: "Where adversarial ML and cyber-operations research meet: continuing the jailbreak/red-teaming work from Scale AI, the autonomous cyber-agent \"gym\" research from the EMU thesis, and a new project idea: a local tool that reads a coding agent's full session, not one tool call at a time, and flags multi-step attack-shaped sequences and goal drift, the way a SOC analyst reviews a session log rather than approving commands one by one."
   source_ids: []
   updated: null
-
-- id: jepa
-  title: Self-Supervised Learning (JEPA)
-  description: >-
-    Learning Joint-Embedding Predictive Architectures and starting a new project applying one to compression: training a model to predict compression ratio and classify codec directly from learned embeddings, across multiple compression algorithms.
-  source_ids: []
-  updated: null
+- id: jev
+  title: JEV Experimentation
+  description: JEV experimentation is the current line of work in this area. Whether it continues the failed JEPA compression project or stands on its own is left open.
+  source_ids:
+    - 2026-09-25-jepa-compression-removal
+  updated: 2026-09-25

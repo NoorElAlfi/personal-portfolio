@@ -25,10 +25,10 @@
       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
     },
     "project": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1,
       "pattern": "^[a-z0-9-]+$",
-      "description": "Must match an id in content/projects.yml."
+      "description": "Must match an id in content/projects.yml, or be null when the entry belongs to no portfolio project (work on the site itself, or an unregistered experiment)."
     },
     "kind": {
       "type": "string",

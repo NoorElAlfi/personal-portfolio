@@ -77,11 +77,13 @@ Body markdown.
    front matter, no deduping — wrong-format notes are fine, missing notes are not.
 2. **Normalize.** Turn inbox bullets into entries under `journal/entries/` (public work) or
    `journal/private/` (private work). This is either the pipeline's `triage` stage (which reads
-   `runs/<week>/activity.json` and emits entries) or a manual pass: copy the front-matter template
-   below, set `id` to `<date>-<project>-<slug>`, set `visibility` **and file the entry in the matching
-   directory**, fill `links`/`tags`, copy the shell/`gh` evidence into `sources:`, leave
-   `status: pending`, and clear the consumed bullets from `inbox.md`. Add missing private projects to
-   `agents/private-projects.yml` so their `project` id resolves.
+   `runs/<week>/activity.json` **and this file**, and emits entries) or a manual pass: copy the
+   front-matter template below, set `id` to `<date>-<project>-<slug>`, set `visibility` **and file
+   the entry in the matching directory**, fill `links`/`tags`, copy the shell/`gh` evidence into
+   `sources:`, and leave `status: pending`. The pipeline deletes a bullet from `inbox.md` by itself
+   once the entry it became is published (it only clears bullets it promoted, so nothing you wrote
+   disappears silently). Add missing private projects to `agents/private-projects.yml` so their
+   `project` id resolves.
 3. **Verify.** Run `node scripts/verify-content.mjs --root .`. It validates every entry against
    `agents/schemas/entry.schema.json`, checks `id`/filename agreement and `project` resolution against
    both registries, and rejects private leaks. `NOTE` lines only report absent local-only paths (an

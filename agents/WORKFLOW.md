@@ -91,16 +91,29 @@ Stages run in this fixed order: `collect`, `triage`, `curate`, `write`, `review`
 (week = ISO `YYYY-Www`), and `runs/` is gitignored because it contains private-repo
 evidence.
 
-| Stage     | Kind  | Reads                                                               | Writes                                                                                       |
-| --------- | ----- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `collect` | code  | `agents/repos.txt`, git history / PR state of the listed repos      | `runs/<week>/activity.json`                                                                  |
-| `triage`  | agent | `activity.json`, `content/projects.yml`                             | `runs/<week>/entries/*.md`                                                                   |
-| `curate`  | agent | `runs/<week>/entries/*.md`                                          | `runs/<week>/plan.json`                                                                      |
-| `write`   | agent | `plan.json`, the cited entries (evidence), existing `content/*.yml` | `runs/<week>/proposals/{project_highlights,now_page,blog_post}.json`                         |
-| `review`  | agent | proposal artifacts + the cited entries (evidence)                   | `runs/<week>/review.json`                                                                    |
-| `apply`   | code  | `runs/<week>/proposals/*.json`                                      | `content/*.yml`, `content/posts/<slug>.mdx`, consumed entries `status: pending -> published` |
-| `verify`  | code  | `content/`, `journal/entries/`                                      | exit code (report on stdout)                                                                 |
-| `publish` | code  | applied working tree                                                | commit + branch + PR (no auto-merge); `runs/<week>/summary.md` via `notify`                  |
+| Stage     | Kind  | Reads                                                               | Writes                                                                                                                                         |
+| --------- | ----- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `collect` | code  | `agents/repos.txt`, git history / PR state of the listed repos      | `runs/<week>/activity.json`                                                                                                                    |
+| `triage`  | agent | `activity.json`, `content/projects.yml`, `journal/inbox.md`         | `runs/<week>/entries/*.md`, `runs/<week>/inbox.json`                                                                                           |
+| `curate`  | agent | `runs/<week>/entries/*.md`, `journal/inbox.md`                      | `runs/<week>/plan.json`                                                                                                                        |
+| `write`   | agent | `plan.json`, the cited entries (evidence), existing `content/*.yml` | `runs/<week>/proposals/{project_highlights,now_page,blog_post}.json`                                                                           |
+| `review`  | agent | proposal artifacts + the cited entries (evidence)                   | `runs/<week>/review.json`                                                                                                                      |
+| `apply`   | code  | `runs/<week>/proposals/*.json`, `runs/<week>/inbox.json`            | `content/*.yml`, `content/posts/<slug>.mdx`, consumed entries `status: pending -> published`, promoted bullets cleared from `journal/inbox.md` |
+| `verify`  | code  | `content/`, `journal/entries/`                                      | exit code (report on stdout)                                                                                                                   |
+| `publish` | code  | applied working tree                                                | commit + branch + PR (no auto-merge); `runs/<week>/summary.md` via `notify`                                                                    |
+
+### The inbox is input, not a suggestion
+
+`journal/inbox.md` is the one channel the author writes by hand, so `triage` **and** `curate`
+receive it, and no bullet is ever dropped silently. `triage` turns every bullet into an entry
+and records that bullet's exact text in `runs/<week>/inbox.json`; `apply` deletes a bullet from
+the inbox only once the entry it became has been published. A bullet the pipeline could not act
+on stays visible in the inbox instead of disappearing.
+
+Bullets that are instructions about the site are honoured as instructions: `now_page` is the
+action for "the current focus changed" **and** for retiring an area — the writer retires a card
+by listing its id in `remove_ids` (see `agents/prompts/writer-now.md`). A retirement is never
+expressed as a highlight or a post.
 
 Raw agent stdout for every agent stage is written to `runs/<week>/raw/<stage>.txt`,
 and `usage`/`cost` reported by the model, when present, lands in
@@ -193,9 +206,16 @@ absent.
 
 ### Agent invocation (`agents/lib/agent.mjs`)
 
-Default command: `omp -p --mode=json --no-session --cwd <repo-root>`. Prompts live in
-`agents/prompts/*.md` and are fed to the process **on stdin**; each prompt contains a
-`<<<STAGE:<name>>>` marker so a stub can identify the stage.
+Default command: `omp -p --mode=json --no-session --no-tools --cwd <repo-root>`. Prompts
+live in `agents/prompts/*.md` and are fed to the process **on stdin**; each prompt contains
+a `<<<STAGE:<name>>>` marker so a stub can identify the stage.
+
+`--no-tools` is deliberate: every fact a stage needs is embedded in its prompt, so an agent
+with tools does nothing but explore the repository. Measured on the first real run, writer
+and reviewer calls spent minutes and megabytes on `read`/`grep`/`bash`/`eval` calls before
+answering — one stage ran past twenty minutes without producing output. With tools off the
+same stages answer in seconds. Re-enable them with `--agent-cmd` if a future stage genuinely
+needs to read the tree.
 
 `omp -p --mode=json` emits a **JSONL event stream** (one JSON object per line), not a
 single JSON object. The final assistant text arrives in the last
@@ -208,7 +228,10 @@ Overrides:
 - `--agent-cmd "<cmd>"` or `$AGENT_CMD`;
 - `--agent-cmd "claude -p --output-format text"` works unchanged — the prompt is still
   fed on stdin and the artifact JSON is read from stdout;
-- bare `omp -p` also works (plain-text output is accepted).
+- bare `omp -p` also works (plain-text output is accepted);
+- `$AGENT_TIMEOUT_MS` caps one agent call (default 600000). A stage that hangs is worse
+  than one that fails: on timeout the child tree is killed, raw stdout is still written,
+  and the stage fails with `timed out after Ns` so the run can resume with `--from`.
 
 Raw stdout from every agent stage is always saved to `runs/<week>/raw/<stage>.txt`,
 even on success. On unparseable output the stage is retried once, then fails hard.

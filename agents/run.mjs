@@ -51,7 +51,8 @@ const USAGE = `Usage: node agents/run.mjs [options]
   --from <stage>      start at a stage and continue to the end
   --only <stage>      run exactly one stage (reusing earlier artifacts)
   --no-publish        skip the git/PR publish stage
-  --agent-cmd <cmd>   agent CLI to run (default: $AGENT_CMD or omp -p --mode=json)
+  --agent-cmd <cmd>   agent CLI to run (default: $AGENT_CMD or
+                      omp -p --mode=json --no-session --no-tools)
   --since <date>      collect commits/PRs/releases since YYYY-MM-DD
   --root <dir>        repository root (default: nearest package.json)
   --help              this text
@@ -193,6 +194,66 @@ function entriesSection(entries) {
     "These are the only citable facts. Nothing outside them may appear in your output.",
     "",
     fence(payload),
+  ].join("\n");
+}
+
+/**
+ * Pending capture bullets from `journal/inbox.md` — the author's own input.
+ * Bullets are the one channel the author writes by hand, so they are passed to
+ * both `triage` and `curate` and must never be dropped silently.
+ */
+function readInbox(root) {
+  const text = readText(path.join(root, "journal", "inbox.md"));
+  if (text === null) return [];
+  return text
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^[-*]\s+\S/.test(line))
+    .map((line) => line.replace(/^[-*]\s+/, "").trim())
+    .filter(Boolean);
+}
+
+function inboxSection(bullets) {
+  if (bullets.length === 0) {
+    return [
+      "## Inbox bullets (0)",
+      "",
+      "The author's inbox is empty. Work only from the activity data.",
+    ].join("\n");
+  }
+  return [
+    `## Inbox bullets (${bullets.length}) — the author's own input`,
+    "",
+    "These are things the author recorded by hand. Each bullet is either a fact or an",
+    "instruction, and every one must be accounted for in your output: never drop one",
+    "silently, never contradict one, and when a bullet has no evidence attached say so",
+    "in the entry body instead of inventing support for it.",
+    "",
+    fence(bullets.map((text, index) => ({ index, text }))),
+  ].join("\n");
+}
+
+/** Current now-page cards, so a writer can retire one by id. */
+function readNowItems(root) {
+  const doc = readYaml(path.join(root, "content", "now.yml"));
+  if (doc === null) return [];
+  expect(Array.isArray(doc), "content/now.yml must hold a list");
+  return doc.map((item) => ({
+    id: item?.id ?? null,
+    title: item?.title ?? null,
+    description: item?.description ?? null,
+  }));
+}
+
+function nowSection(items) {
+  return [
+    `## Current now page (${items.length} card(s))`,
+    "",
+    "Ids are stable across weeks. To retire a card, name its id in `remove_ids` — do not",
+    "restate it as an item, and never leave a card standing that the notes say is over.",
+    "",
+    fence(items),
   ].join("\n");
 }
 
@@ -543,6 +604,12 @@ function validateEntriesArtifact(value) {
         entry.summary.length <= SUMMARY_MAX,
       `${where}.summary must be one line of at most ${SUMMARY_MAX} characters`,
     );
+    if (entry.inbox_bullets !== undefined) {
+      expect(
+        isStringArray(entry.inbox_bullets, { min: 1 }),
+        `${where}.inbox_bullets must be an array of non-empty strings`,
+      );
+    }
     expect(Array.isArray(entry.links), `${where}.links must be an array`);
     entry.links.forEach((link, j) => {
       expect(isObject(link), `${where}.links[${j}] must be an object`);
@@ -613,6 +680,7 @@ async function stageTriage(ctx) {
           registry: p?.registry ?? null,
         })),
       ),
+      inboxSection(readInbox(ctx.root)),
       `## Journal ids that already exist (do not reuse)`,
       "",
       fence(known.map((e) => e.id ?? e.file)),
@@ -713,7 +781,11 @@ async function stageCurate(ctx) {
   );
   const projects = readProjects(ctx.root);
   const prompt = buildPrompt(ctx, "curate", {
-    sections: [entriesSection(entries), projectsSection(projects)],
+    sections: [
+      entriesSection(entries),
+      projectsSection(projects),
+      inboxSection(readInbox(ctx.root)),
+    ],
   });
 
   const call = await callAgent({
@@ -772,6 +844,19 @@ function validateNowPage(value, where) {
   expect(isObject(value), `${where}: artifact must be a JSON object`);
   expect(value.kind === "now_page", `${where}.kind must be "now_page"`);
   expect(Array.isArray(value.items), `${where}.items must be an array`);
+  if (value.remove_ids !== undefined) {
+    expect(
+      isStringArray(value.remove_ids),
+      `${where}.remove_ids must be an array of kebab-case ids`,
+    );
+    value.remove_ids.forEach((id, i) => {
+      expect(SLUG_RE.test(id), `${where}.remove_ids[${i}] must be kebab-case`);
+    });
+  }
+  expect(
+    value.items.length > 0 || (value.remove_ids ?? []).length > 0,
+    `${where}: at least one of items/remove_ids must be non-empty`,
+  );
   value.items.forEach((item, i) => {
     const at = `${where}.items[${i}]`;
     expect(
@@ -828,7 +913,13 @@ async function writeAction(ctx, action, index, entries) {
 
   const prompt = buildPrompt(ctx, writer.prompt, {
     markers,
-    sections: [actionSection(action), entriesSection(cited)],
+    sections: [
+      actionSection(action),
+      entriesSection(cited),
+      ...(writer.kind === "now_page"
+        ? [nowSection(readNowItems(ctx.root))]
+        : []),
+    ],
   });
 
   const name = `write-${String(index + 1).padStart(2, "0")}-${writer.stem}`;
@@ -844,7 +935,7 @@ async function writeAction(ctx, action, index, entries) {
 
   const where = `write/${writer.stem}`;
   const value = WRITER_VALIDATORS[writer.stem](call.value, where);
-  return { action, writer, value };
+  return { action, writer, value, name };
 }
 
 async function stageWrite(ctx) {
@@ -867,6 +958,7 @@ async function stageWrite(ctx) {
   const results = await Promise.all(
     actions.map((action, index) => writeAction(ctx, action, index, entries)),
   );
+  const keepRaw = new Set(results.map((result) => `${result.name}.txt`));
 
   const groups = new Map();
   for (const result of results) {
@@ -905,20 +997,26 @@ async function stageWrite(ctx) {
   if (nowItems.length) {
     const merged = [];
     const seen = new Set();
+    const removeIds = new Set();
     for (const result of nowItems) {
       for (const item of result.value.items) {
         if (seen.has(item.id)) continue;
         seen.add(item.id);
         merged.push(item);
       }
+      for (const id of result.value.remove_ids ?? []) removeIds.add(id);
     }
+    // A card cannot be both rewritten and retired; the retirement wins, because
+    // that is what `apply` does when it sees the same id in both lists.
+    const keptItems = merged.filter((item) => !removeIds.has(item.id));
     const file = "now_page.json";
     keep.add(file);
     written.push(
       writeJson(path.join(proposalsDir, file), {
         kind: "now_page",
         week: ctx.week,
-        items: merged,
+        items: keptItems,
+        ...(removeIds.size > 0 ? { remove_ids: [...removeIds] } : {}),
       }),
     );
   }
@@ -940,6 +1038,19 @@ async function stageWrite(ctx) {
   });
 
   pruneStale(proposalsDir, ".json", keep);
+
+  // Raw agent streams are the debug surface, but a re-run of `write` leaves the
+  // previous attempt's files behind (they are megabytes each). Keep this run's.
+  const rawDir = path.join(ctx.weekDir, "raw");
+  for (const name of filesWithExt(rawDir, ".txt")) {
+    if (!name.startsWith("write-")) continue;
+    if (keepRaw.has(name)) continue;
+    try {
+      fs.rmSync(path.join(rawDir, name), { force: true });
+    } catch {
+      warn(`could not remove stale raw output ${name}`);
+    }
+  }
   process.stdout.write(
     `[write] ${actions.length} agent call(s) -> ${keep.size} proposal file(s)\n`,
   );

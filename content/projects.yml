@@ -1,13 +1,7 @@
-# Projects registry. Newest project first.
-# `description` is plain text; inline links use markdown [label](url) ONLY.
-# This file is public-bundle material: it is imported into client code via `?raw`,
-# so records for private repositories must NEVER live here. Keep them in the
-# gitignored `agents/private-projects.yml` (template: agents/private-projects.example.yml).
 - id: emu-cyber-ops-gym
   title: "EMU: Emulated Cyber Operations Gym"
   tag: M.Sc. Thesis
-  description: >-
-    Built a cyber attack/defense emulation gym for training reinforcement-learning-driven autonomous cyber agents, later migrated from VMware vSphere to Docker for faster environment setup; integrated Caldera, Velociraptor, Metasploit, and Nmap, with Blue/Red agent logic mapped to MITRE ATT&CK. Ran a 200-trial exploitation characterization experiment across 5 real CVE targets (Apache Druid, Apache Flink, HashiCorp Nomad, ProFTPD, Apache Struts2) and 4 attacker sophistication tiers, with 95%-CI success-rate benchmarking.
+  description: Built a cyber attack/defense emulation gym for training reinforcement-learning-driven autonomous cyber agents, later migrated from VMware vSphere to Docker for faster environment setup; integrated Caldera, Velociraptor, Metasploit, and Nmap, with Blue/Red agent logic mapped to MITRE ATT&CK. Ran a 200-trial exploitation characterization experiment across 5 real CVE targets (Apache Druid, Apache Flink, HashiCorp Nomad, ProFTPD, Apache Struts2) and 4 attacker sophistication tiers, with 95%-CI success-rate benchmarking.
   status: shipped
   visibility: public
   repo: null
@@ -16,30 +10,66 @@
   last_activity: null
   highlights: []
   links: []
-
 - id: lucidhover
   title: LucidHover
   tag: VS Code Extension, Published
-  description: >-
-    A VS Code extension that hovers any function and explains it in the context of the whole repo (role, callers/callees, blast radius) via a fully local LLM through Ollama. Python sidecar parses with tree-sitter, builds a call graph, ranks functions by PageRank importance, and caches explanations in SQLite. Published to the VS Code Marketplace under Apache-2.0.
+  description: A VS Code extension that hovers any function and explains it in the context of the whole repo (role, callers/callees, blast radius) via a fully local LLM through Ollama. Python sidecar parses with tree-sitter, builds a call graph, ranks functions by PageRank importance, and caches explanations in SQLite. Published to the VS Code Marketplace under Apache-2.0.
   status: shipped
   visibility: public
   repo: NoorElAlfi/lucidHover
   featured: true
   started: null
-  last_activity: null
-  highlights: []
+  last_activity: 2026-09-18
+  highlights:
+    - date: 2026-08-26
+      text: The blast-radius and execution-trace views were rebuilt as graph-view cards in the docked panel.
+      source_ids:
+        - 2026-08-26-lucidhover-graph-view-redesign
+    - date: 2026-09-09
+      text: JSX tag usage was captured as call-graph references instead of staying invisible to the graph, and a redundant recompute was trimmed from that path.
+      source_ids:
+        - 2026-09-09-lucidhover-jsx-callgraph-references
+    - date: 2026-09-15
+      text: Definition-side aliases for compound components were resolved, restoring references that had gone missing from the graph.
+      source_ids:
+        - 2026-09-15-lucidhover-reference-accuracy-fixes
+    - date: 2026-08-28
+      text: Raised background indexing to a concurrent worker pool, then reverted BACKGROUND_INDEX_CONCURRENCY to 1 after a measurement pass showed the collision frequency did not pay for the concurrency.
+      source_ids:
+        - 2026-08-28-lucidhover-indexing-concurrency-revert
+    - date: 2026-08-28
+      text: Added background-indexing progress UX that counts failed generate_explanation calls so a degrading run stays visible, and fixed the resume()/'pausing' phase race in BackgroundIndexManager.
+      source_ids:
+        - 2026-08-28-lucidhover-indexing-progress-ux
+    - date: 2026-09-03
+      text: Replaced the sidecar RPC loop's fixed poll interval with queue-aware adaptive backoff that follows how much work is actually queued.
+      source_ids:
+        - 2026-09-03-lucidhover-sidecar-poll-backoff
+    - date: 2026-08-28
+      text: Landed a Marketplace readiness gate and executed the publish-prep checklist behind it; the listing was not yet published.
+      source_ids:
+        - 2026-08-28-lucidhover-marketplace-publish-prep
+    - date: 2026-09-16
+      text: Restored CHANGELOG.md and fixed two packaging leaks that had been shipping files the extension should not have included.
+      source_ids:
+        - 2026-09-16-lucidhover-packaging-leaks
+    - date: 2026-09-17
+      text: Added a codebase digest export command that takes the analysis out of the editor.
+      source_ids:
+        - 2026-09-17-lucidhover-digest-export
+    - date: 2026-09-18
+      text: Fixed hover error handling in the LucidHover VS Code extension as part of pre-publish work.
+      source_ids:
+        - 2026-09-18-lucidhover-prepublish-hover-and-pause-fixes
   links:
     - label: Read the write-up
       to: /blog/lucidhover
     - label: GitHub
       href: https://github.com/NoorElAlfi/lucidHover
-
 - id: codebase-deobfuscator
   title: Codebase Deobfuscator
   tag: Agentic Workflow Harness
-  description: >-
-    A reusable local-hardware agentic-workflow harness (endpoint, sandbox, oracle contract, eval set, traces), proven out on JavaScript deobfuscation. Runs a real dspy.GEPA(...).compile() prompt-optimization loop (train 0.12→0.48, val 0.13→0.54) against a local Ollama task model, with Docker-sandboxed differential equivalence testing and call-graph ranking ported from LucidHover.
+  description: A reusable local-hardware agentic-workflow harness (endpoint, sandbox, oracle contract, eval set, traces), proven out on JavaScript deobfuscation. Runs a real dspy.GEPA(...).compile() prompt-optimization loop (train 0.12→0.48, val 0.13→0.54) against a local Ollama task model, with Docker-sandboxed differential equivalence testing and call-graph ranking ported from LucidHover.
   status: shipped
   visibility: public
   repo: null
@@ -50,30 +80,50 @@
   links:
     - label: Read the write-up
       to: /blog/codebase-deobfuscator
-
 - id: siem-guard-code
   title: SIEM Guard
   tag: Security, LLM Pipelines, Anomaly Detection
-  description: >-
-    A local, LLM-assisted security-log pipeline: an Ollama model turns raw log lines into structured fields (validated replies, a template cache, and a regex baseline kept for comparison), while plain statistics decide what is anomalous — an Isolation Forest score gated by a robust median/MAD z-score for behavioral detection, plus weighted rules for supply-chain indicators in package installs. Everything runs on local hardware, so no log data leaves the machine. Published as a research prototype: code and tests only.
+  description: "A local, LLM-assisted security-log pipeline: an Ollama model turns raw log lines into structured fields (validated replies, a template cache, and a regex baseline kept for comparison), while plain statistics decide what is anomalous — an Isolation Forest score gated by a robust median/MAD z-score for behavioral detection, plus weighted rules for supply-chain indicators in package installs. Everything runs on local hardware, so no log data leaves the machine. Published as a research prototype: code and tests only."
   status: active
   visibility: public
   repo: NoorElAlfi/siem-guard-code
   featured: false
   started: null
   last_activity: 2026-09-20
-  highlights: []
+  highlights:
+    - date: 2026-09-05
+      text: Implemented BehavioralDetector with a two-tier Isolation Forest plus LLM reasoning and SupplyChainDetector covering typosquat, source, size and timing signals, and wired both into the detection harness.
+      source_ids:
+        - 2026-09-05-siem-guard-detectors-harness
+    - date: 2026-09-06
+      text: Ran full validation against ground truth, reporting precision, recall and F1 for the detection pipeline.
+      source_ids:
+        - 2026-09-06-siem-guard-eval-and-model-comparison
+    - date: 2026-09-06
+      text: Normalized package names before matching and replaced binary package-name verdicts with confidence scores, which improved typosquat recall.
+      source_ids:
+        - 2026-09-06-siem-guard-package-name-normalization
+    - date: 2026-09-07
+      text: Replaced the RNG stub with real rule matchers for MITRE T1078 and T1195, techniques that had not actually been detected before.
+      source_ids:
+        - 2026-09-07-siem-guard-mitre-rule-matchers
+    - date: 2026-09-18
+      text: Split default models by role, qwen2.5:7b for parsing and mistral:7b for reasoning, with the choice driven by configuration instead of code.
+      source_ids:
+        - 2026-09-18-siem-guard-role-split-models
+    - date: 2026-09-20
+      text: Added a README and an MIT LICENSE to the public SIEM Guard code repository.
+      source_ids:
+        - 2026-09-20-siem-guard-readme-and-license
   links:
     - label: GitHub
       href: https://github.com/NoorElAlfi/siem-guard-code
     - label: Read the write-up
       to: /blog/siem-guard
-
 - id: digital-forensics-investigation
   title: Digital Forensics Investigation
   tag: EE547, Royal Military College of Canada
-  description: >-
-    As part of a 3-person team, investigated a simulated CAF network breach across 8 systems (disk and RAM images) using Volatility and X-Ways Forensics, identifying a misconfigured-TFTP entry point, reconstructing a minute-by-minute attack timeline, and documenting indicators of compromise.
+  description: As part of a 3-person team, investigated a simulated CAF network breach across 8 systems (disk and RAM images) using Volatility and X-Ways Forensics, identifying a misconfigured-TFTP entry point, reconstructing a minute-by-minute attack timeline, and documenting indicators of compromise.
   status: shipped
   visibility: public
   repo: null
@@ -82,12 +132,10 @@
   last_activity: null
   highlights: []
   links: []
-
 - id: sysevr-vulnerability-detection
   title: SySeVR Vulnerability Detection Pipeline
   tag: BlackBerry Limited
-  description: >-
-    Designed custom scripts and data pipelines to assess SySeVR's effectiveness at identifying software vulnerabilities, automating dataset generation and analysis for vulnerability-detection research and experimentation.
+  description: Designed custom scripts and data pipelines to assess SySeVR's effectiveness at identifying software vulnerabilities, automating dataset generation and analysis for vulnerability-detection research and experimentation.
   status: shipped
   visibility: public
   repo: null
@@ -96,12 +144,10 @@
   last_activity: null
   highlights: []
   links: []
-
 - id: gps-privacy-audit
   title: GPS Privacy Audit (Big Data Exposed)
-  tag: "Queen's CAC"
-  description: >-
-    Built a custom logging system for GPS data visualization, integrated with the open-source navigation tool OsmAnd, and developed data-processing methods for large-scale spatial data analysis. Findings are credited in the acknowledgements of a peer-reviewed publication in [Environment and Planning F, 2025/2026](https://journals.sagepub.com/doi/epub/10.1177/26349825251365637).
+  tag: Queen's CAC
+  description: Built a custom logging system for GPS data visualization, integrated with the open-source navigation tool OsmAnd, and developed data-processing methods for large-scale spatial data analysis. Findings are credited in the acknowledgements of a peer-reviewed publication in [Environment and Planning F, 2025/2026](https://journals.sagepub.com/doi/epub/10.1177/26349825251365637).
   status: shipped
   visibility: public
   repo: null
