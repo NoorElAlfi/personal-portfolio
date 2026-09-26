@@ -1,27 +1,43 @@
-## The parameter that did nothing
+SIEM Guard reads security logs and flags suspicious activity. The interesting part of that sentence is which half a language model is allowed to touch: it parses, and it explains. It does not decide.
 
-I went into SIEM Guard's false-positive structure in Session 14B expecting to find a tuning problem and found something less comfortable: the contamination term was inert. It was present in the pipeline and it changed nothing about the outcome. Any experiment run against it would have measured a parameter that was not connected to a decision, which is a worse failure than a bad threshold — a bad threshold at least tells you where you are wrong.
+## Where the model sits
 
-Session 15B was meant to be a full-pipeline test of the false-positive-reduction fixes. Instead it root-caused the miss that was still getting through. That is a different result than the confirmation I was after, and a more useful one. Session 15C then fixed a degenerate-feature blind spot in the population-forest floor: the region of the input where the features that carry rarity information do not carry any, so the floor has nothing to separate on. A blind spot is not a number you can nudge; it is a place the detector cannot see.
+Raw ssh, http, ftp, dns and package lines go through a parser — regex plus `qwen2.5:7b` at temperature 0.1 with schema-constrained output — into plain dicts. Two detectors then run with no LLM involved at all: a behavioural detector over ssh/http/ftp that is pure statistics, and a supply-chain detector over package installs that is four weighted rules. Only the handful of flagged items reach `mistral:7b` at temperature 0.5, which returns severity, reasoning and a next step; a second call drafts a detection rule. If that call fails, the alert still goes out with a fallback severity.
 
-## A template cache, built in two steps
+Detection is not delegated because a detector that outsources its judgement to the same model that transcribed the log is not auditable — and because the parser's measured failure modes are exactly the kind that would be invisible inside a decision.
 
-The LILAC template cache with hierarchical sampling was built standalone in Session 16A and wired into `LLMLogParser.parse_async` in Session 16B. The order matters to me: standalone, the sampling policy is the only thing under test, and wiring comes second. Once the cache was live, its own defects surfaced. Template extraction was dropping short and normalized fields — legitimate fields that simply stopped appearing downstream. The substring-collision fix in `template_cache.py`, where one template's text can match inside another's, was confirmed and documented in Session 28.
+## The gate, and the feature that breaks it
 
-## SSH recall, recovered after the gate fix
+Behavioural detection cuts each entity's events (an IP, falling back to a username) into windows of 5 events, and summarises each window as 8 numbers: `failed_login_ratio`, `login_frequency`, `unique_users`, `unique_ports`, `connection_duration_mean`, `bytes_transferred_mean`, `geographic_changes`, `off_hours_activity`. One population isolation forest of 200 trees scores each window, and anything above 0.6 is flagged.
 
-Session 21 fixed the LILAC SSH corroboration gate. The gate fix was necessary and it was not the whole story. SSH behavioral recall was recovered in Session 23 through entity-identity and population-scoring fixes — the recovery lived in how the pipeline decides what counts as the same entity and how behavior is scored against the population, not in the gate itself. I would rather write that down honestly than present the visible fix as the cause.
+A forest on its own is not enough. Min-max normalisation pushes the most isolated entity in any population toward a score of 1.0 even when the whole population is clean, so the population branch is only trusted when a median/MAD gate agrees: at least two features must exceed a modified z-score of 3.5, computed as `0.6745 * |x - median| / MAD`. Requiring two independent deviations is what keeps one typo'd login from becoming an alert.
 
-## Batch parsing that looks fine
+That gate has a hole. `failed_login_ratio` is MAD == 0 across the ssh population — 75% of clean entities are exactly 0 — so any deviation on it yields z = infinity. About 25% of clean entities carry a single typo'd `Failed password`, and if `login_frequency` also jitters past 3.5, they clear a two-feature gate on one real deviation plus one degenerate one. Measured, that leaked about 1.8% of clean ssh entities, and every clean window that got through at 50,000 entities was that pair.
 
-Sessions 29, 30 and 31 closed integrity gaps in batch parsing. Session 29 fixed a positional-integrity gap, where values land under the wrong field position. Session 30 fixed a content-integrity gap where field values came back transposed. Session 31 fixed a version-field v-prefix guidance gap in package parsing.
+## The tier that was doing nothing
 
-These matter more than parse errors. A parse error is loud; a transposed value is not. The record validates, every field is populated, and downstream detection cannot tell a parsing bug from a genuine signal. That is the failure mode worth fixing before adding more detection.
+An entity with 3 or more windows also got its own forest. It looked like a refinement and it was a trap: the entity tier min-max scaled each forest's own training windows and then scored those same windows, so an entity's most isolated window was guaranteed to score 1.0. Every clean entity was flagged, 100%, at every population size tested, while the population tier alone flagged 0.00% of the same entities.
 
-## Where it stands now
+That is 50,000 forests, 4.06 GB and 33 minutes of fitting to reach precision 2%. It was not repaired, it was measured: across 120 anomalous-entity trials the entity tier added 0 recall, so it was dropped. Fitting 50,000 entities went from 1,551s and 4.06GB to 0.8s and 3MB, and the ssh gate leak went from 1.6-2.2% to 0.00% — 0.003% at 50,000 entities — with recall unchanged at 1.00.
 
-The most recent numbered sessions in the commit history are 36, 37 and 38. Session 36 added `failed_llm` rate observability with origin tracking. Session 37 refreshed the two-corpus dashboard and removed the dead contamination parameter — the inert knob from Session 14B, deleted instead of left in place as a trap for whoever tunes next. Session 38 split the default models by role, config-driven: qwen2.5:7b for parsing and mistral:7b for reasoning. A README and an MIT LICENSE landed after that.
+## Where the time actually went
 
-## What I am not claiming
+The first honest baseline ran 500 logs live against a real `mistral:7b` in 2,286.0s (38.1 minutes), and 76.6% of it was parsing. The breakdown is more useful than the total: `parse_ssh` 1,077.9s, `parse_packages` 302.2s, `parse_dns` 52.2s, and `behavioral_http` 68.5s spent entirely on LLM reasoning for 4 false-positive alerts on clean data. Parsing dns logs costs real time for a log type with no detector behind it.
 
-The request that prompted this post counted over 10 new sessions and improvements, and named JEV and semif experiments. The commit history records Sessions 36 to 38 for that stretch and nothing that identifies those experiments, so I have written up what the commits support and left the rest unverified rather than reconstruct it afterwards. The fixes above are recorded in commits; I have no benchmark numbers to quote and I am not going to produce any. What I can say is which failures were real, which parameter was dead, and which parsing gaps are closed.
+Rules changed that arithmetic. `rule_parser.py` is a strict, fully-anchored rule registry that never guesses: 96,000-98,000 lines/s, flat from 50k to 500k lines, against roughly 1 line/s on the LLM path — about 19.3h for 50,000 lines. Across the three corpora the LLM parsing calls went 21 / 26 / 100 to 0 / 0 / 2, and wall clock went 450.5s / 568.8s / 978.2s to 157.6s / 252.4s / 203.3s. The model still handles the lines the rules cannot claim, and on the real-format corpus that was 6 of 704.
+
+## What SemIf and Jev changed, and what they did not
+
+Sessions 49-51 compared SemIf against the existing Ollama decision calls. Severity classification went from 0.244 to 0.602 macro-F1 and was adopted, wired behind a flag and off by default. Status classification (0.783 to 0.956 accuracy, Brier 0.067, 5s median latency) and format routing (0.911 to 0.930) were recommended but left unwired for want of a call site, and the supply-chain action arm was not adopted at all, because all three arms missed every `block`-labelled case. Jev landed on the same accuracy and macro-F1 as SemIf to four significant figures (0.684 / 0.602), missing the same six records.
+
+## What is still open
+
+Three items are carried rather than closed. Session-lifecycle lines with no `src_ip` still produce `alice`/`ken`/`unknown` pseudo-entities: the parser-side pid/host linkage was built (45/45 lines linkable on its corpus) but deliberately not wired into entity resolution, so the symptom still occurs live. The LLM fallback path over-nulls ssh `user` and `status`, confirmed by a shadow audit of 812 lines where all 82 disagreements had the rule path right. And SemIf severity's improvement was measured on a different state shape than the live call site sends, which is why it ships behind a flag rather than on.
+
+Thirteen of fifteen MITRE techniques remain random-number stubs. That is a closed product-scope decision rather than a backlog item, and it is written down so nobody re-opens it.
+
+## See it
+
+- **How it works, interactively** — the pipeline diagram, one log line's journey field by field, an isolation-forest demo and the gate walkthrough: [SIEM Guard, explained](/siem-guard/explained.html).
+- **The numbers** — accuracy by log type, the parsing-time breakdown, false-positive analysis and MITRE coverage gaps, caveat included in the UI: [the dashboard](/siem-guard/dashboard/dashboard.html).
+- **The code and tests**: [github.com/NoorElAlfi/siem-guard-code](https://github.com/NoorElAlfi/siem-guard-code).

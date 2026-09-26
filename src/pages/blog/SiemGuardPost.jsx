@@ -117,6 +117,16 @@ function SiemGuardPost() {
           rel="noopener noreferrer"
         >
           open the SIEM Guard dashboard &rarr;
+        </a>{" "}
+        There is also an interactive explainer that walks the pipeline, one log
+        line's journey field by field, an isolation-forest demo and the gate
+        that decides whether the forest is trusted:{" "}
+        <a
+          href="/siem-guard/explained.html"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          SIEM Guard, explained &rarr;
         </a>
       </p>
 

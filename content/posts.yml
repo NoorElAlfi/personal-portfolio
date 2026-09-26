@@ -1,20 +1,19 @@
 - slug: siem-guard-detection-hardening
-  title: "Hardening SIEM Guard's detection: inert parameters, lost recall, and parsing that looked fine"
-  summary: What SIEM Guard's false-positive, SSH recall and batch-parsing fixes actually changed — and what the commit record does not support.
+  title: "Inside SIEM Guard: statistics decide, the model explains, and parsing is where the time went"
+  summary: "Where the LLM actually sits in a local security-log pipeline, why a median/MAD gate still leaks on a degenerate feature, the forest tier that added zero recall in 120 trials, and what rules-first parsing changed: 96,000 lines/s against roughly one."
   tags:
     - security
     - anomaly-detection
     - parsing
     - llm
+    - isolation-forest
   file: siem-guard-detection-hardening.mdx
-  date: 2026-09-25
+  date: 2026-09-26
   project: siem-guard-code
   source_ids:
-    - 2026-09-05-siem-guard-false-positive-investigation
-    - 2026-09-06-siem-guard-lilac-cache-and-sampling
-    - 2026-09-06-siem-guard-ssh-recall-fixes
-    - 2026-09-07-siem-guard-batch-parsing-field-integrity
-    - 2026-09-25-siem-guard-blog-post-request
+    - 2026-09-26-siem-guard-measured-results
+    - 2026-09-26-siem-guard-known-weaknesses
+    - 2026-09-26-siem-guard-current-state
   generated: true
 - slug: lucidhover
   title: "LucidHover: hovering a function shouldn't mean reading it in isolation"

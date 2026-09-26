@@ -3,7 +3,7 @@
     "validation": {
       "meta": {
         "generated_from": "Session_34_results.json",
-        "timestamp": "2026-09-17T04:32:56.635543+00:00",
+        "timestamp": "2026-09-22T18:14:53.802925+00:00",
         "pipeline_run_timestamp": "2026-09-07T06:21:37.315172",
         "dataset_total_logs": 500
       },
@@ -297,15 +297,172 @@
           }
         }
       },
+      "parsing_routing": {
+        "strategy": "llm",
+        "overall": {
+          "total_lines": 0,
+          "rule_matched": 0,
+          "recognized_noise": 0,
+          "llm_fallback": 0,
+          "rule_rate": 0.0,
+          "noise_rate": 0.0,
+          "llm_fallback_rate": 0.0
+        },
+        "by_log_type": {
+          "ssh": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          },
+          "http": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          },
+          "ftp": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          },
+          "dns": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          },
+          "packages": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          }
+        }
+      },
+      "hybrid_parsing": {
+        "strategy_comparison": [
+          {
+            "corpus": "validation",
+            "llm": {
+              "accuracy": 0.995,
+              "llm_calls": 21,
+              "wall_clock_seconds": 450.5
+            },
+            "hybrid": {
+              "accuracy": 1.0,
+              "llm_calls": 0,
+              "wall_clock_seconds": 157.6
+            }
+          },
+          {
+            "corpus": "session27 (generalization)",
+            "llm": {
+              "accuracy": 0.9996,
+              "llm_calls": 26,
+              "wall_clock_seconds": 568.8
+            },
+            "hybrid": {
+              "accuracy": 1.0,
+              "llm_calls": 0,
+              "wall_clock_seconds": 252.4
+            }
+          },
+          {
+            "corpus": "session39 (real-format)",
+            "llm": {
+              "accuracy": 0.9247,
+              "llm_calls": 100,
+              "wall_clock_seconds": 978.2
+            },
+            "hybrid": {
+              "accuracy": 1.0,
+              "llm_calls": 2,
+              "wall_clock_seconds": 203.3
+            }
+          }
+        ],
+        "decision_note": "Session 48 flipped DEFAULT_PARSE_STRATEGY to 'hybrid': matches or beats LLM-first parsing accuracy on every type on every corpus (100% everywhere vs. LLM-first's 89.6-100% per type), 65-79% faster wall-clock live, 0 false rule claims across 300 lines in 10 novel unknown formats, and structurally immune to the content-injection failure mode the LLM path showed (0/13 rule-claimed lines manipulated vs. 5-10/19 on the LLM path). See docs/Session_48_results.md."
+      },
+      "detector_scale": {
+        "note": "Session 44 dropped the per-entity Isolation Forest tier (it added 0 recall over the population tier in 120 measured anomalous-entity trials) and fixed an ssh corroboration-gate leak. Recall stayed 1.00 in every cell, before and after, at every size shown. See docs/Session_44_results.md.",
+        "rows": [
+          {
+            "shape": "history",
+            "protocol": "ssh",
+            "n": 50000,
+            "fp_rate_before": 1.0,
+            "fp_rate_after": 0.0,
+            "fit_seconds_before": 1550.87,
+            "fit_seconds_after": 0.8,
+            "fit_rss_mb_before": 4064,
+            "fit_rss_mb_after": 3
+          },
+          {
+            "shape": "history",
+            "protocol": "http",
+            "n": 50000,
+            "fp_rate_before": 1.0,
+            "fp_rate_after": 0.0096,
+            "fit_seconds_before": 1551.43,
+            "fit_seconds_after": 0.78,
+            "fit_rss_mb_before": 4066,
+            "fit_rss_mb_after": 3
+          },
+          {
+            "shape": "corpus",
+            "protocol": "ssh",
+            "n": 50000,
+            "fp_rate_before": 0.0177,
+            "fp_rate_after": 3e-05,
+            "fit_seconds_before": 0.8,
+            "fit_seconds_after": 0.8,
+            "fit_rss_mb_before": 6,
+            "fit_rss_mb_after": 5
+          },
+          {
+            "shape": "corpus",
+            "protocol": "http",
+            "n": 50000,
+            "fp_rate_before": 0.0009,
+            "fp_rate_after": 0.0009,
+            "fit_seconds_before": 21.34,
+            "fit_seconds_after": 0.77,
+            "fit_rss_mb_before": 62,
+            "fit_rss_mb_after": 6
+          }
+        ],
+        "feature_importance_ms_per_flagged_window": {
+          "before": 46.1,
+          "after": 8.0
+        }
+      },
       "caveats": {
         "mitre_coverage": "Only T1078 and T1195 run against a real, deterministic rule matcher (Session 26). The other 13 of 15 MITRE techniques' \u201cdetection rate\u201d comes from an unseeded RNG stub (AdversarialTestingAgent._simulate_detection in detectors.py), reseeded from system entropy on every run -- it is not a measurement of SIEM Guard's actual detection capability. See docs/Session_26_results.md and docs/Session_27_results.md.",
-        "failed_llm": "A line couldn't be reliably parsed or attributed, either because a repetitive batch confused the model into transposing values between near-duplicate lines (see docs/Session_34_results.md) or because the parse call itself failed (timeout, malformed JSON) -- these are two independent mechanisms; the batch-transposition explanation does not apply to the backoff-exhaustion cases."
+        "failed_llm": "A line couldn't be reliably parsed or attributed, either because a repetitive batch confused the model into transposing values between near-duplicate lines (see docs/Session_34_results.md) or because the parse call itself failed (timeout, malformed JSON) -- these are two independent mechanisms; the batch-transposition explanation does not apply to the backoff-exhaustion cases.",
+        "parsing_routing": "Rule-matched and recognized-noise lines never reach the LLM at all (Sessions 45-46's rule_parser.py); only the llm_fallback share is a real LLM call. Under strategy 'llm' every line counts as llm_fallback by definition, so this view agrees with pre-Session-46 numbers on any run made before the hybrid strategy existed. See docs/Session_46_results.md, docs/Session_48_results.md."
       }
     },
     "generalization": {
       "meta": {
         "generated_from": "Session_34_results.json",
-        "timestamp": "2026-09-17T04:32:56.635598+00:00",
+        "timestamp": "2026-09-22T18:14:53.802980+00:00",
         "pipeline_run_timestamp": "2026-09-07T06:37:35.231976",
         "dataset_total_logs": 520
       },
@@ -599,9 +756,166 @@
           }
         }
       },
+      "parsing_routing": {
+        "strategy": "llm",
+        "overall": {
+          "total_lines": 0,
+          "rule_matched": 0,
+          "recognized_noise": 0,
+          "llm_fallback": 0,
+          "rule_rate": 0.0,
+          "noise_rate": 0.0,
+          "llm_fallback_rate": 0.0
+        },
+        "by_log_type": {
+          "ssh": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          },
+          "http": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          },
+          "ftp": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          },
+          "dns": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          },
+          "packages": {
+            "total_lines": 0,
+            "rule_matched": 0,
+            "recognized_noise": 0,
+            "llm_fallback": 0,
+            "rule_rate": 0.0,
+            "noise_rate": 0.0,
+            "llm_fallback_rate": 0.0
+          }
+        }
+      },
+      "hybrid_parsing": {
+        "strategy_comparison": [
+          {
+            "corpus": "validation",
+            "llm": {
+              "accuracy": 0.995,
+              "llm_calls": 21,
+              "wall_clock_seconds": 450.5
+            },
+            "hybrid": {
+              "accuracy": 1.0,
+              "llm_calls": 0,
+              "wall_clock_seconds": 157.6
+            }
+          },
+          {
+            "corpus": "session27 (generalization)",
+            "llm": {
+              "accuracy": 0.9996,
+              "llm_calls": 26,
+              "wall_clock_seconds": 568.8
+            },
+            "hybrid": {
+              "accuracy": 1.0,
+              "llm_calls": 0,
+              "wall_clock_seconds": 252.4
+            }
+          },
+          {
+            "corpus": "session39 (real-format)",
+            "llm": {
+              "accuracy": 0.9247,
+              "llm_calls": 100,
+              "wall_clock_seconds": 978.2
+            },
+            "hybrid": {
+              "accuracy": 1.0,
+              "llm_calls": 2,
+              "wall_clock_seconds": 203.3
+            }
+          }
+        ],
+        "decision_note": "Session 48 flipped DEFAULT_PARSE_STRATEGY to 'hybrid': matches or beats LLM-first parsing accuracy on every type on every corpus (100% everywhere vs. LLM-first's 89.6-100% per type), 65-79% faster wall-clock live, 0 false rule claims across 300 lines in 10 novel unknown formats, and structurally immune to the content-injection failure mode the LLM path showed (0/13 rule-claimed lines manipulated vs. 5-10/19 on the LLM path). See docs/Session_48_results.md."
+      },
+      "detector_scale": {
+        "note": "Session 44 dropped the per-entity Isolation Forest tier (it added 0 recall over the population tier in 120 measured anomalous-entity trials) and fixed an ssh corroboration-gate leak. Recall stayed 1.00 in every cell, before and after, at every size shown. See docs/Session_44_results.md.",
+        "rows": [
+          {
+            "shape": "history",
+            "protocol": "ssh",
+            "n": 50000,
+            "fp_rate_before": 1.0,
+            "fp_rate_after": 0.0,
+            "fit_seconds_before": 1550.87,
+            "fit_seconds_after": 0.8,
+            "fit_rss_mb_before": 4064,
+            "fit_rss_mb_after": 3
+          },
+          {
+            "shape": "history",
+            "protocol": "http",
+            "n": 50000,
+            "fp_rate_before": 1.0,
+            "fp_rate_after": 0.0096,
+            "fit_seconds_before": 1551.43,
+            "fit_seconds_after": 0.78,
+            "fit_rss_mb_before": 4066,
+            "fit_rss_mb_after": 3
+          },
+          {
+            "shape": "corpus",
+            "protocol": "ssh",
+            "n": 50000,
+            "fp_rate_before": 0.0177,
+            "fp_rate_after": 3e-05,
+            "fit_seconds_before": 0.8,
+            "fit_seconds_after": 0.8,
+            "fit_rss_mb_before": 6,
+            "fit_rss_mb_after": 5
+          },
+          {
+            "shape": "corpus",
+            "protocol": "http",
+            "n": 50000,
+            "fp_rate_before": 0.0009,
+            "fp_rate_after": 0.0009,
+            "fit_seconds_before": 21.34,
+            "fit_seconds_after": 0.77,
+            "fit_rss_mb_before": 62,
+            "fit_rss_mb_after": 6
+          }
+        ],
+        "feature_importance_ms_per_flagged_window": {
+          "before": 46.1,
+          "after": 8.0
+        }
+      },
       "caveats": {
         "mitre_coverage": "Only T1078 and T1195 run against a real, deterministic rule matcher (Session 26). The other 13 of 15 MITRE techniques' \u201cdetection rate\u201d comes from an unseeded RNG stub (AdversarialTestingAgent._simulate_detection in detectors.py), reseeded from system entropy on every run -- it is not a measurement of SIEM Guard's actual detection capability. See docs/Session_26_results.md and docs/Session_27_results.md.",
-        "failed_llm": "A line couldn't be reliably parsed or attributed, either because a repetitive batch confused the model into transposing values between near-duplicate lines (see docs/Session_34_results.md) or because the parse call itself failed (timeout, malformed JSON) -- these are two independent mechanisms; the batch-transposition explanation does not apply to the backoff-exhaustion cases."
+        "failed_llm": "A line couldn't be reliably parsed or attributed, either because a repetitive batch confused the model into transposing values between near-duplicate lines (see docs/Session_34_results.md) or because the parse call itself failed (timeout, malformed JSON) -- these are two independent mechanisms; the batch-transposition explanation does not apply to the backoff-exhaustion cases.",
+        "parsing_routing": "Rule-matched and recognized-noise lines never reach the LLM at all (Sessions 45-46's rule_parser.py); only the llm_fallback share is a real LLM call. Under strategy 'llm' every line counts as llm_fallback by definition, so this view agrees with pre-Session-46 numbers on any run made before the hybrid strategy existed. See docs/Session_46_results.md, docs/Session_48_results.md."
       }
     }
   },
