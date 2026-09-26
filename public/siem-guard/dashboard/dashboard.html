@@ -1,17 +1,8 @@
 <meta charset="utf-8">
 <title>SIEM Guard Console</title>
-<script>
-  // Follow the portfolio's own light/dark choice (shared via localStorage on
-  // the same origin) instead of just the OS-level preference, so this page
-  // doesn't jar against whichever mode the visitor already picked.
-  try {
-    var siteTheme = localStorage.getItem('theme');
-    if (siteTheme === 'dark' || siteTheme === 'light') document.documentElement.setAttribute('data-theme', siteTheme);
-  } catch (e) {}
-</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root{
@@ -26,10 +17,10 @@
     --baseline:   #c3c2b7;
     --border:     rgba(11,11,11,0.10);
     --border-strong: rgba(11,11,11,0.18);
-    --accent:     #4f46e5;
-    --accent-soft: rgba(79,70,229,0.12);
-    --slot-aqua:  #06b6d4;
-    --slot-aqua-soft: rgba(6,182,212,0.14);
+    --accent:     #2a78d6;
+    --accent-soft: rgba(42,120,214,0.12);
+    --slot-aqua:  #1baf7a;
+    --slot-aqua-soft: rgba(27,175,122,0.14);
     --good:       #0ca30c;
     --warning:    #fab219;
     --serious:    #ec835a;
@@ -49,10 +40,10 @@
       --baseline:   #383835;
       --border:     rgba(255,255,255,0.10);
       --border-strong: rgba(255,255,255,0.18);
-      --accent:     #818cf8;
-      --accent-soft: rgba(129,140,248,0.16);
-      --slot-aqua:  #22d3ee;
-      --slot-aqua-soft: rgba(34,211,238,0.18);
+      --accent:     #3987e5;
+      --accent-soft: rgba(57,135,229,0.16);
+      --slot-aqua:  #199e70;
+      --slot-aqua-soft: rgba(25,158,112,0.18);
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.6);
     }
   }
@@ -68,10 +59,10 @@
     --baseline:   #383835;
     --border:     rgba(255,255,255,0.10);
     --border-strong: rgba(255,255,255,0.18);
-    --accent:     #818cf8;
-    --accent-soft: rgba(129,140,248,0.16);
-    --slot-aqua:  #22d3ee;
-    --slot-aqua-soft: rgba(34,211,238,0.18);
+    --accent:     #3987e5;
+    --accent-soft: rgba(57,135,229,0.16);
+    --slot-aqua:  #199e70;
+    --slot-aqua-soft: rgba(25,158,112,0.18);
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.6);
   }
 
@@ -79,9 +70,9 @@
   body{
     background:var(--plane);
     color:var(--ink);
-    font-family:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   }
-  .mono{ font-family:"JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 
   .app{ max-width:1360px; margin:0 auto; padding-bottom:64px; }
 
@@ -94,15 +85,12 @@
     padding:14px 20px;
     display:flex; align-items:center; gap:16px; justify-content:space-between; flex-wrap:wrap;
   }
-  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand{ display:flex; align-items:baseline; gap:10px; }
   .brand .mark{
-    width:26px;height:26px;border-radius:7px;flex:none;object-fit:cover;
+    width:26px;height:26px;border-radius:7px;background:var(--accent);
+    display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;
+    flex:none;
   }
-  .back-link{
-    display:inline-block; margin:14px 20px 0; font-size:12.5px; font-weight:500;
-    color:var(--accent); text-decoration:none;
-  }
-  .back-link:hover{ text-decoration:underline; }
   .brand h1{ font-size:15px; font-weight:700; letter-spacing:0.02em; margin:0; }
   .brand .eyebrow{ font-size:11px; color:var(--ink-muted); letter-spacing:0.08em; text-transform:uppercase; }
   .header-right{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
@@ -202,7 +190,7 @@
   .heatmap .hcorner{ background:transparent; }
   .heatmap .hlabel{ color:var(--ink-muted); font-weight:600; justify-content:flex-start; background:transparent; }
   .heatmap .rowlabel{ justify-content:flex-start; font-weight:600; color:var(--ink); background:transparent; }
-  .heatmap .hcell{ color:#fff; font-family:"JetBrains Mono",monospace; font-weight:600; cursor:default; position:relative; }
+  .heatmap .hcell{ color:#fff; font-family:"IBM Plex Mono",monospace; font-weight:600; cursor:default; position:relative; }
   .heatmap .hcell[data-v="0"]{ color:var(--ink-muted); }
 
   /* ---------- mitre bars ---------- */
@@ -231,12 +219,35 @@
   .failed-llm-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
   .failed-llm-badge{
     display:inline-flex; align-items:center; font-size:10.5px; font-weight:600;
-    font-family:"JetBrains Mono", monospace; padding:3px 9px; border-radius:12px;
+    font-family:"IBM Plex Mono", monospace; padding:3px 9px; border-radius:12px;
     cursor:default;
   }
   .failed-llm-badge.clean{ color:var(--ink-muted); background:var(--surface-2); }
   .failed-llm-badge.dropped{ color:#9a6b00; background:rgba(237,161,0,0.14); }
   :root:not([data-theme="light"]) .failed-llm-badge.dropped, :root[data-theme="dark"] .failed-llm-badge.dropped{ color:#ffcf6b; background:rgba(255,207,107,0.16); }
+
+  /* ---------- routing badges (Session 46/53) ---------- */
+  .routing-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .routing-badge{
+    display:inline-flex; align-items:center; font-size:10.5px; font-weight:600;
+    font-family:"IBM Plex Mono", monospace; padding:3px 9px; border-radius:12px;
+    cursor:default;
+  }
+  .routing-badge.all-rules{ color:#1a7f4b; background:rgba(26,127,75,0.14); }
+  :root:not([data-theme="light"]) .routing-badge.all-rules, :root[data-theme="dark"] .routing-badge.all-rules{ color:#5fd39a; background:rgba(95,211,154,0.16); }
+  .routing-badge.mixed{ color:var(--ink-muted); background:var(--surface-2); }
+  .routing-badge.no-rules{ color:#9a6b00; background:rgba(237,161,0,0.14); }
+  :root:not([data-theme="light"]) .routing-badge.no-rules, :root[data-theme="dark"] .routing-badge.no-rules{ color:#ffcf6b; background:rgba(255,207,107,0.16); }
+
+  /* ---------- hybrid/scale tables (Session 53) ---------- */
+  .data-table{ width:100%; border-collapse:collapse; font-size:11.5px; margin-top:10px; }
+  .data-table th, .data-table td{ padding:6px 8px; text-align:right; border-bottom:1px solid var(--border); }
+  .data-table th:first-child, .data-table td:first-child{ text-align:left; }
+  .data-table th{ color:var(--ink-muted); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:0.02em; }
+  .data-table td{ font-family:"IBM Plex Mono", monospace; }
+  .data-table .win{ color:#1a7f4b; font-weight:700; }
+  :root:not([data-theme="light"]) .data-table .win, :root[data-theme="dark"] .data-table .win{ color:#5fd39a; }
+  .subhead{ font-size:12.5px; margin:22px 0 0; color:var(--ink-2); }
 
   /* ---------- roadmap ---------- */
   .approach-list{ display:flex; flex-direction:column; gap:8px; margin-top:14px; }
@@ -248,7 +259,7 @@
   .approach .atrack{ font-size:10.5px; color:var(--ink-muted); }
   .approach .adetail{ font-size:11px; color:var(--ink-2); }
   .approach .ahours{
-    font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:700; color:var(--accent);
+    font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:700; color:var(--accent);
     background:var(--accent-soft); padding:3px 9px; border-radius:8px; white-space:nowrap;
   }
   .legend-row{ display:flex; gap:16px; align-items:center; margin-top:12px; flex-wrap:wrap; }
@@ -284,10 +295,9 @@
 </style>
 
 <div class="app">
-  <a class="back-link" href="/blog/siem-guard">&larr; Back to the SIEM Guard write-up</a>
   <header class="top">
     <div class="brand">
-      <img class="mark" src="/logo.png" alt="Noor El Alfi" />
+      <span class="mark">SG</span>
       <div>
         <h1>SIEM Guard</h1>
         <div class="eyebrow">Results Console</div>
@@ -298,7 +308,7 @@
       <div class="toggle" id="corpusToggle" role="group" aria-label="Corpus" hidden></div>
       <div class="toggle" role="group" aria-label="Data mode">
         <button id="btn-current" class="active" onclick="setMode('current')">Current</button>
-        <button id="btn-projected" onclick="setMode('projected')" title="A pre-implementation estimate from an internal planning pass, frozen before that work began. Not a second measured run: it won't change no matter which results file the dashboard is rebuilt from.">Projected</button>
+        <button id="btn-projected" onclick="setMode('projected')" title="Session 12's priority-matrix estimate (improvement_priority_matrix.md), frozen before Session 13 implementation began. This is not a second measured run — it predates all work since Session 12 and won't change no matter which results file you pass to build_dashboard_data.py.">Session 12 Est.</button>
       </div>
     </div>
   </header>
@@ -310,12 +320,13 @@
       <a href="#s3" class="navlink"><span class="num">3</span>False Positives</a>
       <a href="#s4" class="navlink"><span class="num">4</span>Coverage Gaps</a>
       <a href="#s5" class="navlink"><span class="num">5</span>Improvements Roadmap</a>
+      <a href="#s6" class="navlink"><span class="num">6</span>Hybrid Parsing</a>
     </nav>
 
     <main>
       <div class="headline" id="headline"></div>
       <p class="caption" id="mitreHeadlineCaveat"></p>
-      <p class="caption" id="headlineModeCaption" hidden>Showing an internal priority-matrix estimate: a pre-implementation projection, not a second measured run. It does not update when the dashboard is rebuilt from new results.</p>
+      <p class="caption" id="headlineModeCaption" hidden>Showing Session 12's priority-matrix estimate (improvement_priority_matrix.md) — a pre-implementation projection frozen at Session 12, not a second measured run. It does not update when you rebuild dashboard_data.json from a new results file.</p>
 
       <!-- SECTION 1 -->
       <section class="panel" id="s1">
@@ -352,7 +363,7 @@
           <span class="chip">2</span>
           <div>
             <h2>Bottleneck Analysis</h2>
-            <p id="bottleneckIntro">Where the wall-clock time actually goes: click a slice to drill into that phase.</p>
+            <p id="bottleneckIntro">Where the wall-clock time actually goes &mdash; click a slice to drill into that phase.</p>
           </div>
           <div class="panel-actions"><button class="export-btn" onclick="exportChart('chartPhase','wall-clock-share')">Export PNG</button></div>
         </div>
@@ -371,7 +382,7 @@
           <span class="chip">3</span>
           <div>
             <h2>False Positive Analysis</h2>
-            <p>Outcome composition per detector (row-normalized to that type's entity count): HTTP is the FP hotspot; supply-chain's problem is missed detections, not false alarms.</p>
+            <p>Outcome composition per detector (row-normalized to that type's entity count) &mdash; HTTP is the FP hotspot; supply-chain's problem is missed detections, not false alarms.</p>
           </div>
         </div>
         <div class="grid-2">
@@ -405,19 +416,44 @@
           <span class="chip">5</span>
           <div>
             <h2>Improvements Roadmap</h2>
-            <p>An internal priority matrix selected four approaches for implementation. "Projected" below is that document's own pre-implementation estimate: not a second measured run, and it won't change as later results are loaded.</p>
+            <p>Session 12's priority matrix selected four approaches for Session 13. "Session 12 Est." below is that document's own pre-implementation estimate, frozen at Session 12 — not a second measured run, and it won't change as later sessions' results are loaded.</p>
           </div>
           <div class="panel-actions"><button class="export-btn" onclick="exportChart('chartRoadmap','before-after')">Export PNG</button></div>
         </div>
         <div class="chart-box h300"><canvas id="chartRoadmap"></canvas></div>
         <p class="mitre-caveat" id="roadmapMitreCaveat" style="margin-top:6px"></p>
-        <h3 style="font-size:12.5px;margin:22px 0 0;color:var(--ink-2)">Implementation order &middot; 82 hours total</h3>
+        <h3 style="font-size:12.5px;margin:22px 0 0;color:var(--ink-2)">Session 13 implementation order &middot; 82 hours total</h3>
         <div class="approach-list" id="approachList"></div>
+      </section>
+
+      <!-- SECTION 6 -->
+      <section class="panel" id="s6">
+        <div class="panel-head">
+          <span class="chip">6</span>
+          <div>
+            <h2>Hybrid Parsing &amp; Detector Scale</h2>
+            <p>Sessions 45-48 built a rules-first parser (<code>rule_parser.py</code>) that only sends the LLM lines no rule
+              matches; Session 48 live-measured it against LLM-first and flipped the default. Sessions 41/44 separately
+              found and fixed a per-entity Isolation Forest defect at scale.</p>
+          </div>
+        </div>
+
+        <h3 class="subhead">This run&rsquo;s rule-hit / fallback rate</h3>
+        <div class="routing-row" id="routingBadges"></div>
+        <p class="caption" id="routingCaveat"></p>
+
+        <h3 class="subhead">Hybrid vs. LLM-first, live (Session 48)</h3>
+        <table class="data-table" id="hybridComparisonTable"></table>
+        <p class="caption" id="hybridDecisionNote"></p>
+
+        <h3 class="subhead">Entity-tier fix at scale, N=50,000 (Session 41 &rarr; 44)</h3>
+        <table class="data-table" id="scaleResultsTable"></table>
+        <p class="caption" id="scaleResultsNote"></p>
       </section>
     </main>
   </div>
 
-  <footer class="foot" id="footNote">SIEM Guard Results Console &middot; real pipeline output, not illustrative</footer>
+  <footer class="foot" id="footNote">SIEM Guard Results Console &middot; data: dashboard_data.json (generated by scripts/build_dashboard_data.py)</footer>
 </div>
 
 <script>
@@ -439,27 +475,10 @@ const APPROACH_DETAILS = {
 
 function withTotal(d){ return { ...d, total: d.tp + d.fp + d.tn + d.fn }; }
 
-// dashboard_data.json's caveat strings carry internal doc/session references
-// (repo-only file paths, session numbers) that mean nothing off-repo -- strip
-// them here, once, so every consumer downstream gets portfolio-clean text.
-function sanitizeCaveat(s){
-  if(!s) return s;
-  return s
-    .replace(/\s*See docs\/[^.]+\.md(?:\s+and\s+docs\/[^.]+\.md)?\./gi, '')
-    .replace(/\s*\(see docs\/[^)]+\)/gi, '')
-    .replace(/\s*\(Session\s*\d+\)/gi, '')
-    .trim();
-}
-
 function deriveData(raw){
   const cbt = raw.false_positives.confusion_by_type;
   return {
     ...raw,
-    caveats: {
-      mitre_coverage: sanitizeCaveat(raw.caveats && raw.caveats.mitre_coverage),
-      failed_llm: sanitizeCaveat(raw.caveats && raw.caveats.failed_llm),
-    },
-    coverage_gaps: { ...raw.coverage_gaps, caveat: sanitizeCaveat(raw.coverage_gaps && raw.coverage_gaps.caveat) },
     detection_detail: {
       ssh: withTotal(cbt.ssh), http: withTotal(cbt.http), ftp: withTotal(cbt.ftp),
       supply_chain: withTotal(cbt.supply_chain),
@@ -533,7 +552,7 @@ const GOOD='#0ca30c', WARNING='#fab219', CRITICAL='#d03b3b';
 const ACCENT = DARK ? '#3987e5' : '#2a78d6';
 const AQUA = DARK ? '#199e70' : '#1baf7a';
 
-Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.family = "'IBM Plex Sans', system-ui, sans-serif";
 Chart.defaults.font.size = 11.5;
 Chart.defaults.color = INK;
 
@@ -593,7 +612,7 @@ chartParsing = new Chart(document.getElementById('chartParsing'), {
       tooltip:{...tooltipBase, callbacks:{ label: c => 'Field accuracy: ' + pct(c.parsed.y) } } },
     scales:{
       y:{ min:0, max:1, ticks:{ callback:v=>Math.round(v*100)+'%', color:INK }, grid:{color:GRID} },
-      x:{ grid:{display:false}, ticks:{color:INK, font:{family:"'JetBrains Mono', monospace"}} }
+      x:{ grid:{display:false}, ticks:{color:INK, font:{family:"'IBM Plex Mono', monospace"}} }
     }
   }
 });
@@ -617,7 +636,7 @@ if(failedLlmBadgesEl && DATA.parsing_failed_llm){
     const transposed = (d.by_origin && d.by_origin.batch_transposition_retry_exhausted) || 0;
     const backoff = (d.by_origin && d.by_origin.backoff_retry_exhausted) || 0;
     const title = `${d.failed_llm} of ${d.total_lines} ${t.toUpperCase()} lines dropped from analysis: `
-      + `${transposed} from a repetitive batch confusing the model (a known failure mode), `
+      + `${transposed} from a repetitive batch confusing the model (see Session 34), `
       + `${backoff} from the parse call itself failing (timeout/malformed JSON). `
       + (DATA.caveats.failed_llm || '');
     return `<span class="failed-llm-badge ${cls}" title="${title.replace(/"/g,'&quot;')}">`
@@ -665,7 +684,7 @@ const phaseColors = [ACCENT, AQUA, '#eda100', '#e87ba4'];
 const bottleneckIntro = document.getElementById('bottleneckIntro');
 if(bottleneckIntro){
   const topPhaseIdx = phaseShares.indexOf(Math.max(...phaseShares));
-  bottleneckIntro.textContent = `Where the ${Math.round(DATA.bottleneck.wall_clock_seconds).toLocaleString()}s of wall-clock time actually goes. ${phaseLabels[topPhaseIdx]} dominates at ${pct(phaseShares[topPhaseIdx])}: click a slice to drill into that phase.`;
+  bottleneckIntro.textContent = `Where the ${Math.round(DATA.bottleneck.wall_clock_seconds).toLocaleString()}s of wall-clock time actually goes. ${phaseLabels[topPhaseIdx]} dominates at ${pct(phaseShares[topPhaseIdx])} — click a slice to drill into that phase.`;
 }
 chartPhase = new Chart(document.getElementById('chartPhase'), {
   type:'doughnut',
@@ -696,7 +715,7 @@ function renderParseTime(){
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, title:{display:true, text:'Parsing time by log type (seconds)', align:'start', color:INK, font:{size:12.5,weight:'600'}, padding:{bottom:10}},
         tooltip:{...tooltipBase, callbacks:{ label:c=> c.parsed.x.toFixed(1)+'s ('+pct(c.parsed.x/parsingTimeTotal)+' of parsing time)' }}},
-      scales:{ x:{ ticks:{color:INK}, grid:{color:GRID} }, y:{ grid:{display:false}, ticks:{color:INK, font:{family:"'JetBrains Mono', monospace"}} } }
+      scales:{ x:{ ticks:{color:INK}, grid:{color:GRID} }, y:{ grid:{display:false}, ticks:{color:INK, font:{family:"'IBM Plex Mono', monospace"}} } }
     }
   });
 }
@@ -708,13 +727,13 @@ function showPhase(key){
   if(key === 'parsing'){
     const top = parsingTypesSorted[0];
     const topShare = parsingSecondsByType[top] / parsingTimeTotal;
-    cap.textContent = `Showing: parsing time by log type (${top.toUpperCase()} alone is ${pct(topShare)} of all parsing time, the single largest lever in the pipeline).`;
+    cap.textContent = `Showing: parsing time by log type (${top.toUpperCase()} alone is ${pct(topShare)} of all parsing time — the single largest lever in the pipeline).`;
     renderParseTime();
     return;
   }
   const names = {behavioral:'Behavioral detection', adversarial:'Adversarial testing', supply_chain:'Supply-chain scanning'};
   const secs = DATA.bottleneck.phase_share[key] * DATA.bottleneck.wall_clock_seconds;
-  cap.innerHTML = `Showing: <strong>${names[key]}</strong>: ${secs.toFixed(1)}s total (${pct(DATA.bottleneck.phase_share[key])} of wall clock). This phase has no further type-level timing breakdown available; only parsing is instrumented per log type today.`;
+  cap.innerHTML = `Showing: <strong>${names[key]}</strong> — ${secs.toFixed(1)}s total (${pct(DATA.bottleneck.phase_share[key])} of wall clock). This phase has no further type-level timing breakdown in final_results.json — only parsing is instrumented per log type today.`;
   if(chartParseTime) chartParseTime.destroy();
 }
 
@@ -738,7 +757,7 @@ function buildHeatmap(){
       const share = d[k]/d.total*100;
       const bg = share===0 ? 'transparent' : seqColor(share);
       const border = share===0 ? '1px solid var(--border)' : 'none';
-      html += `<div class="hcell" data-v="${share===0?'0':'1'}" style="background:${bg};${border?('border:'+border+';'):''}" title="${hmLabels[i]}, ${k.toUpperCase()}: ${d[k]}/${d.total} (${share.toFixed(0)}%)">${share.toFixed(0)}%</div>`;
+      html += `<div class="hcell" data-v="${share===0?'0':'1'}" style="background:${bg};${border?('border:'+border+';'):''}" title="${hmLabels[i]} — ${k.toUpperCase()}: ${d[k]}/${d.total} (${share.toFixed(0)}%)">${share.toFixed(0)}%</div>`;
     });
   });
   el.innerHTML = html;
@@ -759,7 +778,7 @@ if(scoreDist){
   histNormal = [2,5,11,18,24,20,12,6,2,1,0];
   histAnomalous = [0,0,1,2,4,8,13,19,22,17,9];
   histIllustrative = true;
-  histCaption.innerHTML = '<span class="illust">Illustrative</span>This run predates raw-score logging, so no real score distribution exists for it yet. This panel approximates the contamination-mismatch pattern found during the project\'s false-positive investigation: it is not a measurement. A later pipeline run with raw-score logging enabled would replace it with real data.';
+  histCaption.innerHTML = '<span class="illust">Illustrative</span>final_results.json predates raw_score logging, so no real score distribution exists for this run yet. This panel approximates the contamination-mismatch pattern described in findings_fp_reduction.md &mdash; it is not a measurement. Re-run the pipeline (detectors.py now logs <code class="mono">raw_score</code>) and rebuild dashboard_data.json to replace it.';
 }
 chartHistogram = new Chart(document.getElementById('chartHistogram'), {
   type:'bar',
@@ -792,8 +811,8 @@ function buildMitre(){
     const gap = t.coverage < DATA.coverage_gaps.gap_threshold;
     const real = !!t.is_real_rule;
     const badge = real
-      ? `<span class="rule-badge real" title="Deterministic rule matcher -- this percentage is a real measurement.">real rule</span>`
-      : `<span class="rule-badge stub" title="Detection rate comes from an unseeded RNG stub, not a real rule -- reseeded from system entropy on every run.">RNG stub</span>`;
+      ? `<span class="rule-badge real" title="Deterministic rule matcher (Session 26) -- this percentage is a real measurement.">real rule</span>`
+      : `<span class="rule-badge stub" title="Detection rate comes from an unseeded RNG stub (AdversarialTestingAgent._simulate_detection), not a real rule -- reseeded from system entropy on every run. See docs/Session_26_results.md and docs/Session_27_results.md.">RNG stub</span>`;
     html += `<div class="mrow ${gap?'gap':''}">
       <div class="mname">${t.id} &middot; ${t.name}${badge}<span class="tactic">${t.tactic}</span></div>
       <div class="mtrack"><div class="mfill" style="width:${t.coverage*100}%; background:${statusColor(t.coverage)}"></div></div>
@@ -813,7 +832,7 @@ chartRoadmap = new Chart(document.getElementById('chartRoadmap'), {
     labels:roadmapLabels,
     datasets:[
       { label:'Current', data: roadmapMetrics.map(m=>DATA.improvements.current[m]), backgroundColor:ACCENT, borderRadius:4, maxBarThickness:28 },
-      { label:'Projected', data: roadmapMetrics.map(m=>DATA.improvements.projected[m]), backgroundColor:AQUA, borderRadius:4, maxBarThickness:28 }
+      { label:'Session 12 Est.', data: roadmapMetrics.map(m=>DATA.improvements.projected[m]), backgroundColor:AQUA, borderRadius:4, maxBarThickness:28 }
     ]
   },
   options:{
@@ -840,6 +859,64 @@ function buildApproaches(){
 }
 buildApproaches();
 
+/* ---------------- Section 6: Hybrid parsing & detector scale (Session 53) ---------------- */
+// Rule-hit / fallback badges: same predates-the-session convention as the
+// Session 36 failed-llm badges above -- a results file made before Session
+// 46, or made under strategy 'llm', renders an honest 0%-rule-matched badge
+// rather than KeyError-ing.
+const routingBadgesEl = document.getElementById('routingBadges');
+const routingCaveatEl = document.getElementById('routingCaveat');
+if(routingCaveatEl) routingCaveatEl.textContent = (DATA.caveats && DATA.caveats.parsing_routing) || '';
+if(routingBadgesEl && DATA.parsing_routing){
+  const byType = DATA.parsing_routing.by_log_type || {};
+  routingBadgesEl.innerHTML = parsingLabels.map(t => {
+    const d = byType[t] || {total_lines:0, rule_matched:0, recognized_noise:0, llm_fallback:0, rule_rate:0, noise_rate:0, llm_fallback_rate:0};
+    const rulePct = Math.round((d.rule_rate || 0) * 1000) / 10;
+    const cls = d.total_lines === 0 ? 'mixed' : (d.rule_rate >= 0.999 ? 'all-rules' : (d.rule_rate <= 0.001 ? 'no-rules' : 'mixed'));
+    const title = `${t.toUpperCase()}: ${d.rule_matched} rule-matched, ${d.recognized_noise} recognized-noise, `
+      + `${d.llm_fallback} to the LLM, of ${d.total_lines} lines. `
+      + (DATA.caveats && DATA.caveats.parsing_routing ? DATA.caveats.parsing_routing : '');
+    return `<span class="routing-badge ${cls}" title="${title.replace(/"/g,'&quot;')}">`
+      + `${t.toUpperCase()}: ${rulePct}% rule / ${Math.round((d.llm_fallback_rate||0)*1000)/10}% LLM</span>`;
+  }).join('');
+}
+
+// Hybrid-vs-LLM-first comparison and the Session 41->44 scale-fix table are
+// both static historical context (like PROJECTED/APPROACHES in Section 5)
+// -- Session 48's three-corpus comparison and Session 41/44's scale sweep
+// are standalone measurements, not part of a normal single run's output.
+const hybridTableEl = document.getElementById('hybridComparisonTable');
+if(hybridTableEl && DATA.hybrid_parsing){
+  const rows = DATA.hybrid_parsing.strategy_comparison || [];
+  hybridTableEl.innerHTML = `<thead><tr><th>Corpus</th><th>LLM-first acc.</th><th>Hybrid acc.</th>
+      <th>LLM calls (LLM&rarr;hybrid)</th><th>Wall clock (LLM&rarr;hybrid)</th></tr></thead><tbody>`
+    + rows.map(r => `<tr>
+        <td>${r.corpus}</td>
+        <td>${pct(r.llm.accuracy)}</td>
+        <td class="win">${pct(r.hybrid.accuracy)}</td>
+        <td>${r.llm.llm_calls} &rarr; ${r.hybrid.llm_calls}</td>
+        <td>${r.llm.wall_clock_seconds}s &rarr; ${r.hybrid.wall_clock_seconds}s</td>
+      </tr>`).join('') + `</tbody>`;
+  const noteEl = document.getElementById('hybridDecisionNote');
+  if(noteEl) noteEl.textContent = DATA.hybrid_parsing.decision_note || '';
+}
+
+const scaleTableEl = document.getElementById('scaleResultsTable');
+if(scaleTableEl && DATA.detector_scale){
+  const rows = DATA.detector_scale.rows || [];
+  scaleTableEl.innerHTML = `<thead><tr><th>Shape</th><th>Protocol</th><th>FP rate (before&rarr;after)</th>
+      <th>fit() seconds (before&rarr;after)</th><th>fit RSS MB (before&rarr;after)</th></tr></thead><tbody>`
+    + rows.map(r => `<tr>
+        <td>${r.shape}</td>
+        <td>${r.protocol}</td>
+        <td>${pct(r.fp_rate_before,2)} &rarr; <span class="win">${pct(r.fp_rate_after,3)}</span></td>
+        <td>${r.fit_seconds_before} &rarr; ${r.fit_seconds_after}</td>
+        <td>${r.fit_rss_mb_before} &rarr; ${r.fit_rss_mb_after}</td>
+      </tr>`).join('') + `</tbody>`;
+  const noteEl = document.getElementById('scaleResultsNote');
+  if(noteEl) noteEl.textContent = DATA.detector_scale.note || '';
+}
+
 /* ---------------- headline strip + mode toggle ---------------- */
 const headlineDefs = [
   { key:'parsing_accuracy', label:'Parsing accuracy', higherBetter:true },
@@ -859,7 +936,7 @@ function renderHeadline(){
       const diff = val - cur;
       const good = h.higherBetter ? diff > 0 : diff < 0;
       const arrow = diff === 0 ? '' : (diff>0 ? '&uarr; ' : '&darr; ');
-      deltaHtml = diff===0 ? '<span class="delta flat">unchanged</span>' : `<span class="delta ${good?'up':'down'}">${arrow}${Math.abs(diff*100).toFixed(1)}pt vs current (projected)</span>`;
+      deltaHtml = diff===0 ? '<span class="delta flat">unchanged</span>' : `<span class="delta ${good?'up':'down'}">${arrow}${Math.abs(diff*100).toFixed(1)}pt vs current (Session 12 est.)</span>`;
     }
     const titleAttr = h.key==='mitre_coverage' ? ` title="${DATA.caveats.mitre_coverage.replace(/"/g,'&quot;')}"` : '';
     const labelSuffix = h.key==='mitre_coverage' ? ' &dagger;' : '';
@@ -885,7 +962,7 @@ if(mitreHeadlineCaveat) mitreHeadlineCaveat.innerHTML = `&dagger; ${DATA.caveats
 } // end initDashboard()
 
 /* ---------------- nav scroll-spy (independent of dashboard_data.json) ---------------- */
-const sections = ['s1','s2','s3','s4','s5'].map(id=>document.getElementById(id));
+const sections = ['s1','s2','s3','s4','s5','s6'].map(id=>document.getElementById(id));
 const links = Array.from(document.querySelectorAll('.navlink'));
 const io = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{
@@ -915,7 +992,7 @@ loadDashboardData().then(initDashboard).catch(err=>{
   document.getElementById('headline').innerHTML = `<div class="stat-tile" style="grid-column:1/-1">
     <div class="label">dashboard_data.json failed to load</div>
     <div class="value" style="color:var(--critical);font-size:14px">${err.message}</div>
-    <div class="delta flat">This page needs to be served over HTTP (not opened directly as a file) so it can fetch its data file.</div>
+    <div class="delta flat">Run <code class="mono">python scripts/build_dashboard_data.py</code> from the repo root, and serve this page over HTTP (not file://) so fetch() can read the JSON alongside it.</div>
   </div>`;
 });
 </script>

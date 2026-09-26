@@ -1,0 +1,26 @@
+# COMMITTED TEMPLATE for local-only private project records.
+#
+# Copy this file to `agents/private-projects.yml` (which is gitignored and
+# local-only) and fill in real values. It exists so the weekly run can resolve
+# journal entries about private work — the journal `project` field is a join key
+# — without private metadata ever reaching the public bundle or the public repo:
+# `content/` is public-bundle material, and every file in it is importable via
+# `?raw` into client code, so private records must never live there.
+#
+# Fields match the records in `content/projects.yml` exactly. `visibility` must
+# stay `private`; these records are never rendered and never shipped.
+- id: my-private-project # kebab-case, unique across both files; journal entries reference this
+  title: My Private Project
+  tag: Private research
+  description: >-
+    One factual sentence describing what this private repository holds.
+  status: active # shipped | active | paused
+  visibility: private # keep this; private => never rendered
+  repo: owner/name # "owner/name" or null
+  featured: false
+  started: null # YYYY-MM or null
+  last_activity: null # YYYY-MM-DD or null
+  highlights: [] # [{date: YYYY-MM-DD, text: str, source_ids: [str]}]
+  links: # each entry: exactly ONE of `to` (internal route) or `href` (external)
+    - label: GitHub
+      href: https://github.com/owner/name

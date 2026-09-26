@@ -22,3 +22,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# agent pipeline
+runs/
+
+# local-only: private project metadata and private journal entries never get committed
+journal/private/
+agents/private-projects.yml

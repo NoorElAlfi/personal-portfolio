@@ -1,0 +1,64 @@
+{
+  "week": "2026-W39",
+  "entries": [
+    {
+      "id": "2026-09-22-lucidhover-experiment-log",
+      "date": "2026-09-22",
+      "project": "lucidhover",
+      "kind": "experiment",
+      "visibility": "public",
+      "summary": "Tried a few ways to rank hover candidates and did not land on one.",
+      "links": [],
+      "tags": ["vscode"],
+      "status": "pending",
+      "sources": ["commit:5c4d3e2: wip ranking notes"],
+      "body": "\nSpent the evening trying a few ways to rank hover candidates. Most of them made the\nordering worse, and none of it was conclusive. The notes are still in the working tree.\n"
+    },
+    {
+      "id": "2026-09-23-siemplify-tenant-isolation",
+      "date": "2026-09-23",
+      "project": "siem-guard",
+      "kind": "fixed",
+      "visibility": "private",
+      "summary": "Closed a tenant-isolation gap where an analysis query could read another tenant's events.",
+      "links": [
+        {
+          "repo": "NoorElAlfi/siem-guard"
+        }
+      ],
+      "tags": ["security", "multi-tenancy"],
+      "status": "pending",
+      "sources": [
+        "commit:9f8e7d6: scope analysis queries by tenant id",
+        "pr:12: Tenant scoping for analysis queries"
+      ],
+      "body": "\nThe analysis path built its SQL from a filter expression without carrying the tenant id\nthrough the rewrite, so a query issued inside one workspace could read events belonging\nto another. The dashboard never hit it because it always filtered by the signed-in\ntenant before calling in; the CLI and the scheduled path did not.\n\nThe fix pushes the tenant id through the query builder instead of adding it at the call\nsites, and rejects a query whose plan does not reference it. That means the invariant is\nenforced where the SQL is produced, so a new caller cannot forget it.\n\nTwo callers were relying on the old behaviour and now fail closed.\n"
+    },
+    {
+      "id": "2026-09-25-lucidhover-callgraph-cache",
+      "date": "2026-09-25",
+      "project": "lucidhover",
+      "kind": "shipped",
+      "visibility": "public",
+      "summary": "Shipped a SQLite-backed call-graph cache so a hover on an unchanged file is a lookup instead of a repo-wide walk.",
+      "links": [
+        {
+          "repo": "NoorElAlfi/lucidHover"
+        },
+        {
+          "commit": "1a2b3c4"
+        },
+        {
+          "pr": "NoorElAlfi/lucidHover#41"
+        }
+      ],
+      "tags": ["vscode", "sqlite", "tree-sitter"],
+      "status": "pending",
+      "sources": [
+        "commit:1a2b3c4: cache resolved call graph edges in sqlite keyed on file hash",
+        "pr:41: Add call graph cache"
+      ],
+      "body": "\nEvery hover used to start from scratch: walk the file, walk its imports, resolve the\ncalls, then drop all of it when the card closed. That is four tree-sitter passes over the\nimport graph for a card the user opens for a couple of seconds.\n\nThe cache stores resolved edges in a SQLite table keyed on the file hash plus the\nextension host version. A hover on an unchanged file is now a lookup; a hover on a\nchanged file re-walks only that file and replaces its rows, so the graph cannot silently\ndescribe code that no longer exists.\n\nStale rows are pruned when the workspace folder is opened, not on every hover, because\neager pruning made the write path slower than the walk it replaced.\n\nThe remaining gap is dynamic calls: an edge that cannot be resolved is stored as\nunresolved, and the hover card says so instead of reporting \"no callers\".\n"
+    }
+  ]
+}

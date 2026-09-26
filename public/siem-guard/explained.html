@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIEM Guard, explained</title>
+<style>
+:root{
+  --bg:#ffffff;--surface-1:#f5f4ef;--surface-2:#ffffff;
+  --text-primary:#1f1e1c;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(0,0,0,0.15);--border-strong:rgba(0,0,0,0.3);
+  --bg-accent:#eeedfe;--text-accent:#3c3489;--border-accent:#7f77dd;
+  --bg-danger:#fceaea;--text-danger:#791f1f;
+  --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1c1b19;--surface-1:#2a2926;--surface-2:#232220;
+    --text-primary:#eeece6;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,0.15);--border-strong:rgba(255,255,255,0.3);
+    --bg-accent:#3c3489;--text-accent:#cecbf6;--border-accent:#afa9ec;
+    --bg-danger:#501313;--text-danger:#f7c1c1;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7;font-size:16px}
+main{max-width:760px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:28px;font-weight:500;margin:0 0 6px}
+h2{font-size:20px;font-weight:500;margin:48px 0 8px}
+p{margin:0 0 14px}
+code{font-family:var(--font-mono);font-size:0.88em;background:var(--surface-1);padding:1px 5px;border-radius:4px}
+.lede{color:var(--text-secondary);font-size:17px;margin:0 0 8px}
+.fig{margin:16px 0 8px;padding:16px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px}
+.note{font-size:13px;color:var(--text-secondary);margin:6px 0 0}
+ul{margin:0 0 14px;padding-left:22px}
+li{margin:0 0 4px}
+button{font:inherit;font-size:14px;color:var(--text-primary);background:transparent;border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:6px 12px;cursor:pointer}
+button:hover{background:var(--surface-1)}
+button:active{transform:scale(0.98)}
+button:disabled{opacity:0.4;cursor:default}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+svg text.t{font:14px var(--font-sans);fill:var(--text-primary)}
+svg text.ts{font:12px var(--font-sans);fill:var(--text-secondary)}
+svg text.th{font:500 14px var(--font-sans);fill:var(--text-primary)}
+svg .arr{stroke:var(--text-secondary);stroke-width:1.5;fill:none}
+.c-gray rect{fill:#f1efe8;stroke:#5f5e5a}.c-gray .th{fill:#444441}.c-gray .ts{fill:#5f5e5a}
+.c-purple rect{fill:#eeedfe;stroke:#534ab7}.c-purple .th{fill:#3c3489}.c-purple .ts{fill:#534ab7}
+.c-teal rect{fill:#e1f5ee;stroke:#0f6e56}.c-teal .th{fill:#085041}.c-teal .ts{fill:#0f6e56}
+@media (prefers-color-scheme: dark){
+  .c-gray rect{fill:#444441;stroke:#b4b2a9}.c-gray .th{fill:#d3d1c7}.c-gray .ts{fill:#b4b2a9}
+  .c-purple rect{fill:#3c3489;stroke:#afa9ec}.c-purple .th{fill:#cecbf6}.c-purple .ts{fill:#afa9ec}
+  .c-teal rect{fill:#085041;stroke:#5dcaa5}.c-teal .th{fill:#9fe1cb}.c-teal .ts{fill:#5dcaa5}
+}
+.sp{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+.sp button{padding:4px 10px;font-size:13px;border-radius:999px}
+.sp button.on,.sel button.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.blk{margin:0 0 12px}
+.lbl{font-size:12px;color:var(--text-secondary);margin:0 0 4px}
+.blk pre{margin:0;padding:10px 12px;background:var(--surface-1);border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.does{font-size:14px;line-height:1.6;margin:0 0 12px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.nav span{font-size:13px;color:var(--text-secondary)}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px}
+.mc{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.mc div{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px}
+.mc span{display:block;font-size:12px;color:var(--text-secondary)}
+.mc b{font-size:20px;font-weight:500}
+.sel{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.sel button{font-size:13px}
+#gate table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;margin:0 0 12px}
+#gate th{font-weight:500;text-align:right;color:var(--text-secondary);padding:6px;border-bottom:0.5px solid var(--border)}
+#gate td{text-align:right;padding:6px;border-bottom:0.5px solid var(--border);font-family:var(--font-mono);font-size:12px}
+#gate th:first-child,#gate td:first-child{text-align:left;width:34%;font-family:var(--font-sans);font-size:13px}
+#gate tr.hot td{background:var(--bg-danger);color:var(--text-danger)}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.flow div{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px;font-size:13px;line-height:1.5}
+.flow b{display:block;font-weight:500;font-size:12px;color:var(--text-secondary);margin:0 0 2px}
+.flow .res{font-weight:500}
+table.plain{width:100%;border-collapse:collapse;font-size:14px;margin:0 0 14px}
+table.plain th,table.plain td{text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--border);vertical-align:top}
+table.plain th{font-weight:500;color:var(--text-secondary)}
+</style>
+</head>
+<body>
+<main>
+
+<h1>SIEM Guard, explained</h1>
+<p class="lede">How a security-log pipeline turns raw text into alerts: where an LLM is used, where it isn't, and how an isolation forest decides what's unusual.</p>
+<p class="note">Every number below (features, medians, z-scores) came from running the real code on a small generated ssh population. Illustrative, not captured from a run: the LLM's reply in step 7, the <code>sshd[9812]</code> process id, and the 2D scatter in the forest demo.</p>
+
+<h2>The big picture</h2>
+<p>Two hard problems, two different tools. Understanding messy text is an LLM job. Deciding what is unusual is a statistics job: the LLM never makes that call, it only writes the explanation afterwards.</p>
+<div class="fig">
+<svg width="100%" viewBox="0 0 680 620" role="img"><title>SIEM Guard pipeline overview</title><desc>Raw log lines are parsed into dicts, split to a behavioral detector or a supply-chain detector, and only flagged items are explained by an LLM into alerts.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<g class="c-gray"><rect x="230" y="30" width="220" height="50" rx="4" stroke-width="0.5"/><text class="th" x="340" y="52" text-anchor="middle">Raw log lines</text><text class="ts" x="340" y="70" text-anchor="middle">ssh, http, ftp, dns, packages</text></g>
+<line class="arr" x1="340" y1="80" x2="340" y2="118" marker-end="url(#arrow)"/>
+<g class="c-purple"><rect x="230" y="120" width="220" height="50" rx="4" stroke-width="0.5"/><text class="th" x="340" y="142" text-anchor="middle">Parser</text><text class="ts" x="340" y="160" text-anchor="middle">LLM turns text into fields</text></g>
+<text class="ts" x="470" y="150">slow, fragile step</text>
+<line class="arr" x1="340" y1="170" x2="340" y2="208" marker-end="url(#arrow)"/>
+<g class="c-gray"><rect x="230" y="210" width="220" height="50" rx="4" stroke-width="0.5"/><text class="th" x="340" y="232" text-anchor="middle">Parsed dicts</text><text class="ts" x="340" y="250" text-anchor="middle">user, src_ip, status ...</text></g>
+<path class="arr" d="M300 260 L300 285 L190 285 L190 308" fill="none" marker-end="url(#arrow)"/>
+<path class="arr" d="M380 260 L380 285 L490 285 L490 308" fill="none" marker-end="url(#arrow)"/>
+<g class="c-teal"><rect x="70" y="310" width="240" height="56" rx="4" stroke-width="0.5"/><text class="th" x="190" y="334" text-anchor="middle">Behavioral detector</text><text class="ts" x="190" y="352" text-anchor="middle">ssh, http, ftp: statistics</text></g>
+<g class="c-teal"><rect x="370" y="310" width="240" height="56" rx="4" stroke-width="0.5"/><text class="th" x="490" y="334" text-anchor="middle">Supply-chain detector</text><text class="ts" x="490" y="352" text-anchor="middle">packages: fixed rules</text></g>
+<path class="arr" d="M190 366 L190 390 L300 390 L300 412" fill="none" marker-end="url(#arrow)"/>
+<path class="arr" d="M490 366 L490 390 L380 390 L380 412" fill="none" marker-end="url(#arrow)"/>
+<g class="c-gray"><rect x="230" y="414" width="220" height="50" rx="4" stroke-width="0.5"/><text class="th" x="340" y="436" text-anchor="middle">Flagged items only</text><text class="ts" x="340" y="454" text-anchor="middle">a handful, not thousands</text></g>
+<line class="arr" x1="340" y1="464" x2="340" y2="500" marker-end="url(#arrow)"/>
+<g class="c-purple"><rect x="230" y="502" width="220" height="50" rx="4" stroke-width="0.5"/><text class="th" x="340" y="524" text-anchor="middle">LLM explains</text><text class="ts" x="340" y="542" text-anchor="middle">severity, reason, next step</text></g>
+<line class="arr" x1="340" y1="552" x2="340" y2="574" marker-end="url(#arrow)"/>
+<text class="th" x="340" y="592" text-anchor="middle">Alerts saved as JSON</text>
+<g class="c-purple"><rect x="70" y="596" width="14" height="14" rx="2" stroke-width="0.5"/></g><text class="ts" x="92" y="608">uses an LLM</text>
+<g class="c-teal"><rect x="190" y="596" width="14" height="14" rx="2" stroke-width="0.5"/></g><text class="ts" x="212" y="608">no LLM, just math</text>
+</svg>
+</div>
+<p class="note">Models: <code>qwen2.5:7b</code> parses (at the top), <code>mistral:7b</code> explains (at the bottom). Both run locally through Ollama.</p>
+
+<h2>One log line's journey</h2>
+<p>Follow a single ssh line from raw text to an explained alert. Click through the steps: each shows the input, what happens, and the output.</p>
+<div class="fig" id="stepper">
+<div class="sp" id="pills"></div>
+<div id="title" style="font-size:16px;font-weight:500;margin:0 0 10px"></div>
+<div class="blk"><div class="lbl" id="l1"></div><pre id="in"></pre></div>
+<div class="does" id="does"></div>
+<div class="blk"><div class="lbl" id="l2"></div><pre id="out"></pre></div>
+<div class="nav"><button id="prev">Back</button><span id="pos"></span><button id="next">Next</button></div>
+</div>
+<p class="note">The parser is defensive because small local models make mistakes: shuffled rows, dropped fields, values copied from a neighbouring line. Steps 2 and 4 are where that is handled.</p>
+
+<h2>How an isolation forest works</h2>
+<p>Anomalies are easy to isolate. Pick a random feature and a random cut, and repeat until a point is alone. Points in the crowd need many cuts; an outlier is alone after a few. Average that over 200 random trees and you have a score. Click "Isolate fully" a few times on the outlier, then on a normal point, then "Run 200 trees". You can also click any dot to make it the target.</p>
+<div class="fig">
+<svg id="cv" width="100%" viewBox="0 0 680 300" style="background:var(--surface-1);border-radius:12px;cursor:pointer" role="img"><title>Scatter plot of 46 points</title></svg>
+<div class="ctl">
+<button id="b1">Split once</button><button id="b2">Isolate fully</button><button id="b3">Reset tree</button><button id="b4">Run 200 trees</button>
+<button id="b5">Target: outlier</button><button id="b6">Target: a normal point</button>
+</div>
+<div class="mc">
+<div><span>Cuts in this tree</span><b id="m1">0</b></div>
+<div><span>Avg cuts, 200 trees</span><b id="m2">-</b></div>
+<div><span>Avg cuts, all points</span><b id="m3">-</b></div>
+<div><span>Anomaly score (0.5 normal, 1 odd)</span><b id="m4">-</b></div>
+</div>
+</div>
+<p class="note">A 2D illustration with made-up points. The real detector uses 8 features per entity, and sklearn gives each tree a random subsample of at most 256 points, which keeps a forest cheap however large the population is.</p>
+
+<h2>How it is used here</h2>
+<ul>
+<li>Each entity (an IP address) has its events cut into windows of 5, and each window is summarised as 8 numbers: failed-login ratio, logins per hour, distinct users, distinct ports, connection duration, bytes, geographic changes, and off-hours share.</li>
+<li>One forest is trained across all entities. It asks: does this entity look unlike everyone else?</li>
+<li>Before trusting the forest, a robust median/MAD check runs on every feature. At least two features must deviate strongly (z above 3.5), otherwise the forest's opinion is ignored. This is the gate.</li>
+<li>A score above 0.6 is flagged.</li>
+</ul>
+<p>Why the gate exists: min-max scaling forces the most isolated entity in any population toward a score of 1.0, even if everyone is clean. Requiring two independent deviations stops one typo'd login from becoming an alert. Try all four entities below.</p>
+<div class="fig" id="gate">
+<div class="sel" id="sel"></div>
+<div id="who" style="font-size:14px;margin:0 0 8px;color:var(--text-secondary)"></div>
+<table><thead><tr><th>Feature</th><th>Value</th><th>Pop. median</th><th>Pop. MAD</th><th>z-score</th></tr></thead><tbody id="tb"></tbody></table>
+<div class="flow" id="flow"></div>
+</div>
+<p class="note">Highlighted rows exceed z = 3.5. "inf" means the population had zero spread on that feature, so any deviation counts as extreme.</p>
+
+<h2>Supply chain: no forest, just rules</h2>
+<p>Package installs are checked by four fixed rules, each with a weight. A package is flagged when the weights of the rules it trips add up to 0.4 or more.</p>
+<table class="plain">
+<tr><th>Rule</th><th>Trips when</th><th>Weight</th></tr>
+<tr><td>Typosquat</td><td>name is within 2 edits of one of ~106 known packages</td><td>0.30</td></tr>
+<tr><td>Rare source</td><td>a source appears fewer than 2 times for this package</td><td>0.20</td></tr>
+<tr><td>Size jump</td><td>latest size exceeds mean + 2 std of earlier sizes</td><td>0.25</td></tr>
+<tr><td>Off-hours</td><td>most installs fall outside 06:00-22:00 UTC</td><td>0.15</td></tr>
+</table>
+
+<h2>Known weaknesses</h2>
+<p>From Session 41's scale sweep (100 to 50,000 entities): recall stays 1.00 at every size, but two problems show up at every size, including the smallest.</p>
+<ul>
+<li>The ssh gate leaks about 1.8% of clean entities: a typo'd login (zero spread on that feature, so z is infinite) plus ordinary jitter in logins per hour clears the two-feature gate.</li>
+<li>Per-entity forests (built only for entities with 3 or more windows) have no gate, so in the self-scoring <code>detect()</code> path they flag every such entity.</li>
+</ul>
+<p class="note">Full numbers: <code>docs/Session_41_results.md</code>. Written explanation and code map: <code>docs/SIEM_Guard_explained.md</code>.</p>
+
+</main>
+<script>
+(function(){
+var S=[
+{t:"1. The raw log line",l1:"Input: a file on disk",i:"(sshd writes this via syslog)",d:"This is what a real OpenSSH server logs. One event per line, plain text, no structure a program can rely on: the user, IP and port are just words in a sentence. Turning this into fields is the parser's whole job.",l2:"Output: one string",o:"Mar  9 02:16:03 bastion01 sshd[9812]: Invalid user postgres from 198.18.0.0 port 39670"},
+{t:"2. Have we seen this shape before?",l1:"Input: the raw line",i:"Mar  9 02:16:03 bastion01 sshd[9812]: Invalid user postgres from 198.18.0.0 port 39670",d:"Two caches sit in front of the LLM. First an exact-line cache. Then the template cache: variable-looking tokens (timestamps, IPs, numbers, the name after 'user') are replaced by placeholders, so 10,000 'Invalid user ...' lines all collapse to ONE template. If that template already has a trusted extraction regex, the fields are pulled out with the regex and the LLM is skipped. A template only earns a regex after 2 independent LLM parses agree on the same field set. Here: no regex yet, so this is a miss and the line goes to the LLM.",l2:"Output: the template, and a cache miss",o:"<TS> bastion01 sshd[<NUM>]: Invalid user <VAR> from <IP> port <NUM>\n\nregex for this template: none yet  ->  MISS  ->  ask the LLM"},
+{t:"3. The prompt sent to the LLM",l1:"Input: up to 10 missed lines batched together (2 shown)",i:"Parse these ssh logs into structured JSON.\nEvery object must include a \"line_id\" = that log's 0-based\nposition in the LOGS list below.\n\n[optional: few-shot examples of already-parsed lines]\n\nLOGS:\nMar  9 02:16:03 bastion01 sshd[9812]: Invalid user postgres from 198.18.0.0 port 39670\nMar  9 09:31:52 bastion01 sshd[8890]: Accepted password for user7 from 10.0.0.7 port 40112 ssh2\n\nFor each log, extract fields like:\n- timestamp\n- user\n- src_ip / src_port\n- status (success/failed)\n- duration (numeric value after \"dur=\")\n- bytes (numeric value after \"bytes=\")\n- geoip_country (value after \"geo=\")\n\nReturn ONLY a valid JSON array ...",d:"Model: qwen2.5:7b via Ollama, temperature 0.1. The request also carries a JSON schema (Ollama 'format' parameter) that forces the output to be an array of exactly 2 objects with exactly these keys, so the model cannot invent field names. Note the guidance mentions dur=/bytes=/geo=: those come from the project's original invented log format. Real sshd lines have none of them, so those fields can only come back empty. That mismatch is a Session 40 finding.",l2:"Output: prompt + schema, sent over HTTP to localhost:11434",o:"schema: array, minItems 2, maxItems 2, each item requires\n  line_id, timestamp, user, src_ip, src_port,\n  status, duration, bytes, geoip_country\n  additionalProperties: false"},
+{t:"4. The model's reply, then validation",l1:"Input: the model's raw JSON text",i:"[{\"line_id\":0,\"timestamp\":\"Mar  9 02:16:03\",\"user\":\"postgres\",\n  \"src_ip\":\"198.18.0.0\",\"src_port\":39670,\"status\":\"failed\",\n  \"duration\":0,\"bytes\":0,\"geoip_country\":\"\"},\n {\"line_id\":1, ... user7 ... success ...}]",d:"Small local models make mistakes, so the reply is checked before it is trusted: right number of objects; every line_id present exactly once (models sometimes shuffle rows); and the values must actually appear in the line they are attached to (models sometimes copy fields from a neighbouring line). Any line that fails is re-asked alone, up to a bounded number of retries, otherwise marked failed_llm. Passing lines are also registered in the template cache, which is how later lookalike lines skip the LLM.",l2:"Output: validated parsed dict (line_id stripped)",o:"{\"timestamp\": \"Mar  9 02:16:03\", \"user\": \"postgres\",\n \"src_ip\": \"198.18.0.0\", \"src_port\": 39670, \"status\": \"failed\",\n \"duration\": 0, \"bytes\": 0, \"geoip_country\": \"\"}"},
+{t:"5. Group by entity, cut into windows",l1:"Input: all parsed dicts. Here, the 5 belonging to src_ip 198.18.0.0",i:"02:16:03  postgres  failed  port 39670\n02:16:05  postgres  failed  port 46123\n02:16:07  postgres  (none)   port 36330   <- 'Connection closed'\n02:16:10  user      failed  port 38614\n02:16:12  user      failed  port 43774",d:"The detector's unit is an entity: here an IP address (src_ip, falling back to user if there is none). Each entity's events are sorted by time and cut into windows of 5 events. Each window is summarised as 8 numbers (next step). The test corpus gives a typical entity only 4 to 6 events, so most entities have exactly 1 window.",l2:"Output: one window per entity",o:"entity 198.18.0.0  ->  window 1 = the 5 events above\nentity 10.0.0.7    ->  window 1 = its 4 events (2 logins, 2 disconnects)"},
+{t:"6. Summarise each window as 8 numbers",l1:"Input: the window's events",i:"198.18.0.0 (attacker): 5 events in 9 seconds, 4 failed, at 02:16\n10.0.0.7   (normal)  : 4 events over 2h16m, 0 failed, at 14:00-16:00",d:"This is where text becomes math. failed_login_ratio = failed / events. login_frequency = events per hour of the window's span (5 events in 9 seconds is 2000 per hour). unique_users and unique_ports count distinct values. off_hours_activity = share of events before 06:00 or from 23:00. duration, bytes and geo stay 0 for real sshd logs because sshd does not record them. Everything after this point is numbers only: no LLM, no text.",l2:"Output: feature vectors (real values from a test run)",o:"feature                  10.0.0.7   198.18.0.0\nfailed_login_ratio           0.00          0.80\nlogin_frequency              1.77       2000.00\nunique_users                    1             2\nunique_ports                    2             5\nconnection_duration_mean        0             0\nbytes_transferred_mean          0             0\ngeographic_changes              0             0\noff_hours_activity            0.0           1.0"},
+{t:"7. After detection: the LLM explains a flagged entity",l1:"Input: only entities the detector flagged (see the gate below)",i:"You are a security analyst. Analyze this anomaly:\nANOMALY DETAILS: {entity: 198.18.0.0, anomaly_type: volume_anomaly,\n  score: 1.0, observed_value: {failed_login_ratio: 0.8, login_frequency: 2000, ...},\n  top_features: [[login_frequency, 0.67], [failed_login_ratio, 0.14]]}\nBASELINE CONTEXT: (this entity's own stats)\nTASK: severity (low..critical), confidence 0-1, reasoning, recommendation.\nRespond ONLY with valid JSON.",d:"The LLM never decides what is anomalous. The statistics already did that. Its job is to write the human-readable part: why it matters and what to do. This runs only for the handful of flagged entities, with mistral:7b at temperature 0.5. A second call asks it to draft a detection rule for that anomaly. If the LLM fails or replies with invalid JSON, a fallback (severity medium, 'Manual review recommended') is used and the alert still goes out.",l2:"Output: an alert (reply text is illustrative; real replies vary)",o:"{\"severity\": \"high\", \"confidence\": 0.9,\n \"reasoning\": \"5 attempts in 9s at 02:16 across 2 usernames and 5 source ports: automated brute force.\",\n \"recommendation\": \"Block 198.18.0.0 and review auth logs for accounts postgres and user.\"}"}
+];
+var cur=0,P=document.getElementById('pills');
+S.forEach(function(s,k){var b=document.createElement('button');b.textContent=String(k+1);b.onclick=function(){cur=k;draw()};P.appendChild(b)});
+function draw(){var s=S[cur];document.getElementById('title').textContent=s.t;document.getElementById('l1').textContent=s.l1;document.getElementById('in').textContent=s.i;document.getElementById('does').textContent=s.d;document.getElementById('l2').textContent=s.l2;document.getElementById('out').textContent=s.o;document.getElementById('pos').textContent='Step '+(cur+1)+' of '+S.length;document.getElementById('prev').disabled=cur===0;document.getElementById('next').disabled=cur===S.length-1;Array.prototype.forEach.call(P.children,function(b,k){b.className=k===cur?'on':''})}
+document.getElementById('prev').onclick=function(){if(cur>0){cur--;draw()}};
+document.getElementById('next').onclick=function(){if(cur<S.length-1){cur++;draw()}};
+draw();
+})();
+
+(function(){
+function mb(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+var R=mb(7),pts=[];
+function rn(){var u=1-R(),v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+for(var i=0;i<45;i++){pts.push({x:Math.min(620,Math.max(60,300+rn()*55)),y:Math.min(270,Math.max(30,150+rn()*32))})}
+pts.push({x:590,y:45});
+var OUT=pts.length-1,tg=OUT,B0={x0:20,x1:660,y0:10,y1:290},cell,splits,depth,done;
+function reset(){cell={x0:B0.x0,x1:B0.x1,y0:B0.y0,y1:B0.y1};splits=[];depth=0;done=false;draw()}
+function inside(c){return pts.filter(function(p){return p.x>=c.x0&&p.x<=c.x1&&p.y>=c.y0&&p.y<=c.y1})}
+function step(c,t){var ps=inside(c);if(ps.length<=1)return null;var ax=Math.random()<0.5?'x':'y',v=ps.map(function(p){return p[ax]}),mn=Math.min.apply(null,v),mx=Math.max.apply(null,v);if(mn===mx){ax=ax==='x'?'y':'x';v=ps.map(function(p){return p[ax]});mn=Math.min.apply(null,v);mx=Math.max.apply(null,v)}
+var s=mn+Math.random()*(mx-mn),old={x0:c.x0,x1:c.x1,y0:c.y0,y1:c.y1};if(t[ax]<s){c[ax+'1']=s}else{c[ax+'0']=s}return {ax:ax,v:s,b:old}}
+function once(){if(done)return;var s=step(cell,pts[tg]);if(!s){done=true;draw();return}splits.push(s);depth++;if(inside(cell).length<=1)done=true;draw()}
+function depthOf(t){var c={x0:B0.x0,x1:B0.x1,y0:B0.y0,y1:B0.y1},d=0;while(inside(c).length>1){var s=step(c,pts[t]);if(!s)break;d++}return d}
+function draw(){var h='';if(done){h+='<rect x="'+cell.x0+'" y="'+cell.y0+'" width="'+(cell.x1-cell.x0)+'" height="'+(cell.y1-cell.y0)+'" fill="#D85A30" opacity="0.18"/>'}
+splits.forEach(function(s,k){var o=Math.max(0.35,1-k*0.08);h+=s.ax==='x'?'<line x1="'+s.v+'" y1="'+s.b.y0+'" x2="'+s.v+'" y2="'+s.b.y1+'" stroke="#7F77DD" stroke-width="1.5" opacity="'+o+'"/>':'<line x1="'+s.b.x0+'" y1="'+s.v+'" x2="'+s.b.x1+'" y2="'+s.v+'" stroke="#7F77DD" stroke-width="1.5" opacity="'+o+'"/>'});
+pts.forEach(function(p,k){var isT=k===tg;h+='<circle data-k="'+k+'" cx="'+p.x+'" cy="'+p.y+'" r="'+(isT?6:4.5)+'" fill="'+(k===OUT?"#D85A30":"#1D9E75")+'" stroke="'+(isT?"var(--text-primary)":"none")+'" stroke-width="2"/>'});
+document.getElementById('cv').innerHTML=h;document.getElementById('m1').textContent=depth+(done?' (isolated)':'')}
+document.getElementById('cv').addEventListener('click',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-k');if(k!==null&&k!==''){tg=+k;reset();stats()}});
+function stats(){document.getElementById('m2').textContent='-';document.getElementById('m3').textContent='-';document.getElementById('m4').textContent='-'}
+function run(){var n=pts.length,T=200,a=0,al=0,i,k;for(i=0;i<T;i++)a+=depthOf(tg);a/=T;for(k=0;k<n;k++){var s=0;for(i=0;i<40;i++)s+=depthOf(k);al+=s/40}al/=n;var c=2*(Math.log(n-1)+0.5772)-2*(n-1)/n;
+document.getElementById('m2').textContent=a.toFixed(1);document.getElementById('m3').textContent=al.toFixed(1);document.getElementById('m4').textContent=Math.pow(2,-a/c).toFixed(2)}
+document.getElementById('b1').onclick=once;
+document.getElementById('b2').onclick=function(){var g=0;while(!done&&g<200){once();g++}};
+document.getElementById('b3').onclick=reset;
+document.getElementById('b4').onclick=run;
+document.getElementById('b5').onclick=function(){tg=OUT;reset();stats()};
+document.getElementById('b6').onclick=function(){tg=0;reset();stats()};
+reset();
+})();
+
+(function(){
+var F=['failed_login_ratio','login_frequency','unique_users','unique_ports','connection_duration_mean','bytes_transferred_mean','geographic_changes','off_hours_activity'];
+var MED=[0,2.086,1,2,0,0,0,0],MAD=[0,0.499,0,0,0,0,0,0];
+var E=[
+{n:'10.0.0.7',tag:'normal, 4 events',v:[0,1.77,1,2,0,0,0,0],out:['0 features over 3.5','Gate closed: needs 2','Score 0.00 (population branch never consulted)','Not flagged. Correct.']},
+{n:'10.0.0.8',tag:'normal, one typo login',v:[0.2,1.62,1,2,0,0,0,0],out:['1 feature over 3.5','Gate closed: needs 2','Score 0.00','Not flagged. Correct: one odd number is not enough.']},
+{n:'198.18.0.0',tag:'attacker, 5 attempts in 9s',v:[0.8,2000,2,5,0,0,0,1],out:['5 features over 3.5','Gate open','Score 1.00 (population forest)','Flagged (over 0.6). Correct.']},
+{n:'198.18.0.1',tag:'attacker, 5 attempts in 4s',v:[1,1125,1,3,0,0,0,1],out:['4 features over 3.5','Gate open','Score 1.00 (z-score candidate)','Flagged (over 0.6). Correct.']}
+];
+var cur=2,S=document.getElementById('sel');
+E.forEach(function(e,k){var b=document.createElement('button');b.textContent=e.n;b.onclick=function(){cur=k;draw()};S.appendChild(b)});
+function z(i,x){var d=Math.abs(x-MED[i]);if(MAD[i]>0)return 0.6745*d/MAD[i];return d>1e-9?Infinity:0}
+function fmt(x){return x>=1000?Math.round(x).toLocaleString():(Math.round(x*100)/100).toString()}
+function draw(){var e=E[cur],rows='';Array.prototype.forEach.call(S.children,function(b,k){b.className=k===cur?'on':''});
+document.getElementById('who').textContent=e.n+': '+e.tag;
+F.forEach(function(f,i){var zz=z(i,e.v[i]),hot=zz>3.5;rows+='<tr'+(hot?' class="hot"':'')+'><td>'+f+'</td><td>'+fmt(e.v[i])+'</td><td>'+fmt(MED[i])+'</td><td>'+fmt(MAD[i])+'</td><td>'+(zz===Infinity?'inf':(Math.round(zz*10)/10))+'</td></tr>'});
+document.getElementById('tb').innerHTML=rows;
+document.getElementById('flow').innerHTML=['1. Count','2. Gate','3. Score','4. Verdict'].map(function(h,k){return '<div><b>'+h+'</b><span class="'+(k==3?'res':'')+'">'+e.out[k]+'</span></div>'}).join('')}
+draw();
+})();
+</script>
+</body>
+</html>

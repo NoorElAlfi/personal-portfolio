@@ -1,27 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import Home from './pages/Home';
-import Blog from './pages/Blog';
-import LucidHoverPost from './pages/blog/LucidHoverPost';
-import CodeDeobfuscatorPost from './pages/blog/CodeDeobfuscatorPost';
-import PokemonShowdownPost from './pages/blog/PokemonShowdownPost';
-import PokeRoguePost from './pages/blog/PokeRoguePost';
-import SiemGuardPost from './pages/blog/SiemGuardPost';
+import React, { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Blog from "./pages/Blog";
+import { postRoutes } from "./data/posts";
 
 function getInitialDarkMode() {
-  const stored = localStorage.getItem('theme');
-  if (stored) return stored === 'dark';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const stored = localStorage.getItem("theme");
+  if (stored) return stored === "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 function App() {
   const [darkMode, setDarkMode] = useState(getInitialDarkMode);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+    document.documentElement.classList.toggle("dark", darkMode);
+    localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
   return (
@@ -41,11 +37,9 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/lucidhover" element={<LucidHoverPost />} />
-            <Route path="/blog/codebase-deobfuscator" element={<CodeDeobfuscatorPost />} />
-            <Route path="/blog/pokemon-showdown-bot" element={<PokemonShowdownPost />} />
-            <Route path="/blog/pokerogue-bot" element={<PokeRoguePost />} />
-            <Route path="/blog/siem-guard" element={<SiemGuardPost />} />
+            {Object.entries(postRoutes).map(([slug, Post]) => (
+              <Route key={slug} path={`/blog/${slug}`} element={<Post />} />
+            ))}
           </Routes>
         </main>
 
