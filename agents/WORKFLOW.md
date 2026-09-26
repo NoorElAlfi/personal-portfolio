@@ -337,13 +337,13 @@ collected locally only; their evidence stays under the gitignored `runs/`.
 5. If the verdict is `fail`, read `violations[].rule` and `detail` in `review.json`,
    fix the proposal or the cited entry, and re-run `--from write` (or `--from review`).
 6. `npm run verify` **warnings** are not failures — each prints as `file:line` and the
-   run still exits 0. Canonical example: `src/pages/blog/SiemGuardPost.jsx:90` links
-   `github.com/NoorElAlfi/siem-guard` (private) from a public post. Deliberately **not**
-   auto-fixed: that repo holds the six-part write-up the sentence refers to, while the
-   public `siem-guard-code` repo is "code and tests only", so repointing the link would
-   falsify the sentence — it is an open author decision (publish the write-up, or reword
-   the sentence). After resolving, re-run `npm run verify` and confirm the summary
-   line's `M warning(s)` count drops.
+   run still exits 0. The one warning this repo carried was
+   `src/pages/blog/SiemGuardPost.jsx:90` linking `github.com/NoorElAlfi/siem-guard`
+   (private) from a public post. Resolved by the author: the sentence now says where the
+   write-up actually lives and points at the public `siem-guard-code` repo. `npm run
+verify` runs with `--strict-private`, so a private repo handle in hand-written content
+   now fails instead of warning — if you ever mean to link private work, drop the flag for
+   that run and say why in the commit.
 
 ---
 
