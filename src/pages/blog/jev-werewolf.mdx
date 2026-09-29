@@ -1,0 +1,39 @@
+Can a local judge model tell who is lying in a social-deduction game? For jev-werewolf I ran the same Werewolf and Mafia transcripts past Jev — TypeSafe's System One model, pinned to `jev-1.13.0` — and past a set of baselines, and compared accuracy, calibration, cost and latency on LLM-generated and human data.
+
+The control that matters is what a judge may see. Every judge gets only `public_view(transcript, upto_round)`: identical text for all of them, no night actions, no roles. The cast is `random` (chance), `keyword` (suspicious words in a player's own statements), `length` (talk volume so far), `llama_judge` (llama3.1:8b on local Ollama reading the whole public view), and six Jev variants: `jev_isolated`, `jev_batched`, `jev_multidim`, `jev_noul`, `jev_pairwise` and `features`. The unit of analysis is the player-round; the confidence intervals are 95% percentile bootstraps that resample whole games.
+
+## The generated games
+
+The generated set is llama3.1:8b: 200 games, 4,479 player-rounds, 699 views. The logistic regression over the Jev answers (`features`) tops the table at 0.825 held-out, but it needs labels to fit and is refit per domain, so it is not a new judge. Among the zero-shot judges, `jev_multidim` — five narrow Jev dimensions per player, combined by a composite fixed before seeing any labels — reaches 0.706 [0.680, 0.730], and is the only judge whose round-1 top-1 is above chance (+0.078 [+0.018, +0.143]). The rest sit near or below chance: `jev_pairwise` 0.545, `jev_batched` 0.542, `jev_isolated` 0.513, `length` 0.503, `keyword` 0.488, `jev_noul` 0.449. `llama_judge` lands at 0.403 [0.370, 0.437] — conclusively below chance. It is the same model that wrote the wolves' lines, it ranks wolves as *less* suspicious, and it follows the villagers' accusations, which the wolves steer.
+
+![AUC by round: the Jev judges and the baselines on the generated games](/jev-werewolf/auc-by-round-generated.png)
+
+![Calibration: reliability of the Jev judges on the generated games](/jev-werewolf/calibration-generated.png)
+
+## Human transcripts are the negative
+
+On `human_mafia` (44 games) every judge is at chance, between 0.451 and 0.496. `avalon` (20 games) gives `jev_noul` 0.608 [0.548, 0.666], and the spoken `werewolf_among_us` set (191 games) gives 0.547 [0.511, 0.584]. Jev tends to read honest humans as deceptive: its ECE on `werewolf_among_us` is 0.407 to 0.562, worse than random. Pooling the three human sources, the learned regression reaches 0.572 [0.540, 0.603], mostly on the back of those 20 avalon games — which I would treat with care. The learned weights do not transfer: the cosine similarity between the generated-data and human-data coefficients is -0.22, and a model trained on human data scores 0.384 on generated games, below chance.
+
+![AUC by round on the pooled human sources](/jev-werewolf/auc-by-round-human.png)
+
+## Letting the judge pick the vote
+
+The sharper test: the same 50 seat/role setups per condition, with the judge's top suspect voted out. Random votes win 24% [12, 36] for the villagers. When `jev_batched` picks the vote they win 50% [36, 64], a gain of 26 percentage points [+12, +40]. `llama_judge` picking the vote yields 12% [4, 22]. Making Jev abstain below 0.28 or 0.42 confidence is worse than not abstaining: 28% and 12%. Removing the defense step gives 44% [30, 58] and halves the calls, but the difference against 50% is inconclusive, and it was not planned in advance.
+
+![Villager win rate when the judge picks the vote](/jev-werewolf/live-villager-win-rate.png)
+
+## The signal looks like style
+
+Two ablations point the same way. A criteria leak — the top criterion naming the tactic the wolves were prompted to use — makes Jev *worse* by 0.061 AUC: villagers say "deflect" 2-4x as often as wolves, so word-matching points at the wrong team. Swapping the wolves to `gpt-oss:20b` makes them easier for Jev (`jev_isolated` 0.667 [0.634, 0.698] against 0.521 on all-llama games), but the talk-volume baseline rises just as much, 0.509 to 0.609. A lot of what `jev_multidim` and the regression pick up is therefore wolf style — vague, passive, accusatory of villagers — not lying. Adaptive wolves that see their own Jev score look like they evade it (-0.052 [-0.112, +0.008], p = 0.09), but with 50 games per condition that is inconclusive.
+
+## Cost
+
+`jev_batched` costs $0.069 per 699 views — about $0.0003 per game — at 0.20 s per view; `jev_isolated` costs $0.092 at 0.39 s per view. `llama_judge` is free on a local GPU but takes 4.7-6.3 s per view, and 39.6 s on the windowed `llm_mafia` views. Jev lists at $0.042 per 1M input tokens with output free, and the reports' cost tables add up to just under $2 of Jev spend in total. The frontier judge — claude-opus-5 with structured output — is built and tested but has never been called: it needs an Anthropic API key and is estimated at $38-114 for 1,208 calls.
+
+## What is still open
+
+This is a research prototype, not a product; there is no license file, and the test suite is fully offline with 223 tests passing. The generated games use generic personas and random votes, and the small samples sit exactly where the interesting cases are: 20 avalon games, 35 llm_mafia and 44 human_mafia. Two results want a confirmatory run — the no-defense gain (+0.028 [+0.012, +0.042]) and the possible adaptive-wolf evasion. The honest summary is that Jev finds deception-like signal in LLM games, that the signal looks like wolf style rather than lying, and that on human games no judge here, Jev included, is clearly useful.
+
+Below is the interactive results page, with per-round curves for every judge across all the sources.
+
+<iframe title="Jev Werewolf Experiment, interactive results" src="/jev-werewolf/results.html" className="results-frame" />

@@ -1,3 +1,17 @@
+- id: jev-werewolf
+  title: Jev Werewolf Experiment
+  tag: LLM Evaluation, Deception Detection
+  description: "Runs the same Werewolf and Mafia transcripts past Jev, TypeSafe's System One model, and past a set of baselines, and reports accuracy, calibration, cost and latency on both LLM-generated and human game data. Jev finds deception in LLM games (AUC 0.61-0.71) where its baselines do not; on the human sources the learned signal turns out to track a model's wolf style rather than deception itself."
+  status: active
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: 2026-09-27
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/jev-werewolf
 - id: emu-cyber-ops-gym
   title: "EMU: Emulated Cyber Operations Gym"
   tag: M.Sc. Thesis
