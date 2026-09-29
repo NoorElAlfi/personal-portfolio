@@ -1,3 +1,19 @@
+- slug: jev-werewolf
+  title: Can Jev tell who is lying in Werewolf and Mafia?
+  summary: A local judge model finds deception-like signal in LLM Werewolf and Mafia games but not in human games, and the signal turns out to look like wolf style rather than lying.
+  tags:
+    - jev
+    - werewolf
+    - evaluation
+    - deception
+    - calibration
+  file: jev-werewolf.mdx
+  date: 2026-09-29
+  project: jev-werewolf
+  source_ids:
+    - 2026-09-27-jev-werewolf-results
+    - 2026-09-29-jev-werewolf-blog-post
+  generated: true
 - slug: siem-guard-detection-hardening
   title: "Inside SIEM Guard: statistics decide, the model explains, and parsing is where the time went"
   summary: "Where the LLM actually sits in a local security-log pipeline, why a median/MAD gate still leaks on a degenerate feature, the forest tier that added zero recall in 120 trials, and what rules-first parsing changed: 96,000 lines/s against roughly one."
