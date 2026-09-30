@@ -4,7 +4,7 @@ The control that matters is what a judge may see. Every judge gets only `public_
 
 ## The generated games
 
-The generated set is llama3.1:8b: 200 games, 4,479 player-rounds, 699 views. The logistic regression over the Jev answers (`features`) tops the table at 0.825 held-out, but it needs labels to fit and is refit per domain, so it is not a new judge. Among the zero-shot judges, `jev_multidim` — five narrow Jev dimensions per player, combined by a composite fixed before seeing any labels — reaches 0.706 [0.680, 0.730], and is the only judge whose round-1 top-1 is above chance (+0.078 [+0.018, +0.143]). The rest sit near or below chance: `jev_pairwise` 0.545, `jev_batched` 0.542, `jev_isolated` 0.513, `length` 0.503, `keyword` 0.488, `jev_noul` 0.449. `llama_judge` lands at 0.403 [0.370, 0.437] — conclusively below chance. It is the same model that wrote the wolves' lines, it ranks wolves as *less* suspicious, and it follows the villagers' accusations, which the wolves steer.
+The generated set is llama3.1:8b: 200 games, 4,479 player-rounds, 699 views. The logistic regression over the Jev answers (`features`) tops the table at 0.825 held-out, but it needs labels to fit and is refit per domain, so it is not a new judge. Among the zero-shot judges, `jev_multidim` — five narrow Jev dimensions per player, combined by a composite fixed before seeing any labels — reaches 0.706 [0.680, 0.730], and is the only judge whose round-1 top-1 is above chance (+0.078 [+0.018, +0.143]). The rest sit near or below chance: `jev_pairwise` 0.545, `jev_batched` 0.542, `jev_isolated` 0.513, `length` 0.503, `keyword` 0.488, `jev_noul` 0.449. `llama_judge` lands at 0.403 [0.370, 0.437] — conclusively below chance. It is the same model that wrote the wolves' lines, it ranks wolves as _less_ suspicious, and it follows the villagers' accusations, which the wolves steer.
 
 ![AUC by round: the Jev judges and the baselines on the generated games](/jev-werewolf/auc-by-round-generated.png)
 
@@ -24,7 +24,7 @@ The sharper test: the same 50 seat/role setups per condition, with the judge's t
 
 ## The signal looks like style
 
-Two ablations point the same way. A criteria leak — the top criterion naming the tactic the wolves were prompted to use — makes Jev *worse* by 0.061 AUC: villagers say "deflect" 2-4x as often as wolves, so word-matching points at the wrong team. Swapping the wolves to `gpt-oss:20b` makes them easier for Jev (`jev_isolated` 0.667 [0.634, 0.698] against 0.521 on all-llama games), but the talk-volume baseline rises just as much, 0.509 to 0.609. A lot of what `jev_multidim` and the regression pick up is therefore wolf style — vague, passive, accusatory of villagers — not lying. Adaptive wolves that see their own Jev score look like they evade it (-0.052 [-0.112, +0.008], p = 0.09), but with 50 games per condition that is inconclusive.
+Two ablations point the same way. A criteria leak — the top criterion naming the tactic the wolves were prompted to use — makes Jev _worse_ by 0.061 AUC: villagers say "deflect" 2-4x as often as wolves, so word-matching points at the wrong team. Swapping the wolves to `gpt-oss:20b` makes them easier for Jev (`jev_isolated` 0.667 [0.634, 0.698] against 0.521 on all-llama games), but the talk-volume baseline rises just as much, 0.509 to 0.609. A lot of what `jev_multidim` and the regression pick up is therefore wolf style — vague, passive, accusatory of villagers — not lying. Adaptive wolves that see their own Jev score look like they evade it (-0.052 [-0.112, +0.008], p = 0.09), but with 50 games per condition that is inconclusive.
 
 ## Cost
 
@@ -34,6 +34,6 @@ Two ablations point the same way. A criteria leak — the top criterion naming t
 
 This is a research prototype, not a product; there is no license file, and the test suite is fully offline with 223 tests passing. The generated games use generic personas and random votes, and the small samples sit exactly where the interesting cases are: 20 avalon games, 35 llm_mafia and 44 human_mafia. Two results want a confirmatory run — the no-defense gain (+0.028 [+0.012, +0.042]) and the possible adaptive-wolf evasion. The honest summary is that Jev finds deception-like signal in LLM games, that the signal looks like wolf style rather than lying, and that on human games no judge here, Jev included, is clearly useful.
 
-Below is the interactive results page, with per-round curves for every judge across all the sources.
+## See it
 
-<iframe title="Jev Werewolf Experiment, interactive results" src="/jev-werewolf/results.html" className="results-frame" />
+The full interactive results page - per-round curves for every judge across all the sources, the reliability plots, live-game outcomes and the ablations, with every number in the reports - is its own page: [open the Jev Werewolf results page](/jev-werewolf/results.html).
