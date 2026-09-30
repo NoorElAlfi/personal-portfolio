@@ -10,6 +10,7 @@
 NoorElAlfi/lucidHover public
 NoorElAlfi/siem-guard-code public
 NoorElAlfi/siem-guard private
+NoorElAlfi/jev-werewolf public
 NoorElAlfi/pokerogue-ai-agent private
 NoorElAlfi/dotfiles private
 NoorElAlfi/personal-portfolio public
