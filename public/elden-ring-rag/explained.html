@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>errag, explained</title>
+<style>
+:root{
+  --bg:#ffffff;--surface-1:#f5f4ef;--surface-2:#ffffff;
+  --text-primary:#1f1e1c;--text-secondary:#5f5e5a;--text-muted:#888780;
+  --border:rgba(0,0,0,0.15);--border-strong:rgba(0,0,0,0.3);
+  --bg-accent:#eeedfe;--text-accent:#3c3489;--border-accent:#7f77dd;
+  --bg-danger:#fceaea;--text-danger:#791f1f;
+  --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1c1b19;--surface-1:#2a2926;--surface-2:#232220;
+    --text-primary:#eeece6;--text-secondary:#b4b2a9;--text-muted:#888780;
+    --border:rgba(255,255,255,0.15);--border-strong:rgba(255,255,255,0.3);
+    --bg-accent:#3c3489;--text-accent:#cecbf6;--border-accent:#afa9ec;
+    --bg-danger:#501313;--text-danger:#f7c1c1;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text-primary);font-family:var(--font-sans);line-height:1.7;font-size:16px}
+main{max-width:760px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:28px;font-weight:500;margin:0 0 6px}
+h2{font-size:20px;font-weight:500;margin:48px 0 8px}
+h3{font-size:15px;font-weight:500;margin:20px 0 6px}
+p{margin:0 0 14px}
+code{font-family:var(--font-mono);font-size:0.88em;background:var(--surface-1);padding:1px 5px;border-radius:4px}
+.lede{color:var(--text-secondary);font-size:17px;margin:0 0 8px}
+.note{font-size:13px;color:var(--text-secondary);margin:6px 0 0}
+ul{margin:0 0 14px;padding-left:22px}
+li{margin:0 0 4px}
+.fig{margin:16px 0 8px;padding:16px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px}
+svg text.t{font:14px var(--font-sans);fill:var(--text-primary)}
+svg text.ts{font:12px var(--font-sans);fill:var(--text-secondary)}
+svg text.th{font:500 14px var(--font-sans);fill:var(--text-primary)}
+svg .arr{stroke:var(--text-secondary);stroke-width:1.5;fill:none}
+svg .arrd{stroke:var(--text-secondary);stroke-width:1.5;fill:none;stroke-dasharray:4 4}
+.c-gray rect{fill:#f1efe8;stroke:#5f5e5a}.c-gray .th{fill:#444441}.c-gray .ts{fill:#5f5e5a}
+.c-purple rect{fill:#eeedfe;stroke:#534ab7}.c-purple .th{fill:#3c3489}.c-purple .ts{fill:#534ab7}
+.c-teal rect{fill:#e1f5ee;stroke:#0f6e56}.c-teal .th{fill:#085041}.c-teal .ts{fill:#0f6e56}
+@media (prefers-color-scheme: dark){
+  .c-gray rect{fill:#444441;stroke:#b4b2a9}.c-gray .th{fill:#d3d1c7}.c-gray .ts{fill:#b4b2a9}
+  .c-purple rect{fill:#3c3489;stroke:#afa9ec}.c-purple .th{fill:#cecbf6}.c-purple .ts{fill:#afa9ec}
+  .c-teal rect{fill:#085041;stroke:#5dcaa5}.c-teal .th{fill:#9fe1cb}.c-teal .ts{fill:#5dcaa5}
+}
+.tiers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.tiers{grid-template-columns:1fr}}
+.tier{background:var(--surface-1);border-radius:var(--radius);padding:14px 16px}
+.tier h3{margin:0 0 2px;font-size:15px}
+.tier .k{font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin:0 0 8px}
+.tier p{font-size:14px;margin:0 0 8px}
+.tier p:last-child{margin:0}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:4px 0 12px}
+.flow div{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px;font-size:13px;line-height:1.5}
+.flow b{display:block;font-weight:500;font-size:12px;color:var(--text-secondary);margin:0 0 2px}
+table.plain{width:100%;border-collapse:collapse;font-size:14px;margin:0 0 14px}
+table.plain th,table.plain td{text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--border);vertical-align:top}
+table.plain th{font-weight:500;color:var(--text-secondary)}
+table.plain td.n{font-family:var(--font-mono);white-space:nowrap}
+</style>
+</head>
+<body>
+<main>
+
+<h1>errag, explained</h1>
+<p class="lede">A personal Elden Ring lookup. Two tiers, deliberately kept separate, backed by a local SQLite file — no vector store, no search index, no model required.</p>
+<p class="note">Every number and claim below comes from the project's README. Nothing here was measured fresh for this page, and the page makes no network requests.</p>
+
+<h2>Two tiers, kept apart on purpose</h2>
+<p>The whole design is a bet that "where do I find X" and "what do I do next" are different problems, and answering both with one retrieval mechanism would serve neither well. So there are two question shapes and two answers.</p>
+<div class="fig">
+<div class="tiers">
+<div class="tier">
+<p class="k">Tier 1 &middot; item</p>
+<h3>where</h3>
+<p><em>"where can I find X"</em> — one question, one row. A SQLite row lookup with fuzzy entity resolution, returning a cited source URL.</p>
+<p>It is a lookup, not a synthesis: the job is to find the right line in the corpus and refuse to guess when it can't.</p>
+</div>
+<div class="tier">
+<p class="k">Tier 2 &middot; quest</p>
+<h3>quest</h3>
+<p><em>"what should I do next", "did I miss a quest"</em> — ordered steps, filtered by region or section.</p>
+<p>Its entire value is the <strong>ordering</strong>, so it is served as a sequence, not as chunks to be ranked.</p>
+</div>
+</div>
+</div>
+<p>Why separate rather than one unified retriever: a lookup wants exactly one item and a loud failure when nothing fits; an ordered walkthrough wants the document whole and in order. Chunking the quest document to feed an embedding index would destroy the ordering that is its entire value, and a top-k search over item names would return five near-identical neighbours when what you asked for is one of them.</p>
+
+<h2>The pipeline</h2>
+<p>From wiki pages to a cited answer. Fetch is the only stage that ever touches the network, and only when you explicitly ask it to; every later stage runs offline against the local database.</p>
+<div class="fig">
+<svg width="100%" viewBox="0 0 680 640" role="img"><title>errag pipeline overview</title><desc>An opt-in Fandom fetch caches wikitext, ingest turns it into SQLite rows, name normalisation and synonym expansion feed either the tier 1 lookup or the tier 2 quest retrieval, and an optional chat model reads only what was retrieved.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<g class="c-purple"><rect x="200" y="20" width="240" height="50" rx="4" stroke-width="0.5"/><text class="th" x="320" y="41" text-anchor="middle">fetch</text><text class="ts" x="320" y="60" text-anchor="middle">opt-in Fandom scrape</text></g>
+
+<line class="arr" x1="320" y1="70" x2="320" y2="104" marker-end="url(#arrow)"/>
+
+<g class="c-gray"><rect x="200" y="104" width="240" height="50" rx="4" stroke-width="0.5"/><text class="th" x="320" y="125" text-anchor="middle">ingest</text><text class="ts" x="320" y="144" text-anchor="middle">wikitext &rarr; rows</text></g>
+
+<line class="arr" x1="320" y1="154" x2="320" y2="188" marker-end="url(#arrow)"/>
+
+<g class="c-teal"><rect x="200" y="188" width="240" height="66" rx="4" stroke-width="0.5"/><text class="th" x="320" y="210" text-anchor="middle">SQLite &middot; errag.db</text><text class="ts" x="320" y="229" text-anchor="middle">item &middot; alias &middot; passage</text><text class="ts" x="320" y="246" text-anchor="middle">quest_step &mdash; no FTS5, no vectors</text></g>
+
+<line class="arr" x1="320" y1="254" x2="320" y2="288" marker-end="url(#arrow)"/>
+
+<g class="c-gray"><rect x="200" y="288" width="240" height="50" rx="4" stroke-width="0.5"/><text class="th" x="320" y="309" text-anchor="middle">normalise + expand names</text><text class="ts" x="320" y="328" text-anchor="middle">PHRASE_SYNONYMS</text></g>
+
+<path class="arr" d="M320 338 L320 366 L170 366 L170 392" marker-end="url(#arrow)"/>
+<path class="arr" d="M320 338 L320 366 L510 366 L510 392" marker-end="url(#arrow)"/>
+
+<g class="c-gray"><rect x="40" y="392" width="260" height="60" rx="4" stroke-width="0.5"/><text class="th" x="170" y="414" text-anchor="middle">tier 1 &middot; where</text><text class="ts" x="170" y="432" text-anchor="middle">one row: fuzzy entity</text><text class="ts" x="170" y="448" text-anchor="middle">resolution, cited source</text></g>
+
+<g class="c-gray"><rect x="380" y="392" width="260" height="60" rx="4" stroke-width="0.5"/><text class="th" x="510" y="414" text-anchor="middle">tier 2 &middot; quest</text><text class="ts" x="510" y="432" text-anchor="middle">ordered steps, filtered</text><text class="ts" x="510" y="448" text-anchor="middle">by region and section</text></g>
+
+<line class="arr" x1="170" y1="452" x2="170" y2="486" marker-end="url(#arrow)"/>
+<line class="arr" x1="510" y1="452" x2="510" y2="486" marker-end="url(#arrow)"/>
+
+<g class="c-teal"><rect x="40" y="486" width="260" height="56" rx="4" stroke-width="0.5"/><text class="th" x="170" y="509" text-anchor="middle">answer + cited source URL</text><text class="ts" x="170" y="528" text-anchor="middle">exit 0 / 1 / 2</text></g>
+
+<g class="c-purple"><rect x="380" y="486" width="260" height="56" rx="4" stroke-width="0.5"/><text class="th" x="510" y="509" text-anchor="middle">chat &mdash; optional model</text><text class="ts" x="510" y="528" text-anchor="middle">strict reader of retrieved</text></g>
+
+<line class="arr" x1="510" y1="542" x2="510" y2="556" marker-end="url(#arrow)"/>
+
+<g class="c-teal"><rect x="380" y="556" width="260" height="52" rx="4" stroke-width="0.5"/><text class="th" x="510" y="578" text-anchor="middle">answer citing blocks</text><text class="ts" x="510" y="597" text-anchor="middle">--backend none prints context only</text></g>
+
+<line class="arrd" x1="200" y1="149" x2="90" y2="149"/><line class="arrd" x1="90" y1="149" x2="90" y2="40"/>
+<text class="ts" x="96" y="96" text-anchor="start">refuses without --yes</text>
+<text class="ts" x="96" y="112" text-anchor="start">robots.txt unverified</text>
+</svg>
+</div>
+<p class="note">The dashed callout marks the one stage with any uncertainty: <code>fetch</code> refuses to run without <code>--yes</code>, because fandom.com's <code>robots.txt</code> is served behind Cloudflare and its automated-access policy could not be read.</p>
+
+<h3>What each stage does</h3>
+<ul>
+<li><strong>fetch</strong> — optional and explicit. Pulls Fandom item pages and caches them as local JSON (<code>data/raw/items/*.json</code>), skipping pages already present unless asked to refresh. One-off, low-volume personal use is the intended line; bulk harvest or redistribution is not.</li>
+<li><strong>ingest</strong> — parses the cached wikitext into rows: each <code>item</code> (display name, location, effect, source URL, and a curated flag), one or more <code>alias</code> keys per item for fuzzy resolution, the full page prose chunked by section into <code>passage</code>, and the quest document into ordered <code>quest_step</code> rows.</li>
+<li><strong>normalise + synonyms</strong> — names are lowercased, apostrophes unified, possessives stripped, then expanded through <code>PHRASE_SYNONYMS</code>. This is how community shorthand that appears in no in-game name still resolves: <code>"ball bearing"</code> &rarr; <code>"bell bearing"</code>, <code>"somber smithing stone"</code> &rarr; <code>"somberstone"</code>.</li>
+<li><strong>tier 1 / tier 2</strong> — either a scored lookup across the alias table, or a filtered, ordered read of the quest steps.</li>
+<li><strong>answer</strong> — always carries its <code>source</code> URL, so the provenance is visible and stayable.</li>
+<li><strong>chat</strong> — optional and strictly downstream. Retrieval runs first; a model then answers only from what was retrieved and cites it. No model is required for any of the above.</li>
+</ul>
+
+<h2>Why no vector store and no FTS5</h2>
+<p>Both omissions were measured, not assumed. They are the two decisions the project is most likely to be asked about, so they are worth stating plainly.</p>
+<h3>No FTS5</h3>
+<p>The FTS5 <code>trigram</code> tokenizer was tried first: it returns zero rows for <code>match 'smberston'</code> and cannot rank. Since the corpus is at most a few thousand rows, a token-set scorer in Python is simpler and strictly better. The stated revisit point is a corpus past roughly 100k rows — well beyond what this ever holds.</p>
+<h3>No vector store, no embeddings</h3>
+<ul>
+<li>Tier 1 is a lookup, not a synthesis. Top-k cosine retrieval would blur the five near-identical <code>Bell Bearing [n]</code> entries together, when the whole question is <em>which index</em>.</li>
+<li>Tier 2 is 2.7k words total, which fits in a context window whole. Chunking and embedding it would destroy the ordering that is its entire value.</li>
+</ul>
+<p>Synonym expansion stands in where a learned alias model might otherwise go: the mappings are hand-curated and only cover shorthand that appears in no in-game name, which is why a conflated query like <code>"somber smithing stone ball bearing 1"</code> can still land on the right item and report the genuinely ambiguous alternative.</p>
+
+<h2>One <code>where</code> query, end to end</h2>
+<p>Follow <code>"somber smithing stone ball bearing 1"</code> — a player's shorthand, containing no exact item name — from raw string to a cited answer.</p>
+<div class="flow">
+<div><b>1. Expand</b>Synonyms rewrite the shorthand: <code>ball bearing</code> &rarr; <code>bell bearing</code>, <code>somber smithing stone</code> &rarr; <code>somberstone</code>.</div>
+<div><b>2. Score</b>A token-set scorer compares every expanded variant against every alias and ranks the best match per item.</div>
+<div><b>3. Guard</b>A trailing index is checked against the item's <em>display name</em>, so <code>[1]</code> can never be answered with <code>[2]</code>.</div>
+<div><b>4. Gate</b>The top score must clear <code>ANSWER_MIN = 0.72</code>, or the tool declines rather than guess.</div>
+<div><b>5. Answer</b>Confident: one card with its source URL. Otherwise: ranked suggestions, or an explicit "nothing matched".</div>
+</div>
+<p>Two things make this more than a fuzzy string match. First, the index guard: every indexed item also carries an index-stripped alias, so without checking the display name the tie between <code>[1]</code> and <code>[2]</code> would be unbreakable. Second, the confidence gate: a score below <code>0.72</code> does not produce a wrong answer, it produces a ranked list and a non-zero exit. This is exactly the mechanism the golden set caught when a query tied between the correct item and <code>Smithing Stone [1]</code>, and it is why the tool is built to fail loudly rather than confabulate.</p>
+<p>The exit-code contract is part of the interface, not an afterthought:</p>
+<table class="plain">
+<tr><th>Exit</th><th>Meaning</th></tr>
+<tr><td class="n">0</td><td>Answered — a confident match was found (or <code>--all</code> listed every match).</td></tr>
+<tr><td class="n">1</td><td>No confident match — scores below the threshold; ranked suggestions are printed instead.</td></tr>
+<tr><td class="n">2</td><td>Nothing in the corpus matched at all.</td></tr>
+</table>
+<p>Two further honesty behaviours are enforced the same way: an item whose source page carries no <code>==Acquisition==</code> text says <code>(no acquisition text in corpus)</code> rather than inventing a location, and every resolved item shows its <code>source</code> URL.</p>
+
+<h2>What counts as correct: <code>eval</code> and <code>overrides.json</code></h2>
+<p>The project's real specification is not this page or even the README — it is <code>data/eval/golden.json</code> plus a set of invariants, run by <code>errag eval</code>, which exits non-zero if any case fails so it works as a pre-commit or CI gate.</p>
+<p>Two kinds of check, deliberately kept distinct:</p>
+<ul>
+<li><strong>Answer cases</strong> — a query, the item it must resolve to, and optionally a substring its location must contain. These are written from knowledge of the game, <em>not</em> generated from the database: a case read out of the database passes no matter how wrong the database is, which is the failure mode worth avoiding.</li>
+<li><strong>Invariants</strong> — properties that must hold for every row regardless of content, so they cannot be satisfied by a lucky lookup: every located item carries a source URL; no duplicate display names; no unescaped entity artifacts; no navigation pages ingested; every item has a resolvable alias.</li>
+</ul>
+<p>The golden set is the project's memory of its own bugs: it is what caught the scoring tie above, and the three regressions that widening the corpus introduced. The rule is to add a case every time a wrong answer slips through.</p>
+<h3>The curated escape hatch</h3>
+<p>Scraping cannot supply facts that require a judgement call, nor fix facts the source got wrong. <code>data/curated/overrides.json</code> is merged on top of the scraped corpus after every build, keyed by item name (any casing or punctuation — keys are normalised). A key matching an existing item <strong>overrides</strong> its fields and marks the row <code>[curated]</code> in output; a key matching nothing and supplying a <code>location</code> is added as a brand-new item. That covers both stub pages with an empty <code>==Acquisition==</code> and anything no wiki page carries at all.</p>
+
+<h2>Known limitations</h2>
+<p>Stated plainly, because the tool is built to be honest in its output and this page should be too.</p>
+<ul>
+<li><strong>The quest document's DLC section is truncated.</strong> The source ends mid-sentence, yielding 13 DLC steps with no region tags, versus 272 base-game steps of which 170 are region-tagged. Base game coverage is good; DLC is not.</li>
+<li><strong>287 of 2,725 items have no location</strong> — their pages exist with an empty <code>==Acquisition==</code>. They still answer, with the explicit "no acquisition text" line.</li>
+<li><strong><code>category</code> is empty for most armaments.</strong> It is read from the page's own <code>[[Category:...]]</code> links, and Fandom's weapon pages carry none — verified: Moonveil's wikitext contains zero occurrences of <code>Category:</code>.</li>
+<li><strong>Region derivation is best-effort.</strong> 1,448 of the 2,438 located items resolve to a region from the location prose; the rest never name one.</li>
+<li><strong>Versioning is curated-only, because it was measured.</strong> Every cached item page was checked for a version marker; none carries one. The only version signal anywhere is <code>{{SOTE}}</code> on a category index page, which flags exactly 10 bearings as Shadow of the Erdtree. <code>game_version</code> is never guessed.</li>
+<li><strong>Chat retrieval is heuristic and thinly tested.</strong> Entity detection prefers boss pages on combat words, and treats a curated generic word list (<code>weapon</code>, <code>armor</code>, <code>ash</code>, ...) as never an entity. Both are judgement calls, and only six retrieval cases are covered by <code>errag eval</code>.</li>
+<li><strong>Retrieval depends on pages being fetched.</strong> <code>Affinity</code>, <code>Scaling</code> and <code>Stats</code> are redirects, and <code>Ashes of War</code> uses an empty infobox, so all were silently absent until redirect resolution was added. If a chat answer looks empty, the fix is to run <code>errag chat --backend none</code> and read what was actually retrieved before blaming the model.</li>
+<li><strong>No model is bundled.</strong> <code>chat</code> is useful without one (context-only), but natural-language answers need <code>ollama</code> installed or <code>OPENAI_API_KEY</code> set. The request/response plumbing is verified against a stub server; the quality of any particular model's answers is not.</li>
+</ul>
+<p class="note">The through-line: every stage is built to say what it does not know — a below-threshold query declines, an unlocated item says so, an unversioned item claims no version, and <code>--backend none</code> shows exactly what retrieval returned before any model touches it.</p>
+
+</main>
+</body>
+</html>

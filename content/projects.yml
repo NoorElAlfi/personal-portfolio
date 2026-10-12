@@ -1,3 +1,31 @@
+- id: elden-ring-rag
+  title: errag — a local Elden Ring item and quest lookup
+  tag: Retrieval, SQLite, Local LLM
+  description: "A two-tier, fully local Elden Ring lookup, with no network calls at query time and no model required. Tier 1 answers \"where can I find X\" as a fuzzy-resolved SQLite row lookup that cites the source wiki page on every answer; tier 2 answers \"what should I do next / did I miss a quest\" as an ordered step index filterable by region and section. An optional local-LLM chat layer answers strictly from the passages retrieval returned, and a golden-set eval plus row invariants act as the project's real acceptance gate."
+  status: active
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: 2026-10-12
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/elden-ring-rag
+- id: cryptic-coach
+  title: Cryptic Coach
+  tag: LLM Fine-tuning, QLoRA, GRPO
+  description: "Fine-tuned Qwen2.5-1.5B-Instruct to answer cryptic crossword clues on a single 8 GB GPU — QLoRA supervised fine-tuning, then GRPO with a verifiable reward — scoring every stage on the same answer-disjoint test set with 95% bootstrap confidence intervals. The honest result: the best model solves 3.6% of unseen clues, its \"Definition:\" line is a template learned from annotations rather than reasoning, and two GRPO runs plus a distillation experiment are written up as the negative results they were."
+  status: shipped
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: 2026-10-12
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/cryptic-coach
 - id: jev-werewolf
   title: Jev Werewolf Experiment
   tag: LLM Evaluation, Deception Detection

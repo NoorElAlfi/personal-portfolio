@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cryptic Coach — project tour</title>
+<style>
+/* Layout concept: a long report page. A crossword-grid masthead, then sections that each pair one decision with the
+   evidence for it. Charts are plain HTML/SVG with direct values; the palette is the validated default (blue = the
+   headline series, orange = the contrast series). */
+:root {
+  --bg: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #6f6d67;
+  --grid: #e1e0d9; --axis: #c3c2b7; --hair: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s2: #eb6834; --good: #006300; --bad: #b02a2a; --tint: #eaf1fb; --tint2: #fdeee7;
+  --cell: #0b0b0b; --cell-ink: #fcfcfb; --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif; color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink2: #c3c2b7; --muted: #a09e96;
+  --grid: #2c2c2a; --axis: #383835; --hair: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --good: #0ca30c; --bad: #e66767; --tint: #16243a; --tint2: #3a2218;
+  --cell: #fcfcfb; --cell-ink: #0b0b0b; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink2: #c3c2b7; --muted: #a09e96;
+  --grid: #2c2c2a; --axis: #383835; --hair: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --good: #0ca30c; --bad: #e66767; --tint: #16243a; --tint2: #3a2218;
+  --cell: #fcfcfb; --cell-ink: #0b0b0b; color-scheme: dark; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--sans); padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 1040px; margin-inline: auto; }
+h1, h2, h3 { line-height: 1.15; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); margin-bottom: 8px; }
+h3 { font-size: 1.05rem; margin-bottom: 6px; }
+p { margin: 0 0 12px; max-width: 68ch; }
+a { color: var(--s1); }
+.lede { color: var(--ink2); font-size: 1.05rem; max-width: 70ch; }
+.eyebrow { font: 600 0.72rem/1 var(--sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+section { padding-block: 48px 8px; border-top: 1px solid var(--hair); margin-top: 40px; }
+section:first-of-type { border-top: 0; margin-top: 0; }
+
+/* masthead: a crossword grid that spells the name */
+header { padding-block: 40px 28px; }
+.grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 3px; max-width: 560px; margin-bottom: 24px; }
+.cell { aspect-ratio: 1; display: grid; place-items: center; font: 700 clamp(0.8rem, 2.6vw, 1.35rem)/1 var(--mono);
+  background: var(--surface); border: 1.5px solid var(--cell); color: var(--ink); border-radius: 2px; }
+.cell.black { background: var(--cell); border-color: var(--cell); }
+.cell.key { background: var(--s1); border-color: var(--s1); color: #fff; }
+header h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin-bottom: 12px; }
+.nav { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 20px; font-size: 0.9rem; }
+.nav a { color: var(--ink2); text-decoration: none; border-bottom: 1px solid var(--axis); }
+.nav a:hover, .nav a:focus-visible { color: var(--ink); border-color: var(--ink); }
+.theme { float: right; font: inherit; font-size: 0.85rem; color: var(--ink2); background: var(--surface); border: 1px solid var(--axis);
+  border-radius: 6px; padding: 6px 10px; cursor: pointer; margin-top: 12px; }
+.theme:hover { color: var(--ink); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-block: 20px; }
+.tile { background: var(--surface); border: 1px solid var(--hair); border-radius: 8px; padding: 14px 16px; }
+.tile b { display: block; font-size: 1.9rem; line-height: 1.1; letter-spacing: -0.02em; }
+.tile span { color: var(--ink2); font-size: 0.85rem; }
+
+.panel { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 18px 18px 14px; margin-block: 16px; min-width: 0; }
+.panel h3 + .sub { color: var(--ink2); font-size: 0.9rem; margin: 0 0 14px; max-width: 70ch; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.cols > * { min-width: 0; }
+.note { font-size: 0.85rem; color: var(--ink2); max-width: 78ch; margin: 12px 0 0; }
+.callout { border-left: 3px solid var(--s2); padding: 4px 0 4px 14px; margin-block: 14px; color: var(--ink); max-width: 70ch; }
+
+/* pipeline */
+.flow { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; margin-block: 18px; padding: 0; list-style: none; }
+.step { flex: 1 1 140px; background: var(--surface); border: 1px solid var(--hair); border-radius: 8px; padding: 12px 14px; position: relative; min-width: 0; }
+.step small { display: block; color: var(--muted); font: 600 0.68rem/1 var(--sans); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+.step b { display: block; margin-bottom: 4px; }
+.step span { color: var(--ink2); font-size: 0.85rem; display: block; }
+.step.fail { background: var(--tint2); }
+.step.win { background: var(--tint); }
+.branch { margin-top: 4px; color: var(--ink2); font-size: 0.9rem; }
+
+/* HTML-drawn charts */
+.chart { position: relative; }
+.grp { font: 600 0.72rem/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 16px 0 4px; }
+.row { display: grid; grid-template-columns: minmax(120px, 250px) minmax(0, 1fr) 64px; gap: 10px; align-items: center; min-height: 30px; }
+.row .lab { font-size: 0.88rem; color: var(--ink); line-height: 1.25; }
+.row .val { font-variant-numeric: tabular-nums; font-size: 0.88rem; text-align: right; color: var(--ink); }
+.track { position: relative; height: 22px; }
+.tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--grid); }
+.tick.zero { background: var(--axis); width: 2px; }
+.tick.lim { background: transparent; border-left: 2px dashed var(--bad); }
+.bar { position: absolute; left: 0; top: 7px; height: 8px; border-radius: 0 4px 4px 0; background: var(--s1); }
+.bar.alt { background: var(--s2); }
+.ci { position: absolute; top: 10px; height: 2px; background: var(--ink); opacity: 0.8; }
+.ci::before, .ci::after { content: ""; position: absolute; top: -4px; width: 2px; height: 10px; background: var(--ink); }
+.ci::before { left: 0; } .ci::after { right: 0; }
+.dot { position: absolute; top: 6px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--s1); border: 2px solid var(--surface); }
+.dot.alt { background: var(--s2); } .dot.bad { background: var(--bad); }
+.axis { display: grid; grid-template-columns: minmax(120px, 250px) minmax(0, 1fr) 64px; gap: 10px; }
+.axis .scale { position: relative; height: 18px; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.axis .scale i { position: absolute; transform: translateX(-50%); font-style: normal; }
+.row:hover .track { background: color-mix(in srgb, var(--grid) 40%, transparent); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.82rem; color: var(--ink2); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+@media (max-width: 560px) {
+  .row, .axis { grid-template-columns: minmax(0, 1fr) 58px; }
+  .row .lab { grid-column: 1 / -1; margin-top: 8px; }
+  .row .track { grid-column: 1; } .axis > :first-child { display: none; }
+  .axis .scale { grid-column: 1; }
+}
+svg.line { width: 100%; height: auto; display: block; overflow: visible; touch-action: pan-y; }
+svg.line text { fill: var(--muted); font: 12px var(--sans); font-variant-numeric: tabular-nums; }
+svg.line .gl { stroke: var(--grid); stroke-width: 1; }
+svg.line .ax { stroke: var(--axis); stroke-width: 1; }
+svg.line .ser { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+svg.line .pt { stroke: var(--surface); stroke-width: 2; }
+svg.line .cross { stroke: var(--ink2); stroke-width: 1; stroke-dasharray: 3 3; }
+svg.line .ann { fill: var(--ink2); font-size: 12px; }
+#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 0.82rem; line-height: 1.4;
+  padding: 7px 10px; border-radius: 6px; max-width: 260px; opacity: 0; transition: opacity 0.08s; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--ink2); font-size: 0.85rem; }
+summary:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.tbl { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+th { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--axis); color: var(--ink2); white-space: nowrap; }
+.pill.pos { color: var(--good); border-color: var(--good); } .pill.neg { color: var(--bad); border-color: var(--bad); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-block: 16px; }
+.card { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 16px; min-width: 0; }
+.card p { font-size: 0.92rem; color: var(--ink2); margin: 0; }
+.files { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-block: 16px; }
+.files ul { margin: 0; padding: 0; list-style: none; font-size: 0.88rem; }
+.files li { padding: 6px 0; border-bottom: 1px solid var(--hair); }
+.files li span { display: block; }
+.files li code { overflow-wrap: anywhere; } .files li span { color: var(--ink2); }
+footer { margin-top: 56px; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--hair); padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } #tip { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <button class="theme" id="themeBtn" type="button" aria-label="Toggle light and dark theme">Theme</button>
+  <div class="grid" id="mast" aria-hidden="true"></div>
+  <div class="eyebrow">Qwen2.5-1.5B-Instruct · QLoRA SFT · GRPO · one 8GB GPU</div>
+  <h1>Cryptic Coach</h1>
+  <p class="lede">A small model fine-tuned to answer cryptic crossword clues, with every stage scored on the same 3,000 clues
+  whose answers it never saw in training. It solves <b>3.6%</b> of them. This page shows how the project was built, why each
+  choice was made, and what every experiment measured, including the ones that failed.</p>
+  <nav class="nav" aria-label="Sections">
+    <a href="#pipeline">Pipeline</a><a href="#data">Data and splits</a><a href="#choices">Design choices</a>
+    <a href="#results">Results</a><a href="#grpo">GRPO story</a><a href="#failure">Failure analysis</a>
+    <a href="#teacher">Large model and distillation</a><a href="#export">Export and demo</a><a href="#repo">Implementation</a>
+  </nav>
+  <div class="tiles">
+    <div class="tile"><b>3.6%</b><span>final test accuracy, 95% CI 3.0 to 4.3</span></div>
+    <div class="tile"><b>0.2%</b><span>base model, 0-shot and 5-shot</span></div>
+    <div class="tile"><b>66.3%</b><span>large reasoning model, 300 clues (a lower bound)</span></div>
+    <div class="tile"><b>70</b><span>automated tests, including a data-hygiene test</span></div>
+  </div>
+</header>
+
+<section id="pipeline">
+  <div class="eyebrow">How it was built</div>
+  <h2>The pipeline, phase by phase</h2>
+  <p class="lede">One pinned prompt, one split and one scoring rule are shared by every stage, so any two rows in the results are comparable.</p>
+  <ol class="flow">
+    <li class="step"><small>Phase 1</small><b>Data and splits</b><span>578k train clues. Answer-disjoint dev and test with leakage checks.</span></li>
+    <li class="step"><small>Phase 2</small><b>Eval harness</b><span>Greedy decoding, exact match, bootstrap CIs, test locked after one scoring.</span></li>
+    <li class="step"><small>Phase 3</small><b>SFT</b><span>QLoRA on a templated "Definition, answer" target. 1.0%, then 2.1% with 4x data.</span></li>
+    <li class="step fail"><small>Phase 4</small><b>GRPO, two failures</b><span>Shaped rewards got gamed. Accuracy fell to 0.8% and 0.9%.</span></li>
+    <li class="step win"><small>Phase 4c</small><b>GRPO that works</b><span>From SFT v2, dynamic sampling, exact-match reward. 3.6%.</span></li>
+    <li class="step"><small>Phase 5</small><b>GGUF and API baseline</b><span>Q4_K_M within noise of fp16. A large model solves 66%.</span></li>
+    <li class="step fail"><small>Phase 5b</small><b>Distillation</b><span>Teacher explanations made the student worse than its control.</span></li>
+    <li class="step"><small>Phase 6</small><b>Demo, hygiene, write-up</b><span>Gradio on the GGUF, a test that blocks clue text, blog draft.</span></li>
+  </ol>
+  <p class="branch">Red tint marks a negative result, blue marks the winning run. Hardware: RTX 2070 SUPER, 8GB, fp16 only (no bf16),
+  4-bit base. Training ran in WSL2 Ubuntu 24.04. API spend was about $8.59 in total, under the $10 ceiling.</p>
+</section>
+
+<section id="data">
+  <div class="eyebrow">Measuring honestly came first</div>
+  <h2>Data and the answer-disjoint split</h2>
+  <p class="lede">Cryptic setters reuse answers, so a random split lets a model score by remembering them. The headline split puts all
+  clues for an answer on one side only, then checks for near-duplicates.</p>
+  <div class="tiles" id="splitTiles"></div>
+  <div class="cols">
+    <div class="panel"><h3>What a plain split would have leaked into test</h3>
+      <p class="sub">Clues flagged by the fuzzy checks among 3,600 test candidates. The build removes them; the plain split would not.</p>
+      <div class="chart" id="leakChart"></div></div>
+    <div class="panel"><h3>Why the random split inflates scores</h3>
+      <p class="sub">Same SFT recipe, scored on each split.</p>
+      <div class="chart" id="randChart"></div>
+      <p class="note" id="randNote"></p></div>
+  </div>
+  <div class="panel"><h3>Rows dropped in cleaning</h3>
+    <p class="sub">Counts only, logged rather than silently dropped.</p>
+    <div class="chart" id="dropChart"></div></div>
+</section>
+
+<section id="choices">
+  <div class="eyebrow">Decisions and what they led to</div>
+  <h2>Design choices</h2>
+  <div class="panel"><div class="tbl"><table>
+    <thead><tr><th>Decision</th><th>Chosen</th><th>Rejected</th><th>Why, and what happened</th></tr></thead>
+    <tbody>
+    <tr><td>Headline split</td><td>Answer-disjoint, deduped, normalized answers</td><td>Random split</td><td>Random splits measure memorization. Kept one random number for contrast: 3.4% against 1.0%.</td></tr>
+    <tr><td>Test discipline</td><td>Locked test set, dev for every decision</td><td>Tuning on test</td><td>Test is scored once per stage. The dev-to-test gap (4.2% to 3.6%) is the winner's curse and is reported.</td></tr>
+    <tr><td>One protocol</td><td>Same prompt, exemplars, greedy decoding, 256-token cap</td><td>Per-stage prompts</td><td>A baseline that fails the format would make SFT look better than it is. Prompt hash is stored in every metrics file.</td></tr>
+    <tr><td>Output format</td><td>"Definition: X." then &lt;answer&gt;</td><td>Answer only; real reasoning</td><td>Free and consistent. The definition line is a template from dataset annotations, not reasoning.</td></tr>
+    <tr><td>Base model</td><td>Qwen2.5-1.5B-Instruct, 4-bit NF4 + LoRA rank 16</td><td>3B or larger</td><td>8GB VRAM and fp16 only. GRPO peaked at 4.55 GB.</td></tr>
+    <tr><td>Training stack</td><td>Plain transformers + PEFT loops</td><td>Unsloth/TRL trainers</td><td>Full control of the GRPO loop, dynamic sampling and memory on Turing.</td></tr>
+    <tr><td>GRPO reward</td><td>0.1 well-formed tag + 1.0 exact match, trained only on groups with signal</td><td>Shaped length and letter bonuses</td><td>The shaped rewards were gamed and accuracy fell. The sparse reward worked once the start was strong enough.</td></tr>
+    <tr><td>Reported metric</td><td>Exact match, never reward</td><td>Reward curves</td><td>Caught the length-bonus hacking by reading samples.</td></tr>
+    <tr><td>Large-model baseline</td><td>API model on a fixed 300-clue subset</td><td>Local 4-bit 7-9B</td><td>Owner's choice. $2.07 for the scored run. The row is a lower bound because a third of clues hit the token limit.</td></tr>
+    <tr><td>Export</td><td>Merged fp16, then GGUF Q4_K_M</td><td>Serving the adapter</td><td>Paired test against fp16 rules out a drop of more than 1.5 points.</td></tr>
+    <tr><td>Distillation</td><td>Gated extension, capped at $8, matched controls</td><td>Uncontrolled "explanations help" claim</td><td>Every explanation arm lost to its templated control, so no GRPO was run on top.</td></tr>
+    <tr><td>Publishing</td><td>No weights, splits or per-clue outputs anywhere</td><td>Hugging Face release</td><td>The clues belong to newspapers and setters. A test enforces it.</td></tr>
+    </tbody></table></div></div>
+</section>
+
+<section id="results">
+  <div class="eyebrow">Evidence</div>
+  <h2>Results on the locked test set</h2>
+  <p class="lede">Exact-match accuracy on 3,000 clues with unseen answers. Dots and bars show the value, whiskers the 95% bootstrap interval.
+  Hover a row for details.</p>
+  <div class="panel">
+    <div class="legend"><span><i style="background:var(--s1)"></i>Answer-disjoint test</span><span><i style="background:var(--s2)"></i>Random-split test (contrast)</span></div>
+    <div class="chart" id="mainChart"></div>
+    <details><summary>Table view</summary><div class="tbl" id="mainTable"></div></details>
+  </div>
+  <div class="callout">The two readings that matter: SFT v2 + GRPO beats SFT v2 by <b>+1.53 points</b> (paired 95% CI 0.83 to 2.27),
+  and every explanation-trained model is below its control with an interval that excludes zero.</div>
+</section>
+
+<section id="grpo">
+  <div class="eyebrow">Phase 4</div>
+  <h2>GRPO failed twice, then worked</h2>
+  <p class="lede">GRPO only learns when some samples in a group beat the others. At 1% accuracy almost no group had a correct sample,
+  and the model optimized whatever bonus was left.</p>
+  <div class="cols">
+    <div class="panel"><h3>Failed runs: dev accuracy by training step</h3>
+      <p class="sub">Both runs start from the first SFT (1.8% on dev) and degrade. v1 had a length bonus; v2 had letter-position credit.</p>
+      <div class="chart" id="failLines"></div></div>
+    <div class="panel"><h3>Working run: dev accuracy by cumulative step</h3>
+      <p class="sub">From SFT v2 with dynamic sampling. A plateau for about 120 steps, then another point of gain.</p>
+      <div class="chart" id="winLines"></div></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>The format collapse</h3>
+      <p class="sub">Dev answer-tag rate in the working run. Groups with no right answer are discarded, so nothing penalized a missing tag.
+      The fix keeps groups whose only contrast is format; it held for 111 re-run steps.</p>
+      <div class="chart" id="fmtLines"></div></div>
+    <div class="panel"><h3>What the failed runs did</h3>
+      <div class="cards" style="margin:0;grid-template-columns:1fr">
+        <div><h3>98 to 99.6%</h3><p>of groups had no exact-match sample in v1, so the only signal was the 0.1 length bonus.</p></div>
+        <div><h3>43% to 81%</h3><p>of dev answers had the right letter count by step 200 of v1, while exact match fell from 1.8% to 0.3%. Right-length strings that were not words.</p></div>
+        <div><h3>3% to 4%</h3><p>of groups had identical rewards in v2 (v1: up to 65%), so every step carried gradient, but 96 to 97% still had no right answer.</p></div>
+      </div></div>
+  </div>
+</section>
+
+<section id="failure">
+  <div class="eyebrow">Where the final model fails</div>
+  <h2>Failure analysis</h2>
+  <p class="lede">All numbers are for the final model on 3,000 test clues. It finds the definition and misses the wordplay.</p>
+  <div class="cols">
+    <div class="panel"><h3>The definition line is a template</h3>
+      <p class="sub">Clues with a definition annotation (n = <span id="nAnn"></span>).</p>
+      <div class="chart" id="defChart"></div>
+      <p class="note">Spotting the definition is pattern matching the model learned. Solving the wordplay is not.</p></div>
+    <div class="panel"><h3>Wrong answers have the right shape</h3>
+      <p class="sub">Among wrong answers, the share with the correct letter count, and the mean share of letters in the correct position.</p>
+      <div class="chart" id="shapeChart"></div></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>Accuracy by answer length</h3><p class="sub">Test exact match, letters in the answer.</p><div class="chart" id="lenEm"></div></div>
+    <div class="panel"><h3>Right letter count by answer length</h3><p class="sub">Share of outputs whose length matches the enumeration.</p><div class="chart" id="lenOk"></div></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>By answer structure</h3><div class="chart" id="wordChart"></div>
+      <p class="note">Multi-word answers scored higher. The reason is untested.</p></div>
+    <div class="panel"><h3>By source</h3><p class="sub">Sources with at least 100 test clues. Intervals are wide; read the ranking loosely.</p><div class="chart" id="srcChart"></div></div>
+  </div>
+  <p class="note" id="diversity"></p>
+</section>
+
+<section id="teacher">
+  <div class="eyebrow">Phases 5 and 5b</div>
+  <h2>A large model, and trying to learn from it</h2>
+  <div class="cols">
+    <div class="panel"><h3>Same 300 clues, four models</h3>
+      <p class="sub">Test subset, zero-shot with the pinned prompt. The API model is a reasoning model and 86 of 300 clues hit its token limit
+      and count as wrong; of the 214 it finished, 93% were right. It may also have seen published puzzles.</p>
+      <div class="chart" id="subChart"></div></div>
+    <div class="panel"><h3>Distillation: explanation arm minus its templated control</h3>
+      <p class="sub">Paired difference in test accuracy, percentage points, 95% CI. Zero means no effect.</p>
+      <div class="chart" id="distChart"></div>
+      <p class="note">The student learned to write fluent wordplay that does not add up, then derived the answer from the invented working.
+      Right-length answers fell from about 55% to about 25%. One design was tested: explanation before the answer, up to 3,699
+      examples, one learning rate. It does not show that distillation cannot work.</p></div>
+  </div>
+  <div class="tiles">
+    <div class="tile"><b>$2.07</b><span>scored API baseline run ($2.23 with pilots)</span></div>
+    <div class="tile"><b>$6.36</b><span>distillation, including the $0.21 pilot</span></div>
+    <div class="tile"><b>728 / 3,699</b><span>kept explanations, arm A (blind solve) and arm B (answer given)</span></div>
+    <div class="tile"><b>0</b><span>teacher outputs committed; they stay in git-ignored data/</span></div>
+  </div>
+</section>
+
+<section id="export">
+  <div class="eyebrow">Phases 5 and 6</div>
+  <h2>Export, demo and data hygiene</h2>
+  <div class="cols">
+    <div class="panel"><h3>GGUF Q4_K_M against merged fp16</h3>
+      <p class="sub">Paired accuracy difference on all 3,000 test clues, with the 1.5-point limit from the spec.</p>
+      <div class="chart" id="ggufChart"></div>
+      <p class="note" id="ggufNote"></p></div>
+    <div class="panel"><h3>Local demo</h3>
+      <p>A Gradio page sends the clue to a local <code>llama-server</code> running the 986 MB GGUF, with the pinned prompt and greedy decoding. It shows
+      the raw output, the parsed answer and format checks (answer tag, letter count), plus an optional known-answer check. A banner says
+      the model is usually wrong and that the definition line is a template.</p>
+      <p>Run it from a clean venv: <code>pip install -r requirements-demo.txt</code>, then <code>python scripts/demo.py</code> with the server and GGUF paths.</p></div>
+  </div>
+  <div class="panel"><h3>Data-hygiene test</h3>
+    <p>The clues belong to newspapers and setters, so nothing derived from them may leave the machine. <code>tests/test_data_hygiene.py</code> collects
+    every file git tracks or would track, normalizes the text, and fails if it contains any dev, test or random-split clue, any teacher wordplay
+    line, or the train clues used for distillation. It also fails if clue-level or weight files sit outside the ignored <code>data/</code>,
+    <code>outputs/</code> and <code>checkpoints/</code>. A planted clue made it fail; the repository passes.</p></div>
+</section>
+
+<section id="repo">
+  <div class="eyebrow">Implementation</div>
+  <h2>What is in the repository</h2>
+  <div class="files">
+    <div class="panel"><h3>Library: <code>src/cryptic_coach/</code></h3><ul>
+      <li><code>scoring.py</code><span>Answer extraction, normalization, the shaped reward</span></li>
+      <li><code>data.py</code><span>Cleaning, definition checks, split I/O</span></li>
+      <li><code>splits.py</code><span>Answer-group splits and fuzzy leakage checks</span></li>
+      <li><code>prompt.py</code><span>The one pinned prompt and its hash</span></li>
+      <li><code>evaluation.py</code><span>Scoring and bootstrap CIs</span></li>
+      <li><code>sft.py</code><span>SFT targets and collation</span></li>
+      <li><code>grpo.py</code><span>Reward variants, dynamic sampling helpers</span></li>
+      <li><code>distill.py</code><span>Teacher prompts, parser, filters</span></li>
+      <li><code>demo.py</code><span>Demo backend for llama.cpp</span></li></ul></div>
+    <div class="panel"><h3>Entry points: <code>scripts/</code></h3><ul>
+      <li><code>build_splits.py</code><span>Splits and leakage report</span></li>
+      <li><code>eval.py</code><span>Score a stage; test is locked</span></li>
+      <li><code>train_sft.py</code><span>QLoRA SFT</span></li>
+      <li><code>select_ckpt.py</code><span>Pick a checkpoint on dev</span></li>
+      <li><code>train_grpo.py</code><span>GRPO loop</span></li>
+      <li><code>grpo_campaign.py</code><span>Unattended GRPO runs with early stopping</span></li>
+      <li><code>merge_adapter.py</code><span>Merge LoRA into the fp16 base</span></li>
+      <li><code>eval_gguf.py, compare_gguf.py</code><span>Score and compare the GGUF</span></li>
+      <li><code>api_baseline.py, distill_*.py</code><span>The paid API steps, spend-capped</span></li>
+      <li><code>make_results.py</code><span>Table and chart from aggregates</span></li>
+      <li><code>failure_analysis.py, demo.py</code><span>Phase 6</span></li></ul></div>
+    <div class="panel"><h3>Tests and write-ups</h3><ul>
+      <li><code>tests/</code><span>70 tests: normalization, splits, evaluation, GRPO, distillation, demo, hygiene</span></li>
+      <li><code>results/</code><span>Aggregate metrics, table, chart, one write-up per phase</span></li>
+      <li><code>docs/blog_draft.md</code><span>The blog draft</span></li>
+      <li><code>specs/</code><span>Spec, run plan, distillation plan</span></li>
+      <li><code>requirements.lock</code><span>Pinned environment</span></li></ul></div>
+  </div>
+  <h3 style="margin-top:28px">What went wrong</h3>
+  <div class="cards">
+    <div class="card"><h3>The definition is a template</h3><p>Nothing in training checks that the answer follows from the clue.</p></div>
+    <div class="card"><h3>Shaped rewards were gamed</h3><p>The model wrote right-length non-words. Caught by reading samples and reporting exact match.</p></div>
+    <div class="card"><h3>Explanations hurt</h3><p>Teacher wordplay made students worse than their controls at both scales.</p></div>
+    <div class="card"><h3>Format collapse</h3><p>Dynamic sampling dropped the groups that would have penalized a missing tag.</p></div>
+    <div class="card"><h3>Uneven comparison</h3><p>The large model used thousands of thinking tokens; the small ones were capped at 256.</p></div>
+    <div class="card"><h3>One seed</h3><p>Results are single runs. The GRPO runs form one chain, not replicates.</p></div>
+  </div>
+</section>
+
+<footer>Generated by <code>scripts/build_overview.py</code> from aggregate metrics in <code>results/</code>. No clue text is on this page.
+Split hash <span class="mono" id="hash"></span>.</footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const D = {"rows": [{"group": "Baselines", "label": "Base model, 0-shot", "stage": "baseline_0shot", "split": "test", "v": 0.23333333333333336, "lo": 0.06666666666666667, "hi": 0.4333333333333333, "n": 3000, "fmt": 85.1}, {"group": "Baselines", "label": "Base model, 5-shot", "stage": "baseline_5shot", "split": "test", "v": 0.16666666666666669, "lo": 0.03333333333333333, "hi": 0.33333333333333337, "n": 3000, "fmt": 99.96666666666667}, {"group": "SFT", "label": "SFT, 40k clues", "stage": "sft", "split": "test", "v": 0.9666666666666667, "lo": 0.6333333333333333, "hi": 1.3333333333333335, "n": 3000, "fmt": 100.0}, {"group": "SFT", "label": "SFT, 40k clues, random split (contrast)", "stage": "sft_random", "split": "rand_test", "v": 3.4333333333333336, "lo": 2.8000000000000003, "hi": 4.1000000000000005, "n": 3000, "fmt": 100.0}, {"group": "SFT", "label": "SFT v2, 160k clues", "stage": "sft_v2", "split": "test", "v": 2.1, "lo": 1.6, "hi": 2.6333333333333333, "n": 3000, "fmt": 100.0}, {"group": "GRPO from the weak SFT (failed)", "label": "GRPO v1: shaped reward", "stage": "grpo", "split": "test", "v": 0.8, "lo": 0.5, "hi": 1.1333333333333333, "n": 3000, "fmt": 100.0}, {"group": "GRPO from the weak SFT (failed)", "label": "GRPO v2: no length bonus, letter credit", "stage": "grpo_v2", "split": "test", "v": 0.8999999999999999, "lo": 0.5666666666666667, "hi": 1.2666666666666666, "n": 3000, "fmt": 100.0}, {"group": "GRPO from SFT v2", "label": "SFT v2 + GRPO, dynamic sampling", "stage": "grpo_sftv2", "split": "test", "v": 3.6333333333333337, "lo": 2.966666666666667, "hi": 4.3, "n": 3000, "fmt": 99.93333333333332}, {"group": "Export", "label": "Merged fp16", "stage": "grpo_sftv2_fp16", "split": "test", "v": 3.7666666666666666, "lo": 3.1, "hi": 4.433333333333334, "n": 3000, "fmt": 100.0}, {"group": "Export", "label": "GGUF Q4_K_M (986 MB)", "stage": "grpo_sftv2_gguf_q4km", "split": "test", "v": 3.3666666666666663, "lo": 2.7333333333333334, "hi": 4.033333333333333, "n": 3000, "fmt": 99.96666666666667}, {"group": "Distillation (all worse than control)", "label": "Control, 483 clues, templated", "stage": "dist_ctrl_core", "split": "test", "v": 2.1333333333333333, "lo": 1.6, "hi": 2.666666666666667, "n": 3000, "fmt": 100.0}, {"group": "Distillation (all worse than control)", "label": "Arm A explanations, 483 clues", "stage": "dist_A_core", "split": "test", "v": 0.6333333333333333, "lo": 0.36666666666666664, "hi": 0.9333333333333335, "n": 3000, "fmt": 99.93333333333332}, {"group": "Distillation (all worse than control)", "label": "Arm B explanations, 483 clues", "stage": "dist_B_core", "split": "test", "v": 0.23333333333333336, "lo": 0.06666666666666667, "hi": 0.4333333333333333, "n": 3000, "fmt": 99.63333333333333}, {"group": "Distillation (all worse than control)", "label": "Control, 3,699 clues, templated", "stage": "dist_ctrl_scale", "split": "test", "v": 1.7333333333333332, "lo": 1.2666666666666666, "hi": 2.1999999999999997, "n": 3000, "fmt": 99.96666666666667}, {"group": "Distillation (all worse than control)", "label": "Arm B explanations, 3,699 clues", "stage": "dist_B_scale", "split": "test", "v": 1.1333333333333333, "lo": 0.7666666666666666, "hi": 1.5333333333333332, "n": 3000, "fmt": 100.0}], "subset": [{"label": "Base model, 0-shot", "v": 0.6666666666666667, "lo": 0.0, "hi": 1.6666666666666667, "n": 300, "fmt": 86.66666666666667}, {"label": "SFT v2", "v": 3.0, "lo": 1.3333333333333335, "hi": 5.0, "n": 300, "fmt": 100.0}, {"label": "SFT v2 + GRPO", "v": 4.0, "lo": 2.0, "hi": 6.333333333333334, "n": 300, "fmt": 100.0}, {"label": "DeepSeek V4.1 Flash (API)", "v": 66.33333333333333, "lo": 61.0, "hi": 71.66666666666667, "n": 300, "fmt": 71.33333333333334}], "split": {"sizes": {"train": {"clues": 578443, "unique_answers": 104033, "with_definition": 418508}, "dev": {"clues": 2000, "unique_answers": 1271, "with_definition": 1442}, "test": {"clues": 3000, "unique_answers": 1912, "with_definition": 2175}, "rand_train": {"clues": 593921, "unique_answers": 107389, "with_definition": 429613}, "rand_dev": {"clues": 2000, "unique_answers": 1937, "with_definition": 1455}, "rand_test": {"clues": 3000, "unique_answers": 2857, "with_definition": 2184}}, "drops": {"duplicate_clue_answer": 14722, "answer_length_mismatch": 12163, "no_enumeration": 32624, "null_clue_or_answer": 1169, "length_out_of_range": 14}, "naive": {"candidates": 3600, "flagged_edit_distance_1": 398, "flagged_stem": 1378, "flagged_clue_jaccard": 13, "removed_total": 13, "survivors": 3587}, "build": {"candidates": 3601, "flagged_edit_distance_1": 0, "flagged_stem": 0, "flagged_clue_jaccard": 8, "removed_total": 8, "survivors": 3593}, "rand_seen": 92.63333333333334, "hash": "f3950a68aa62"}, "failure": {"stage": "grpo_sftv2", "n": 3000, "exact_match": 0.036333333333333336, "by_answer_length": {"2-5": {"n": 410, "exact_match": 0.04390243902439024, "length_ok": 0.7024390243902439}, "6-8": {"n": 1300, "exact_match": 0.038461538461538464, "length_ok": 0.6115384615384616}, "9-11": {"n": 933, "exact_match": 0.03429796355841372, "length_ok": 0.4490889603429796}, "12+": {"n": 357, "exact_match": 0.025210084033613446, "length_ok": 0.226890756302521}}, "by_word_structure": {"single word": {"n": 2262, "exact_match": 0.03138815207780725, "length_ok": 0.5977011494252874}, "multi-word or hyphenated": {"n": 738, "exact_match": 0.051490514905149054, "length_ok": 0.3130081300813008}}, "by_definition_annotation": {"no definition annotation": {"n": 825, "exact_match": 0.03272727272727273, "length_ok": 0.5139393939393939}, "definition annotated": {"n": 2175, "exact_match": 0.03770114942528736, "length_ok": 0.5328735632183909}}, "by_source": {"fifteensquared": {"n": 1062, "exact_match": 0.02824858757062147, "length_ok": 0.5282485875706214}, "bigdave44": {"n": 948, "exact_match": 0.04113924050632911, "length_ok": 0.4978902953586498}, "times_xwd_times": {"n": 562, "exact_match": 0.028469750889679714, "length_ok": 0.5676156583629893}, "thehinducrosswordcorner": {"n": 298, "exact_match": 0.06375838926174497, "length_ok": 0.5536912751677853}}, "wrong_but_right_length": 0.5098581805603597, "unique_predicted_answers": 2823, "top10_predicted_answer_share": 0.011333333333333334, "definition_line_equals_annotation": {"n_annotated": 2175, "share": 0.6262068965517241}, "wrong_answer_mean_letter_position_overlap": 0.11522365646624408}, "distill": {"A explanations vs control (483 clues)": {"dev": {"diff_points": -2.15, "ci95": [-2.85, -1.5]}, "test": {"diff_points": -1.5, "ci95": [-2.07, -0.97]}}, "B explanations vs control (483 clues)": {"dev": {"diff_points": -2.15, "ci95": [-2.9, -1.45]}, "test": {"diff_points": -1.9, "ci95": [-2.43, -1.4]}}, "B explanations vs control (3,699 clues)": {"dev": {"diff_points": -0.85, "ci95": [-1.5, -0.2]}, "test": {"diff_points": -0.6, "ci95": [-1.17, -0.07]}}, "control (483) vs SFT v2": {"dev": {"diff_points": -0.1, "ci95": [-0.65, 0.45]}, "test": {"diff_points": 0.03, "ci95": [-0.4, 0.47]}}, "control (3,699) vs SFT v2": {"dev": {"diff_points": -0.7, "ci95": [-1.3, -0.1]}, "test": {"diff_points": -0.37, "ci95": [-0.8, 0.07]}}, "B explanations (3,699) vs SFT v2": {"dev": {"diff_points": -1.55, "ci95": [-2.3, -0.8]}, "test": {"diff_points": -0.97, "ci95": [-1.57, -0.37]}}}, "gguf": {"a": "grpo_sftv2_fp16", "b": "grpo_sftv2_gguf_q4km", "split": "test", "n": 3000, "acc_a": 0.03766666666666667, "acc_b": 0.033666666666666664, "answer_agreement": 0.45466666666666666, "correctness_agreement": 0.9813333333333333, "a_only_correct": 34, "b_only_correct": 22, "diff_b_minus_a_points": -0.4, "diff_ci95_points": [-0.8666666666666666, 0.1], "max_drop_points": 1.5, "ci_excludes_drop_larger_than_max": true}};
+const $ = (id) => document.getElementById(id);
+const f1 = (x) => x.toFixed(1), f2 = (x) => x.toFixed(2), fmtN = (x) => x.toLocaleString("en-US");
+
+/* theme toggle (per-viewer convenience; storage may be unavailable) */
+(function () {
+  const root = document.documentElement; let saved = null;
+  try { saved = localStorage.getItem("cc-theme"); } catch (e) {}
+  if (saved) root.setAttribute("data-theme", saved);
+  $("themeBtn").addEventListener("click", () => {
+    const dark = root.getAttribute("data-theme") === "dark" ||
+      (!root.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+    const next = dark ? "light" : "dark"; root.setAttribute("data-theme", next);
+    try { localStorage.setItem("cc-theme", next); } catch (e) {}
+  });
+})();
+
+/* masthead: a small crossword grid that spells the name */
+(function () {
+  const words = ["CRYPTIC", "COACH"], cols = 9, mast = $("mast"); mast.style.setProperty("--cols", cols);
+  const rows = [["C","R","Y","P","T","I","C","#","#"], ["#","#","#","#","#","#","O","#","#"], ["#","#","#","#","#","#","A","#","#"],
+    ["#","#","#","#","#","#","C","#","#"], ["#","#","#","#","#","#","H","#","#"]];
+  rows.flat().forEach((ch) => {
+    const d = document.createElement("div"); d.className = "cell" + (ch === "#" ? " black" : "") + (ch === "C" ? " key" : "");
+    if (ch !== "#") d.textContent = ch; mast.appendChild(d);
+  });
+})();
+
+/* tooltip: any element with data-tip */
+const tip = $("tip");
+function showTip(html, x, y) {
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(Math.max(8, x + 14), innerWidth - w - 8) + "px";
+  tip.style.top = Math.min(Math.max(8, y - h - 12), innerHeight - h - 8) + "px";
+}
+const hideTip = () => { tip.style.opacity = 0; };
+document.addEventListener("pointermove", (e) => {
+  const t = e.target.closest && e.target.closest("[data-tip]");
+  t ? showTip(t.getAttribute("data-tip"), e.clientX, e.clientY) : (e.target.closest && e.target.closest("svg.line") ? 0 : hideTip());
+});
+document.addEventListener("pointerleave", hideTip);
+
+/* HTML row chart. rows: {label, v, lo, hi, text, tip, alt, group, kind:'bar'|'dot'} */
+function rowChart(el, rows, o) {
+  const min = o.min || 0, max = o.max, span = max - min, pos = (x) => ((x - min) / span) * 100 + "%";
+  let h = "";
+  const ticks = o.ticks.map((t) => `<div class="tick${t === 0 && min < 0 ? " zero" : ""}" style="left:${pos(t)}"></div>`).join("") +
+    (o.limit != null ? `<div class="tick lim" style="left:${pos(o.limit)}"></div>` : "");
+  let g = null;
+  rows.forEach((r) => {
+    if (r.group && r.group !== g) { g = r.group; h += `<div class="grp">${r.group}</div>`; }
+    const mark = o.kind === "dot"
+      ? `<div class="dot ${r.alt ? "alt" : ""} ${r.bad ? "bad" : ""}" style="left:${pos(r.v)}"></div>`
+      : `<div class="bar ${r.alt ? "alt" : ""}" style="width:${pos(r.v)}"></div>`;
+    const ci = r.lo != null ? `<div class="ci" style="left:${pos(r.lo)};width:calc(${pos(r.hi)} - ${pos(r.lo)})"></div>` : "";
+    h += `<div class="row" data-tip="${r.tip}"><div class="lab">${r.label}</div><div class="track">${ticks}${mark}${ci}</div><div class="val">${r.text}</div></div>`;
+  });
+  const sc = o.ticks.map((t) => `<i style="left:${pos(t)}">${t}${o.unit || ""}</i>`).join("") +
+    (o.limit != null ? `<i style="left:${pos(o.limit)};color:var(--bad)">limit</i>` : "");
+  h += `<div class="axis"><div></div><div class="scale">${sc}</div><div></div></div>`;
+  el.innerHTML = h;
+}
+const pct = (r) => `${f1(r.v)}%`;
+const ciTxt = (r) => `${f1(r.v)}% [${f1(r.lo)}, ${f1(r.hi)}]`;
+
+/* line chart. series: {name,color,pts:[[x,y]]} */
+function lineChart(el, o) {
+  const W = 560, H = 250, L = 44, R = o.R || 16, T = 14, B = 40, iw = W - L - R, ih = H - T - B;
+  const X = (x) => L + ((x - o.x0) / (o.x1 - o.x0)) * iw, Y = (y) => T + ih - ((y - o.y0) / (o.y1 - o.y0)) * ih;
+  let s = `<svg class="line" viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria}">`;
+  o.yt.forEach((t) => { s += `<line class="gl" x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}"/><text x="${L - 8}" y="${Y(t) + 4}" text-anchor="end">${t}${o.yu || ""}</text>`; });
+  o.xt.forEach((t) => { s += `<text x="${X(t)}" y="${H - 20}" text-anchor="middle">${t}</text>`; });
+  s += `<line class="ax" x1="${L}" x2="${W - R}" y1="${Y(o.y0)}" y2="${Y(o.y0)}"/><text x="${L + iw / 2}" y="${H - 3}" text-anchor="middle">${o.xlabel}</text>`;
+  (o.ref || []).forEach((r) => { s += `<line class="gl" style="stroke:var(--axis);stroke-dasharray:4 4" x1="${L}" x2="${W - R}" y1="${Y(r.y)}" y2="${Y(r.y)}"/><text class="ann" x="${W - R}" y="${Y(r.y) - 5}" text-anchor="end">${r.label}</text>`; });
+  o.series.forEach((se) => {
+    s += `<polyline class="ser" style="stroke:${se.color}" points="${se.pts.map((p) => X(p[0]) + "," + Y(p[1])).join(" ")}"/>`;
+    se.pts.forEach((p) => { s += `<circle class="pt" style="fill:${se.color}" cx="${X(p[0])}" cy="${Y(p[1])}" r="4"/>`; });
+    const last = se.pts[se.pts.length - 1];
+    if (!o.nolabel) s += `<text class="ann" x="${X(last[0]) + 9}" y="${Y(last[1]) + (se.dy || 4)}">${se.name}</text>`;
+  });
+  s += `<line class="cross" id="${el.id}-x" y1="${T}" y2="${T + ih}" style="display:none"/><rect id="${el.id}-r" x="${L}" y="${T}" width="${iw}" height="${ih}" fill="transparent"/></svg>`;
+  el.innerHTML = s;
+  const svg = el.querySelector("svg"), cross = $(el.id + "-x");
+  const xs = [...new Set(o.series.flatMap((se) => se.pts.map((p) => p[0])))].sort((a, b) => a - b);
+  const move = (e) => {
+    const b = svg.getBoundingClientRect(), vx = ((e.clientX - b.left) / b.width) * W;
+    const xv = o.x0 + ((vx - L) / iw) * (o.x1 - o.x0);
+    const near = xs.reduce((a, c) => (Math.abs(c - xv) < Math.abs(a - xv) ? c : a), xs[0]);
+    cross.setAttribute("x1", X(near)); cross.setAttribute("x2", X(near)); cross.style.display = "";
+    const lines = o.series.map((se) => { const p = se.pts.find((q) => q[0] === near); return p ? `${se.name}: <b>${p[1]}${o.yu || ""}</b>` : null; }).filter(Boolean);
+    showTip(`${o.xlabel} ${near}<br>${lines.join("<br>")}`, e.clientX, e.clientY);
+  };
+  const r = $(el.id + "-r"); r.addEventListener("pointermove", move);
+  r.addEventListener("pointerleave", () => { cross.style.display = "none"; hideTip(); });
+}
+
+function tableHTML(head, rows) {
+  return `<table><thead><tr>${head.map((h, i) => `<th class="${i ? "n" : ""}">${h}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map((r) => `<tr>${r.map((c, i) => `<td class="${i ? "n" : ""}">${c}</td>`).join("")}</tr>`).join("") + `</tbody></table>`;
+}
+
+/* ---- Data and splits ---- */
+const sp = D.split, S = sp.sizes;
+$("splitTiles").innerHTML =
+  `<div class="tile"><b>${fmtN(S.train.clues)}</b><span>train clues, ${fmtN(S.train.unique_answers)} unique answers</span></div>
+   <div class="tile"><b>${fmtN(S.test.clues)}</b><span>locked test clues, ${fmtN(S.test.unique_answers)} answers, none in train</span></div>
+   <div class="tile"><b>${fmtN(S.dev.clues)}</b><span>dev clues for every decision</span></div>
+   <div class="tile"><b>${fmtN(S.train.with_definition)}</b><span>train clues with a verified definition (${Math.round(100 * S.train.with_definition / S.train.clues)}%)</span></div>`;
+const leak = [
+  { label: "Edit distance 1 from a train answer", v: sp.naive.flagged_edit_distance_1 },
+  { label: "Same word stem as a train answer", v: sp.naive.flagged_stem },
+  { label: "Near-duplicate clue text (Jaccard 0.5)", v: sp.naive.flagged_clue_jaccard }];
+rowChart($("leakChart"), leak.map((r) => ({ label: r.label, v: r.v, text: fmtN(r.v), tip: `${r.label}: ${fmtN(r.v)} of 3,600 candidate test clues` })),
+  { max: 1500, ticks: [0, 500, 1000, 1500] });
+const sftDis = D.rows.find((r) => r.stage === "sft"), sftRnd = D.rows.find((r) => r.stage === "sft_random");
+rowChart($("randChart"), [
+  { label: "Answer-disjoint test", v: sftDis.v, lo: sftDis.lo, hi: sftDis.hi, text: pct(sftDis), tip: ciTxt(sftDis) },
+  { label: "Random-split test", v: sftRnd.v, lo: sftRnd.lo, hi: sftRnd.hi, text: pct(sftRnd), alt: true, tip: ciTxt(sftRnd) }],
+  { max: 5, ticks: [0, 1, 2, 3, 4, 5], unit: "%" });
+$("randNote").textContent = `On the random split, ${f1(sp.rand_seen)}% of test answers also appear in train, so memorization is worth about ${f1(sftRnd.v / sftDis.v)}x the headline number.`;
+const dr = Object.entries(sp.drops).sort((a, b) => b[1] - a[1]);
+const names = { no_enumeration: "No trailing enumeration", duplicate_clue_answer: "Duplicate clue and answer", answer_length_mismatch: "Answer length differs from enumeration",
+  null_clue_or_answer: "Missing clue or answer", length_out_of_range: "Answer length outside 2 to 30" };
+rowChart($("dropChart"), dr.map(([k, v]) => ({ label: names[k] || k, v, text: fmtN(v), tip: `${names[k] || k}: ${fmtN(v)} rows` })),
+  { max: 35000, ticks: [0, 10000, 20000, 30000] });
+
+/* ---- Main results ---- */
+const mainRows = D.rows.map((r) => ({ group: r.group, label: r.label, v: r.v, lo: r.lo, hi: r.hi, text: pct(r), alt: r.split === "rand_test",
+  kind: "bar", tip: `${r.label}<br>${ciTxt(r)}<br>format rate ${f1(r.fmt)}%, n = ${fmtN(r.n)}` }));
+rowChart($("mainChart"), mainRows, { max: 5, ticks: [0, 1, 2, 3, 4, 5], unit: "%" });
+$("mainTable").innerHTML = tableHTML(["Stage", "Test EM", "95% CI", "Format rate"],
+  D.rows.map((r) => [r.label, f2(r.v) + "%", `${f2(r.lo)} to ${f2(r.hi)}`, f1(r.fmt) + "%"]));
+
+/* ---- GRPO lines ---- */
+lineChart($("failLines"), { aria: "Dev exact match by GRPO step for two failed runs", x0: 0, x1: 200, y0: 0, y1: 2, xt: [0, 50, 100, 150, 200], yt: [0, 0.5, 1, 1.5, 2], yu: "%", xlabel: "GRPO step", R: 104,
+  series: [{ name: "v1 shaped", color: "var(--s2)", dy: 6, pts: [[0, 1.8], [50, 0.95], [100, 0.5], [150, 0.45], [200, 0.3]] },
+           { name: "v2 letter credit", color: "var(--s1)", dy: 0, pts: [[0, 1.8], [50, 1.6], [100, 1.5], [150, 1.15], [200, 0.9]] }] });
+const win = [[0, 2.65], [40, 3.25], [80, 3.3], [120, 3.1], [160, 2.95], [200, 3.2], [240, 3.9], [280, 4.0], [320, 4.2], [360, 3.65], [400, 4.05]];
+lineChart($("winLines"), { aria: "Dev exact match by cumulative GRPO step from SFT v2", x0: 0, x1: 400, y0: 2, y1: 5, xt: [0, 100, 200, 300, 400], yt: [2, 3, 4, 5], yu: "%", xlabel: "cumulative GRPO step",
+  nolabel: true, ref: [{ y: 2.65, label: "SFT v2 start" }], series: [{ name: "dynamic sampling", color: "var(--s1)", pts: win }] });
+lineChart($("fmtLines"), { aria: "Dev answer-tag rate by cumulative GRPO step", x0: 0, x1: 400, y0: 80, y1: 100, xt: [0, 100, 200, 300, 400], yt: [80, 85, 90, 95, 100], yu: "%", xlabel: "cumulative GRPO step", nolabel: true,
+  series: [{ name: "answer-tag rate", color: "var(--s2)", pts: [[0, 100], [200, 100], [240, 99.9], [280, 99.9], [320, 99.8], [360, 96.7], [400, 87.1]] }] });
+
+/* ---- Failure analysis ---- */
+const F = D.failure, P = (x) => 100 * x;
+$("nAnn").textContent = fmtN(F.definition_line_equals_annotation.n_annotated);
+rowChart($("defChart"), [
+  { label: "Definition line equals the annotation", v: P(F.definition_line_equals_annotation.share), text: f1(P(F.definition_line_equals_annotation.share)) + "%", tip: "Definition line matches the dataset annotation" },
+  { label: "Answer is correct", v: P(F.by_definition_annotation["definition annotated"].exact_match), text: f1(P(F.by_definition_annotation["definition annotated"].exact_match)) + "%", alt: true, tip: "Exact match on annotated clues" }],
+  { max: 100, ticks: [0, 25, 50, 75, 100], unit: "%" });
+rowChart($("shapeChart"), [
+  { label: "Wrong answers with the right letter count", v: P(F.wrong_but_right_length), text: f1(P(F.wrong_but_right_length)) + "%", tip: "Share of wrong answers whose length matches" },
+  { label: "Letters in the correct position (mean)", v: P(F.wrong_answer_mean_letter_position_overlap), text: f1(P(F.wrong_answer_mean_letter_position_overlap)) + "%", alt: true, tip: "Mean letter-position overlap of wrong answers" }],
+  { max: 100, ticks: [0, 25, 50, 75, 100], unit: "%" });
+const lens = Object.entries(F.by_answer_length);
+rowChart($("lenEm"), lens.map(([k, v]) => ({ label: k + " letters (n = " + fmtN(v.n) + ")", v: P(v.exact_match), text: f1(P(v.exact_match)) + "%", tip: `${k} letters: ${f1(P(v.exact_match))}% exact match` })), { max: 6, ticks: [0, 2, 4, 6], unit: "%" });
+rowChart($("lenOk"), lens.map(([k, v]) => ({ label: k + " letters", v: P(v.length_ok), text: f1(P(v.length_ok)) + "%", alt: true, tip: `${k} letters: ${f1(P(v.length_ok))}% have the right length` })), { max: 100, ticks: [0, 25, 50, 75, 100], unit: "%" });
+rowChart($("wordChart"), Object.entries(F.by_word_structure).map(([k, v]) => ({ label: k + " (n = " + fmtN(v.n) + ")", v: P(v.exact_match), text: f1(P(v.exact_match)) + "%", tip: `${k}: ${f1(P(v.exact_match))}%` })), { max: 8, ticks: [0, 2, 4, 6, 8], unit: "%" });
+rowChart($("srcChart"), Object.entries(F.by_source).map(([k, v]) => ({ label: k + " (n = " + fmtN(v.n) + ")", v: P(v.exact_match), text: f1(P(v.exact_match)) + "%", tip: `${k}: ${f1(P(v.exact_match))}%` })), { max: 8, ticks: [0, 2, 4, 6, 8], unit: "%" });
+$("diversity").textContent = `The model gave ${fmtN(F.unique_predicted_answers)} different answers across ${fmtN(F.n)} clues, and its ten most common answers make up ${f1(P(F.top10_predicted_answer_share))}% of outputs, so it is not parked on a few safe guesses.`;
+
+/* ---- Large model and distillation ---- */
+rowChart($("subChart"), D.subset.map((r, i) => ({ label: r.label, v: r.v, lo: r.lo, hi: r.hi, text: pct(r), alt: i === 3, tip: ciTxt(r) + ", n = 300" })),
+  { max: 80, ticks: [0, 20, 40, 60, 80], unit: "%" });
+const dn = [["A explanations vs control (483 clues)", "Arm A vs control, 483 clues"], ["B explanations vs control (483 clues)", "Arm B vs control, 483 clues"], ["B explanations vs control (3,699 clues)", "Arm B vs control, 3,699 clues"]];
+rowChart($("distChart"), dn.map(([k, l]) => { const t = D.distill[k].test;
+  return { label: l, v: t.diff_points, lo: t.ci95[0], hi: t.ci95[1], text: (t.diff_points > 0 ? "+" : "") + f2(t.diff_points), bad: true, kind: "dot",
+    tip: `${l}<br>${f2(t.diff_points)} points [${f2(t.ci95[0])}, ${f2(t.ci95[1])}]<br>dev: ${f2(D.distill[k].dev.diff_points)} [${f2(D.distill[k].dev.ci95[0])}, ${f2(D.distill[k].dev.ci95[1])}]` }; }),
+  { min: -3, max: 1, ticks: [-3, -2, -1, 0, 1], kind: "dot" });
+
+/* ---- GGUF ---- */
+const G = D.gguf;
+rowChart($("ggufChart"), [{ label: "GGUF minus fp16", v: G.diff_b_minus_a_points, lo: G.diff_ci95_points[0], hi: G.diff_ci95_points[1],
+  text: f2(G.diff_b_minus_a_points), kind: "dot", tip: `${f2(G.diff_b_minus_a_points)} points [${f2(G.diff_ci95_points[0])}, ${f2(G.diff_ci95_points[1])}]` }],
+  { min: -2, max: 1, ticks: [-2, -1, 0, 1], limit: -G.max_drop_points, kind: "dot" });
+$("ggufNote").textContent = `fp16 ${f2(100 * G.acc_a)}% and GGUF ${f2(100 * G.acc_b)}%. The interval stays above -1.5, so the check passes. Correctness agrees on ${f1(100 * G.correctness_agreement)}% of clues (${G.a_only_correct} solved only by fp16, ${G.b_only_correct} only by the GGUF). The extracted answers agree only ${f1(100 * G.answer_agreement)}% of the time, which is expected for a model that is wrong on 96% of clues.`;
+$("hash").textContent = sp.hash;
+</script>
+</body>
+</html>

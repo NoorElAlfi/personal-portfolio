@@ -1,3 +1,31 @@
+- slug: elden-ring-rag
+  title: "Building an Elden Ring lookup that would rather fail than invent an answer"
+  summary: A two-tier, fully local Elden Ring lookup — fuzzy item resolution with cited sources, an ordered quest index, and a resolver built to fail loudly rather than confabulate a location.
+  tags:
+    - retrieval
+    - sqlite
+    - local-llm
+    - elden-ring
+  file: elden-ring-rag.mdx
+  date: 2026-10-12
+  project: elden-ring-rag
+  source_ids:
+    - 2026-10-12-elden-ring-rag
+  generated: true
+- slug: cryptic-coach
+  title: "I fine-tuned a small model on cryptic crosswords. It gets about 3.6% right."
+  summary: Fine-tuning a small local model to answer cryptic crossword clues, scored on answers it never saw in training — including the two reinforcement-learning runs and the distillation experiment that went backwards.
+  tags:
+    - fine-tuning
+    - qlora
+    - grpo
+    - local-llm
+  file: cryptic-coach.mdx
+  date: 2026-10-12
+  project: cryptic-coach
+  source_ids:
+    - 2026-10-12-cryptic-coach
+  generated: true
 - slug: jev-werewolf
   title: Can Jev tell who is lying in Werewolf and Mafia?
   summary: A local judge model finds deception-like signal in LLM Werewolf and Mafia games but not in human games, and the signal turns out to look like wolf style rather than lying.

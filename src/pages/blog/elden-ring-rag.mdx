@@ -1,0 +1,31 @@
+errag is a personal Elden Ring lookup I run locally: no network calls at query time, no API keys, and no model required. It answers two shapes of question that look similar and are not. Tier 1 is "where do I find X" — a SQLite row lookup with fuzzy name resolution and a cited source. Tier 2 is "what should I do next", or "did I miss a quest" — ordered steps filtered by region or section. The current corpus holds 2,725 items, 3,732 aliases, 2,438 with a location, 1,448 with a region, and 9,643 passages; the quest document contributes 285 ordered steps.
+
+## Two tiers, no synthesis
+
+Tier 1 is a lookup. `errag where "somber smithing stone ball bearing 1"` returns one item, Somberstone Miner's Bell Bearing [1], with its region, the exact spot, a use line and the source URL, and it prints the genuinely ambiguous alternative under the answer so the near miss is visible. Community shorthand that appears in no in-game name is expanded by hand: `PHRASE_SYNONYMS` maps "ball bearing" to "bell bearing" and "somber smithing stone" to "somberstone", which is the whole reason a conflated query like that one lands correctly.
+
+Tier 2 keeps ordering, because ordering is the point. `errag quest Ranni` prints the Ranni steps in sequence with their region tags and branch notes; `--region Volcano` or `--section dlc` filter with AND. This is the one place a chunking retriever would destroy the value of the data.
+
+## Why no FTS5 and no vector store
+
+I measured both before building. SQLite's FTS5 `trigram` tokenizer returns zero rows for the fuzzy match `'smberston'` and cannot rank, and since the corpus is at most a few thousand rows a token-set scorer in Python is simpler and strictly better; I would revisit that only past roughly 100k rows. Embeddings are the wrong tool twice over. Tier 1 is a lookup, not a synthesis, and top-k cosine retrieval would blur five near-identical `Bell Bearing` entries together. Tier 2 is about 2.7k words of prose that fits in a context window whole, so chunking and embedding it would destroy the ordering that gives it meaning.
+
+## Failing loudly
+
+The resolver is built to refuse rather than confabulate. A query matching nothing returns exit 2 and says so; a query below the confidence threshold `ANSWER_MIN = 0.72` returns ranked suggestions instead of an answer and exits 1; a confident hit exits 0. A trailing index is guarded explicitly — asking for `Bell Bearing [1]` must not answer with `Bell Bearing [2]`, which is the bug the index check in `names.rank` was written to catch. And an item whose source page has an empty `==Acquisition==` section says `(no acquisition text in corpus)` instead of inventing a location.
+
+## The eval set is the spec
+
+`data/eval/golden.json` is the project's real specification. `errag eval` currently runs 40 answer cases, 6 chat-retrieval cases and 8 invariants — 54 checks, 0 failures. The answer cases are written from knowledge of the game, not read out of the database, because a case generated from the database passes no matter how wrong the database is. That is exactly how the scoring tie between the correct answer and `Smithing Stone [1]` got caught, along with the regressions that corpus widening introduced.
+
+## The curated escape hatch
+
+Scraping cannot supply judgement calls, so `data/curated/overrides.json` is merged on top of the corpus after every build, keyed by item name with any casing or punctuation. A key matching an existing item overrides its fields and marks the row `[curated]`; a key matching nothing and supplying a location is added as a new item. It carries 2 entries today, both clarifying which of the two miner's bell bearings is which.
+
+## What is still open
+
+287 of the 2,725 items have no location — their pages exist with an empty `==Acquisition==`. The quest document's DLC section is truncated mid-sentence: 13 DLC steps with 0 region tags against 272 base-game steps with 170 region-tagged, so base-game coverage is good and DLC is not. `category` is empty for most armaments because Fandom's weapon pages carry no `[[Category:...]]` links at all. And chat retrieval is heuristic and thinly tested, covered by only the 6 retrieval cases; the entity-detection preferences and the `GENERIC` word list are judgement calls I treat as a smoke alarm, not a guarantee.
+
+## See it
+
+The interactive walkthrough — both tiers side by side, the resolver's confidence behaviour and the golden set — is here: [errag, explained](/elden-ring-rag/explained.html).
