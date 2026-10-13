@@ -1,7 +1,7 @@
 - id: elden-ring-rag
-  title: errag — a local Elden Ring item and quest lookup
-  tag: Retrieval, SQLite, Local LLM
-  description: "A two-tier, fully local Elden Ring lookup, with no network calls at query time and no model required. Tier 1 answers \"where can I find X\" as a fuzzy-resolved SQLite row lookup that cites the source wiki page on every answer; tier 2 answers \"what should I do next / did I miss a quest\" as an ordered step index filterable by region and section. An optional local-LLM chat layer answers strictly from the passages retrieval returned, and a golden-set eval plus row invariants act as the project's real acceptance gate."
+  title: errag — a local Elden Ring companion
+  tag: Retrieval, Evaluation, Local LLM
+  description: "A local Elden Ring assistant for the questions that come up mid-playthrough: wiki pages and my quest-order list in SQLite, intent-aware retrieval that knows a boss from the shackles named after him, and a local model that answers only from what was retrieved, citing each claim. Measured on questions phrased the way I actually ask them, with a held-out set run once, and served as a phone-friendly page with a quest-progress checklist."
   status: active
   visibility: public
   repo: null

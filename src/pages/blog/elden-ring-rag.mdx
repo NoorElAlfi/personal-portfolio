@@ -1,31 +1,43 @@
-errag is a personal Elden Ring lookup I run locally: no network calls at query time, no API keys, and no model required. It answers two shapes of question that look similar and are not. Tier 1 is "where do I find X" — a SQLite row lookup with fuzzy name resolution and a cited source. Tier 2 is "what should I do next", or "did I miss a quest" — ordered steps filtered by region or section. The current corpus holds 2,725 items, 3,732 aliases, 2,438 with a location, 1,448 with a region, and 9,643 passages; the quest document contributes 285 ordered steps.
+errag is a local Elden Ring assistant I use mid-playthrough: wiki pages and my own quest-order list in a SQLite file, a retriever that picks the passages that answer a question, and a small model on my own GPU that answers only from those passages and cites each claim. I built the first version in an evening with DeepSeek's help. It passed every check in its own eval set, 54 of 54, and still failed most of the questions I actually had while playing. This post is about closing that gap, and the honest headline is the held-out number: on 20 questions written after the changes and run once, the right page reached the top three retrieved blocks for 18, up from 4 with the original code.
 
-## Two tiers, no synthesis
+## Measuring the questions I actually ask
 
-Tier 1 is a lookup. `errag where "somber smithing stone ball bearing 1"` returns one item, Somberstone Miner's Bell Bearing [1], with its region, the exact spot, a use line and the source URL, and it prints the genuinely ambiguous alternative under the answer so the near miss is visible. Community shorthand that appears in no in-game name is expanded by hand: `PHRASE_SYNONYMS` maps "ball bearing" to "bell bearing" and "somber smithing stone" to "somberstone", which is the whole reason a conflated query like that one lands correctly.
+The original eval set was mostly item lookups ("where is Moonveil"), so it never asked the shapes of question I actually type: "how do I start Ranni's quest", "is Margit weak to anything", "how do I get to the Haligtree", "what should I do after beating Godrick". I wrote 32 of those down before measuring anything. A question passes if a page that answers it lands in the top three retrieved blocks. The original system passed 7 of 32.
 
-Tier 2 keeps ordering, because ordering is the point. `errag quest Ranni` prints the Ranni steps in sequence with their region tags and branch notes; `--region Volcano` or `--section dlc` filter with AND. This is the one place a chunking retriever would destroy the value of the data.
+Running the original retriever over a widened corpus splits the two kinds of fix apart. Fetching NPC, location and system pages, 572 more cached pages, moved it from 7 to 10 of 32. The retrieval rewrite did the rest, to 32 of 32. That last number is flattering, because I tuned against that set. So after the rewrite I wrote 20 new questions and ran them once: 18 of 20. The original code scores 4 of 20 on the same set, and 8 with the widened corpus. The two misses, a plural and a boss my quest list never names, had general fixes, which makes 20 of 20 and also spends that set.
 
-## Why no FTS5 and no vector store
+## Why it failed
 
-I measured both before building. SQLite's FTS5 `trigram` tokenizer returns zero rows for the fuzzy match `'smberston'` and cannot rank, and since the corpus is at most a few thousand rows a token-set scorer in Python is simpler and strictly better; I would revisit that only past roughly 100k rows. Embeddings are the wrong tool twice over. Tier 1 is a lookup, not a synthesis, and top-k cosine retrieval would blur five near-identical `Bell Bearing` entries together. Tier 2 is about 2.7k words of prose that fits in a context window whole, so chunking and embedding it would destroy the ordering that gives it meaning.
+The corpus had no people or places in it. "How do I start Ranni's quest" retrieved Ranni's Scroll, because the only pages with "Ranni" in the title were items.
 
-## Failing loudly
+Even with the pages there, a name meant the wrong thing. A page only counted as a boss if "Bosses" was its first wiki category, and Margit's first is "Characters", so "is Margit weak to anything" retrieved Margit's Shackle. "How do I get to the Haligtree" retrieved Haligtree Gauntlets. Every page now gets a kind (boss, NPC, location, armour, item, guide) read from all of its categories, each question is read for an intent (combat, quest, travel, progression), and the intent decides which kind a name means. An item named after someone, like "Ranni's Scroll", now loses to that someone unless the question names the item.
 
-The resolver is built to refuse rather than confabulate. A query matching nothing returns exit 2 and says so; a query below the confidence threshold `ANSWER_MIN = 0.72` returns ranked suggestions instead of an answer and exits 1; a confident hit exits 0. A trailing index is guarded explicitly — asking for `Bell Bearing [1]` must not answer with `Bell Bearing [2]`, which is the bug the index check in `names.rank` was written to catch. And an item whose source page has an empty `==Acquisition==` section says `(no acquisition text in corpus)` instead of inventing a location.
+The player's words are not the wiki's. Nobody types "Wandering Mausoleum", "Blood Loss" or "Rebirth"; they type "walking mausoleum", "bleed" and "respec". A hand-edited shorthand file now maps 32 nicknames to in-game names and 53 phrases to the pages that answer them.
 
-## The eval set is the spec
+Progression questions ignored the quest list. "What should I do after beating Godrick" returned Godrick's lore. It now leads with an ordered window of my own quest list, starting at the Godrick milestone, and the web page keeps a checklist so "what should I do next" starts at the first step I haven't ticked off.
 
-`data/eval/golden.json` is the project's real specification. `errag eval` currently runs 40 answer cases, 6 chat-retrieval cases and 8 invariants — 54 checks, 0 failures. The answer cases are written from knowledge of the game, not read out of the database, because a case generated from the database passes no matter how wrong the database is. That is exactly how the scoring tie between the correct answer and `Smithing Stone [1]` got caught, along with the regressions that corpus widening introduced.
+## The model was the other half
 
-## The curated escape hatch
+With retrieval fixed, answers were still weak. Given the same context at temperature 0, `llama3.1:8b` answered the Godrick question with one step; `qwen2.5:7b` gave the 11 steps that follow, in order, so it is now the default. The system prompt became a short rulebook: the direct answer first, at most six ordered bullets, a citation on every line, and the question repeated after the context. Each rule is there because a 7 to 8B model got that thing wrong without it.
 
-Scraping cannot supply judgement calls, so `data/curated/overrides.json` is merged on top of the corpus after every build, keyed by item name with any casing or punctuation. A key matching an existing item overrides its fields and marks the row `[curated]`; a key matching nothing and supplying a location is added as a new item. It carries 2 entries today, both clarifying which of the two miner's bell bearings is which.
+Across all 52 questions, 50 answers passed the mechanical checks (every citation points at a real block, the answer has substance, numbers appear in the context) and 2 left out citations. Those checks cannot tell me whether an answer is true. Reading them did. "How do I get to Leyndell" was told to defeat Maliketh, because the Royal and Ashen Capitals tied on name and the tie went alphabetically to the late-game page. Ties now go to the page the rest of the wiki mentions most, 222 passages against 52. With the right page retrieved, the model still invents a detour through the sewers, which is the limit of a 7B model reading a few thousand characters of wiki text.
+
+## Bugs that only reading answers found
+
+Most of what I fixed came from asking a question and reading the reply, not from a test written in advance: stop words stripped from questions but not from page names, so "Lake of Rot" could never match by name; a nickname rule giving an item called "Dark Moon" an exact match for the Dark Moon Greatsword; spelling correction in the item card but not in chat, so "where is moonveal" showed the right card and then said nothing matched; quest progress keyed by step text, when the list repeats some lines word for word; and a web server that died whenever a browser tab closed mid-answer. Each one is now a regression case. The eval runs 114 checks and the unit tests 50, all passing.
+
+## Using it
+
+`errag serve` starts a local page I keep open on my phone while I play. Answers stream in, each citation highlights its source, and a confident item match shows a card with location, requirements and scaling. The original threw those numbers away, even though the wiki's infoboxes carry them for 1,588 items.
+
+![errag answering a misspelled question with the Moonveil item card and a cited answer](/elden-ring-rag/web-ask.png)
+
+<img src="/elden-ring-rag/phone-quests.png" alt="The quest log on a phone, with progress and the next steps" style={{display: "block", width: "20rem", maxWidth: "100%", height: "auto", margin: "0 auto"}} />
 
 ## What is still open
 
-287 of the 2,725 items have no location — their pages exist with an empty `==Acquisition==`. The quest document's DLC section is truncated mid-sentence: 13 DLC steps with 0 region tags against 272 base-game steps with 170 region-tagged, so base-game coverage is good and DLC is not. `category` is empty for most armaments because Fandom's weapon pages carry no `[[Category:...]]` links at all. And chat retrieval is heuristic and thinly tested, covered by only the 6 retrieval cases; the entity-detection preferences and the `GENERIC` word list are judgement calls I treat as a smoke alarm, not a guarantee.
+The model can still invent details the retrieval did not give it, and no retrieval check catches that; the citations are there so I can. The quest list's DLC section is truncated in the source document: 12 Shadow of the Erdtree steps with no region tags, against 270 for the base game. The question sets are small, 52 questions judged by one person, and the held-out set is spent. The intent words and the shorthand file are judgement calls that are testable now, which is not the same as correct.
 
 ## See it
 
-The interactive walkthrough — both tiers side by side, the resolver's confidence behaviour and the golden set — is here: [errag, explained](/elden-ring-rag/explained.html).
+The before-and-after explorer, with the real retrieval outputs and answers for eight questions, the measured results and the full list of bugs, is on its own page: [errag, explained](/elden-ring-rag/explained.html).
