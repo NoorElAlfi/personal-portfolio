@@ -1,3 +1,31 @@
+- id: elden-ring-rag
+  title: errag — a local Elden Ring companion
+  tag: Retrieval, Evaluation, Local LLM
+  description: "A local Elden Ring assistant for the questions that come up mid-playthrough: wiki pages and my quest-order list in SQLite, intent-aware retrieval that knows a boss from the shackles named after him, and a local model that answers only from what was retrieved, citing each claim. Measured on questions phrased the way I actually ask them, with a held-out set run once, and served as a phone-friendly page with a quest-progress checklist."
+  status: active
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: 2026-10-12
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/elden-ring-rag
+- id: cryptic-coach
+  title: Cryptic Coach
+  tag: LLM Fine-tuning, QLoRA, GRPO
+  description: "Fine-tuned Qwen2.5-1.5B-Instruct to answer cryptic crossword clues on a single 8 GB GPU — QLoRA supervised fine-tuning, then GRPO with a verifiable reward — scoring every stage on the same answer-disjoint test set with 95% bootstrap confidence intervals. The honest result: the best model solves 3.6% of unseen clues, its \"Definition:\" line is a template learned from annotations rather than reasoning, and two GRPO runs plus a distillation experiment are written up as the negative results they were."
+  status: shipped
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: 2026-10-12
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/cryptic-coach
 - id: jev-werewolf
   title: Jev Werewolf Experiment
   tag: LLM Evaluation, Deception Detection

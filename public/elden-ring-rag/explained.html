@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>errag, explained</title>
+<meta name="description" content="How a local Elden Ring assistant went from answering 4 of 20 unseen playthrough questions to 20 of 20, with the real before/after outputs.">
+<style>
+/* Layout concept: a field report. A dark-gold masthead in the app's own palette, then one section per
+   claim, each carrying its evidence: the real retrieval outputs, the measured scores, the bugs. All data on
+   this page was captured from the project's own runs; nothing is illustrative. */
+:root {
+  --bg: #f7f3ea; --surface: #fbf8f1; --surface-2: #efe8d8; --ink: #211d15; --ink-2: #554c3b; --muted: #7a705c;
+  --hair: rgba(33,29,21,.12); --hair-2: rgba(33,29,21,.22);
+  --gold: #8a6a22; --gold-ink: #6e5214; --gold-bg: rgba(138,106,34,.10);
+  --s1: #2a78d6; --s2: #eb6834;
+  --good: #2f6b28; --good-bg: #e3efdc; --warn: #8a5a0f; --warn-bg: #f6ead2; --bad: #a3392b; --bad-bg: #f7e1dc;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f0e0b; --surface: #1b1915; --surface-2: #24211b; --ink: #efe9da; --ink-2: #c4bba6; --muted: #9a917c;
+  --hair: rgba(239,233,218,.10); --hair-2: rgba(239,233,218,.20);
+  --gold: #d6b46c; --gold-ink: #f0d79a; --gold-bg: rgba(214,180,108,.10);
+  --s1: #3987e5; --s2: #d95926;
+  --good: #8fc47f; --good-bg: #1f2b1b; --warn: #e2ac62; --warn-bg: #2d2416; --bad: #ec8a7c; --bad-bg: #331c18;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f0e0b; --surface: #1b1915; --surface-2: #24211b; --ink: #efe9da; --ink-2: #c4bba6; --muted: #9a917c;
+  --hair: rgba(239,233,218,.10); --hair-2: rgba(239,233,218,.20);
+  --gold: #d6b46c; --gold-ink: #f0d79a; --gold-bg: rgba(214,180,108,.10);
+  --s1: #3987e5; --s2: #d95926;
+  --good: #8fc47f; --good-bg: #1f2b1b; --warn: #e2ac62; --warn-bg: #2d2416; --bad: #ec8a7c; --bad-bg: #331c18;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--sans); padding: 0 16px 72px; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+h1, h2, h3 { margin: 0; line-height: 1.15; text-wrap: balance; }
+h1 { font: 600 clamp(2rem, 5.2vw, 3.3rem)/1.06 var(--serif); letter-spacing: -.01em; color: var(--gold-ink); }
+h2 { font: 600 clamp(1.45rem, 3.2vw, 1.95rem)/1.15 var(--serif); margin-bottom: 8px; }
+h3 { font-size: 1.02rem; margin-bottom: 4px; }
+p { margin: 0 0 12px; max-width: 70ch; }
+a { color: var(--gold); }
+code { font-family: var(--mono); font-size: .86em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+.eyebrow { font: 600 .72rem/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.lede { color: var(--ink-2); font-size: 1.08rem; max-width: 66ch; }
+.note { color: var(--muted); font-size: .88rem; }
+section { padding-top: 44px; margin-top: 44px; border-top: 1px solid var(--hair); }
+
+/* masthead */
+header.mast { padding: 44px 0 8px; background: radial-gradient(ellipse 70% 90% at 20% 0%, var(--gold-bg), transparent 70%); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 26px; }
+.tile { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; }
+.tile .big { font: 600 2.1rem/1.1 var(--serif); color: var(--ink); font-variant-numeric: tabular-nums; }
+.tile .big small { font: 500 1rem var(--sans); color: var(--muted); }
+.tile .lbl { font-size: .86rem; color: var(--ink-2); margin-top: 4px; }
+
+/* explorer */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 16px; }
+.chips button { font: inherit; font-size: .9rem; color: var(--ink-2); background: var(--surface); border: 1px solid var(--hair-2);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.chips button:hover { border-color: var(--gold); color: var(--ink); }
+.chips button[aria-pressed="true"] { background: var(--gold-bg); border-color: var(--gold); color: var(--gold-ink); }
+.vs { display: grid; grid-template-columns: 1fr 1.35fr; gap: 14px; }
+@media (max-width: 760px) { .vs { grid-template-columns: 1fr; } }
+.pane { background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; padding: 16px; min-width: 0; }
+.pane.after { border-color: var(--hair-2); }
+.pane h3 { display: flex; align-items: baseline; gap: 8px; font: 600 .78rem/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.pane.after h3 { color: var(--gold); }
+.hits { list-style: none; margin: 0; padding: 0; }
+.hits li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--hair); align-items: start; }
+.hits li:first-child { border-top: 0; }
+.mark { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: .72rem; font-weight: 700; margin-top: 2px; }
+.mark.y { background: var(--good-bg); color: var(--good); } .mark.n { background: var(--surface-2); color: var(--muted); }
+.hits .t { font-weight: 500; overflow-wrap: anywhere; } .hits .k { font-size: .78rem; color: var(--muted); }
+.verdict { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; margin: 14px 0 8px; }
+.verdict.good { background: var(--good-bg); color: var(--good); } .verdict.warn { background: var(--warn-bg); color: var(--warn); }
+.verdict.bad { background: var(--bad-bg); color: var(--bad); }
+.answer { border-top: 1px solid var(--hair); padding-top: 4px; font-size: .96rem; }
+.answer p { margin: 0 0 8px; } .answer ul, .answer ol { margin: 0 0 8px; padding-left: 20px; } .answer li { margin-bottom: 3px; }
+.answer .why { color: var(--ink-2); font-size: .88rem; margin-top: 8px; }
+sup.c { font: 600 .68rem var(--sans); color: var(--gold); background: var(--gold-bg); border-radius: 4px; padding: 0 4px; margin-left: 1px; }
+.scroll { max-height: 340px; overflow: auto; padding-right: 4px; }
+
+/* chart */
+.chart { background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; padding: 18px 18px 8px; position: relative; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .86rem; color: var(--ink-2); margin-bottom: 14px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.plot { position: relative; margin-left: 210px; margin-right: 56px; }
+@media (max-width: 640px) { .plot { margin-left: 0; } }
+.grid { position: absolute; inset: 0; pointer-events: none; }
+.grid b { position: absolute; top: 0; bottom: 22px; width: 1px; background: var(--hair); }
+.grid em { position: absolute; bottom: 0; transform: translateX(-50%); font: normal .74rem var(--sans); color: var(--muted); font-variant-numeric: tabular-nums; }
+.group { position: relative; padding: 10px 0; }
+.group .name { position: absolute; left: -210px; width: 196px; top: 50%; transform: translateY(-50%); font-size: .88rem; color: var(--ink-2); line-height: 1.3; }
+@media (max-width: 640px) { .group .name { position: static; transform: none; width: auto; margin-bottom: 6px; } }
+.bar { position: relative; height: 22px; margin: 2px 0; }
+.bar .fill { height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
+.bar .val { position: absolute; top: 50%; transform: translateY(-50%); font-size: .8rem; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; padding-left: 6px; }
+.bar:hover .fill, .bar:focus .fill { filter: brightness(1.1); outline: 2px solid var(--surface); }
+.axis-space { height: 26px; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .8rem; padding: 6px 9px; border-radius: 7px; white-space: nowrap; opacity: 0; transition: opacity .1s; z-index: 3; }
+details.table { margin-top: 10px; font-size: .9rem; }
+details.table summary { cursor: pointer; color: var(--muted); }
+table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+th { font-weight: 600; color: var(--ink-2); }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* flow */
+.flow { display: grid; gap: 10px; counter-reset: step; }
+.stage { display: grid; grid-template-columns: 34px 1fr; gap: 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 12px 14px; }
+.stage::before { counter-increment: step; content: counter(step); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font: 600 .9rem var(--serif); color: var(--gold-ink); background: var(--gold-bg); border: 1px solid var(--gold); }
+.stage p { margin: 2px 0 0; color: var(--ink-2); font-size: .94rem; max-width: none; }
+.stage .eg { font-family: var(--mono); font-size: .8rem; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+.blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 8px; }
+.blocks div { border: 1px dashed var(--hair-2); border-radius: 8px; padding: 7px 9px; font-size: .84rem; color: var(--ink-2); }
+.blocks b { display: block; color: var(--ink); font-size: .86rem; }
+
+/* bugs */
+.bugs { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; }
+.bug { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 14px 16px; }
+.bug .sym { font: 500 1rem/1.35 var(--serif); color: var(--ink); margin-bottom: 8px; }
+.bug dl { margin: 0; display: grid; grid-template-columns: 52px 1fr; gap: 4px 10px; font-size: .88rem; }
+.bug dt { color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; padding-top: 2px; }
+.bug dd { margin: 0; color: var(--ink-2); }
+
+/* shots */
+.shots { display: grid; grid-template-columns: 2.2fr 1fr 1fr; gap: 14px; align-items: start; }
+@media (max-width: 760px) { .shots { grid-template-columns: 1fr 1fr; } .shots figure:first-child { grid-column: 1 / -1; } }
+figure { margin: 0; }
+figure img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--hair-2); background: #0e0d0b; }
+figcaption { font-size: .84rem; color: var(--muted); margin-top: 6px; }
+ul.open { padding-left: 20px; } ul.open li { margin-bottom: 8px; max-width: 72ch; }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--hair); font-size: .84rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">errag · how it works now</div>
+  <h1>Asking a wiki the questions you actually ask mid-playthrough</h1>
+  <p class="lede" style="margin-top:14px">errag is a local Elden Ring assistant: wiki pages and my own quest-order list in SQLite, a retriever that
+  picks the right passages, and a small model on my GPU that answers only from them, citing each claim. The first version passed its
+  own tests and still failed the questions I actually had while playing. This page shows what changed, using the system's real outputs.</p>
+  <div class="tiles">
+    <div class="tile"><div class="big">4 → 18 <small>of 20</small></div><div class="lbl">unseen questions with the right page in the top 3, first run (20 after two general fixes)</div></div>
+    <div class="tile"><div class="big">7 → 32 <small>of 32</small></div><div class="lbl">playthrough questions written before measuring, then tuned against</div></div>
+    <div class="tile"><div class="big">10,616</div><div class="lbl">wiki passages, 2,867 items and 282 quest steps, all in one local SQLite file</div></div>
+    <div class="tile"><div class="big">qwen2.5:7b</div><div class="lbl">answers on an 8 GB RTX 2070 SUPER; no API key, no network at question time</div></div>
+  </div>
+</header>
+
+<section id="explorer">
+  <div class="eyebrow">Before and after</div>
+  <h2>Same question, what the model gets handed</h2>
+  <p>A retrieval system is only as good as what it puts in front of the model. Pick a question: the left column is what the original
+  retriever handed over (top three pages), the right is what it hands over now, followed by the answer <code>qwen2.5:7b</code> gave from it at
+  temperature 0. A tick marks a page that actually answers the question. The verdicts are mine, checked against the game.</p>
+  <div class="chips" id="chips" role="group" aria-label="Questions"></div>
+  <div class="vs">
+    <div class="pane"><h3>Before <span class="note" style="text-transform:none;letter-spacing:0;font-weight:400">original code, original corpus</span></h3><ul class="hits" id="before"></ul></div>
+    <div class="pane after"><h3>Now</h3><ul class="hits" id="after"></ul><div id="verdict"></div><div class="answer scroll" id="answer"></div></div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="eyebrow">Measured</div>
+  <h2>Where the improvement came from</h2>
+  <p>Each question passes if a page that answers it is in the top three retrieved blocks. Running the original retriever on the widened corpus
+  separates the two changes: fetching NPC, location and system pages helped a little, and the retrieval rewrite did most of the work.</p>
+  <div class="chart" id="chart">
+    <div class="legend"><span><i style="background:var(--s1)"></i>Playthrough set · 32 questions, tuned against</span><span><i style="background:var(--s2)"></i>Held-out set · 20 questions, first run</span></div>
+    <div class="plot" id="plot"></div>
+    <div class="tip" id="tip" role="tooltip"></div>
+  </div>
+  <details class="table"><summary>Show as a table</summary>
+    <table><thead><tr><th>Configuration</th><th>Playthrough (32)</th><th>Held-out (20)</th></tr></thead><tbody id="tbody"></tbody></table>
+  </details>
+  <p class="note" style="margin-top:12px">The playthrough set was written before any measurement and then tuned against, so its 32/32 flatters the code. The held-out set was
+  written after the rewrite and run once: 18/20. Its two misses (a plural, and a boss the quest document never names) were fixed generally, which spends that set;
+  the next round of changes needs a fresh one.</p>
+</section>
+
+<section id="flow">
+  <div class="eyebrow">The pipeline</div>
+  <h2>What happens to a question</h2>
+  <div class="flow">
+    <div class="stage"><div><h3>Rewrite the player's words into the wiki's</h3>
+      <p>A hand-edited shorthand file maps nicknames to in-game names, and goals to the pages that answer them. Misspelled name words are corrected,
+      but only if the word appears nowhere in the wiki's own prose, so "where" is never "corrected" to "wheel".</p>
+      <div class="eg">rob → rivers of blood · walking mausoleum → wandering mausoleum · respec → [Rebirth, Larval Tear] · moonveal → moonveil</div></div></div>
+    <div class="stage"><div><h3>Read the intent</h3>
+      <p>Combat ("beat", "weak"), quest ("questline"), travel ("get to", "where is") or progression ("after", "next", "missed").</p>
+      <div class="eg">"how do I get to the haligtree" → travel</div></div></div>
+    <div class="stage"><div><h3>Decide which page a name means</h3>
+      <p>Every page has a kind (boss, NPC, location, armour, item, guide) read from all of its wiki categories. The intent prefers a kind; an item named
+      <em>after</em> someone loses to that someone; ties go to the page the rest of the wiki mentions most.</p>
+      <div class="eg">haligtree → Miquella's Haligtree (location), not Haligtree Gauntlets (armour)</div></div></div>
+    <div class="stage"><div><h3>Assemble the context, best first</h3>
+      <div class="blocks">
+        <div><b>Quest order</b>for progression questions, an ordered window of my quest list, skipping steps I've ticked off</div>
+        <div><b>Concept pages</b>what the shorthand file points at</div>
+        <div><b>Named pages</b>their item card (location, requirements, scaling) and the sections that fit the intent</div>
+        <div><b>Keyword search</b>BM25 over section-level chunks, to fill the rest</div>
+      </div></div></div>
+    <div class="stage"><div><h3>Answer from that, and only that</h3>
+      <p>The model gets the question before and after the context and a short rulebook: the direct answer first, at most six ordered bullets, a citation
+      on every line. Each rule exists because a 7 to 8B model got that thing wrong without it.</p></div></div>
+  </div>
+</section>
+
+<section id="bugs">
+  <div class="eyebrow">What measuring found</div>
+  <h2>Bugs no unit test would have caught</h2>
+  <p>Almost every one of these was found by asking a real question and reading what came back, not by a test written in advance. Each is now a regression case.</p>
+  <div class="bugs">
+    <div class="bug"><div class="sym">"Is Margit weak to anything?" retrieved Margit's Shackle.</div><dl><dt>Cause</dt><dd>A page counted as a boss only if "Bosses" was its <em>first</em> wiki category. Margit's first is "Characters".</dd><dt>Fix</dt><dd>Kinds read from every category.</dd></dl></div>
+    <div class="bug"><div class="sym">"How do I start Ranni's quest?" retrieved Ranni's Scroll.</div><dl><dt>Cause</dt><dd>No NPC pages in the corpus, and nothing told a person apart from an item named after them.</dd><dt>Fix</dt><dd>Fetched NPC and location pages; possessive items are demoted unless named.</dd></dl></div>
+    <div class="bug"><div class="sym">"Lake of Rot" could never match by name.</div><dl><dt>Cause</dt><dd>Stop words were stripped from questions ("lake rot") but not from page names ("lake of rot").</dd><dt>Fix</dt><dd>Strip them from both sides.</dd></dl></div>
+    <div class="bug"><div class="sym">"How do I get to Leyndell?" was told to defeat Maliketh.</div><dl><dt>Cause</dt><dd>Royal and Ashen Capital tied on name, and the tie went alphabetically to the late-game page.</dd><dt>Fix</dt><dd>Ties go to the page the wiki mentions most (222 passages against 52).</dd></dl></div>
+    <div class="bug"><div class="sym">"Dark moon greatsword" resolved to an item called "Dark Moon".</div><dl><dt>Cause</dt><dd>A new nickname, dark moon → dark moon greatsword, was also applied to <em>aliases</em>, giving the wrong item an exact match.</dd><dt>Fix</dt><dd>Nicknames expand questions only.</dd></dl></div>
+    <div class="bug"><div class="sym">"Where is moonveal" showed the Moonveil card, then said nothing matched.</div><dl><dt>Cause</dt><dd>Spelling correction existed in the item lookup but not in chat retrieval.</dd><dt>Fix</dt><dd>Both correct typos, restricted to words the wiki never uses.</dd></dl></div>
+    <div class="bug"><div class="sym">Ticking off "Talk to Fia" ticked a second step too.</div><dl><dt>Cause</dt><dd>Progress was keyed by step text, and the quest list repeats some lines word for word.</dd><dt>Fix</dt><dd>Key by text plus occurrence.</dd></dl></div>
+    <div class="bug"><div class="sym">Closing a browser tab killed the server.</div><dl><dt>Cause</dt><dd>The CLI makes SIGPIPE fatal so piping into <code>head</code> exits quietly; a dropped stream did the same to the web server.</dd><dt>Fix</dt><dd><code>serve</code> ignores SIGPIPE.</dd></dl></div>
+  </div>
+</section>
+
+<section id="app">
+  <div class="eyebrow">Using it</div>
+  <h2>A page to keep open beside the game</h2>
+  <p><code>errag serve</code> starts a local web page I can open on my phone while I play. Answers stream in as the model writes them, each citation highlights its
+  source, and a confident item match shows a card with location, requirements and scaling. The quest log is my quest-order list as a checklist, and
+  "what should I do next" answers from the first steps I haven't ticked off.</p>
+  <div class="shots">
+    <figure><img src="web-ask.png" alt="errag web page answering 'where is moonveal' with a Moonveil item card and a cited answer" width="1920" height="1640"><figcaption>A typo, resolved: the item card, then the answer with its citation.</figcaption></figure>
+    <figure><img src="phone-ask.png" alt="errag on a phone answering 'what should I do next' from the quest list" width="780" height="1688"><figcaption>"What should I do next", from my own progress.</figcaption></figure>
+    <figure><img src="phone-quests.png" alt="errag quest log on a phone with a progress bar and the next steps" width="780" height="1688"><figcaption>The quest log: next up, filters, done up to here.</figcaption></figure>
+  </div>
+</section>
+
+<section id="open">
+  <div class="eyebrow">Still open</div>
+  <h2>What it still gets wrong</h2>
+  <ul class="open">
+    <li><strong>The model can still invent details.</strong> For "how do I get to Leyndell", retrieval now hands over the right page, and <code>qwen2.5:7b</code> still adds a route
+      through the sewers that isn't there. Retrieval checks can't catch that; the citations are there so I can.</li>
+    <li><strong>The quest list's DLC section is truncated.</strong> The source document stops mid-sentence: 12 Shadow of the Erdtree steps with no region tags, against 270 base-game steps.</li>
+    <li><strong>The question sets are small and mine.</strong> 52 playthrough questions and one person's judgement of what "right" means. The held-out set is now spent.</li>
+    <li><strong>Heuristics, not learning.</strong> Intent words, kind bonuses and the shorthand file are judgement calls. They are testable now, which is not the same as correct.</li>
+  </ul>
+</section>
+
+<footer>Wiki content from the Elden Ring Fandom wiki (CC BY-SA), fetched once for personal use and cited on every answer. The quest-order list is the author's own.
+Every output on this page was captured from the project's own runs on 2026-10-12.</footer>
+</div>
+
+<script>
+const DATA = [{"q": "how do I start ranni's quest", "before": ["Ranni's Scroll", "Ranni's Dark Moon", "Ranni's Great Rune"], "after": ["Ranni the Witch", "Quest order, steps mentioning ranni (steps 7-177)", "Ranni's Rise"], "kinds": ["item", "quest", "search"], "answer": "To start Ranni's quest, follow these steps:\n\n- Visit the Church of Elleh and meet Ranni the Witch at night. Exhaust her dialogue to receive the Spirit Calling Bell and Lone Wolf Ashes [4].\n- Alternatively, you can purchase the Lone Wolf Ashes for 200 runes and the Spirit Calling Bell for 1,000 runes from the Twin Maiden Husks in Roundtable Hold if you missed the initial encounter [4].", "ok": ["Ranni the Witch", "Quest order"], "verdict": "correct", "why": ""}, {"q": "is margit weak to anything", "before": ["Margit's Shackle", "Margit the Fell Omen", "Margit, the Fell Omen"], "after": ["Margit the Fell Omen", "Margit, the Fell Omen", "Beast Claw (Spell)"], "kinds": ["item", "page", "search"], "answer": "Margit the Fell Omen is not particularly weak to anything, but he takes some additional damage from slashing and fire attacks, and can also be poisoned and bled [3].\n\n- Use slashing and fire attacks to deal more damage.\n- Poison and bleed Margit to weaken him further.\n- Employ an aggressive playstyle with jump attacks, charged attacks, and Ash of War to exploit his openings [3].", "ok": ["Margit the Fell Omen", "Margit, the Fell Omen"], "verdict": "correct", "why": ""}, {"q": "how do I get to the haligtree", "before": ["Haligtree Gauntlets", "Haligtree Greaves", "Haligtree Knight Gauntlets"], "after": ["Miquella's Haligtree", "Elphael, Brace of the Haligtree", "Haligtree Gauntlets"], "kinds": ["page", "page", "search"], "answer": "To reach Miquella's Haligtree, follow these steps:\n\n- Solve the puzzle in the Evergaol at Ordina, Liturgical Town [5].\n- Take the Sending Gate to access Miquella's Haligtree [5].", "ok": ["Miquella's Haligtree", "Elphael, Brace of the Haligtree"], "verdict": "incomplete", "why": "True as far as it goes, but it skips the two halves of the Haligtree Secret Medallion and the Grand Lift of Rold that come first."}, {"q": "what should I do after beating godrick", "before": ["Godrick the Grafted", "Soldier of Godrick", "Godrick Soldier"], "after": ["Quest order, what comes next (steps 47-61)", "Godrick the Grafted", "Godrick the Grafted (grace)"], "kinds": ["quest", "item", "page"], "answer": "1. After defeating Godrick the Grafted, proceed to Roundtable Hold to speak with Rogier about the face [1].\n2. Exhaust all dialogue options with Enia, Gideon, and Nepheli at Roundtable Hold [1].\n3. Talk to Rodreika and Hewg several times until Hewg takes Rodreika as his apprentice [1].\n4. Return to Stormveil to find the Crimson Hood [1].\n5. Head to Liurnia of the Lakes and meet Hyetta, giving her the Shabriri Grape [1].\n6. Engage with Thops in the Church of Irith in Liurnia [1].\n7. Speak with Rya in Liurnia [1].\n8. Interact with Boggart, buy the necklace and prawn, and return Rya’s necklace [1].\n9. Visit Nepheli at the Village of Albinaurics, exhaust dialogue, and kill the omenkiller [1].\n10. Release Albus from the pot in the Village of Albinaurics and obtain the medallion half [1].\n11. Finally, find Latenna at Slumbering Wolf’s Shack in Liurnia [1].", "ok": ["Quest order"], "verdict": "correct", "why": "These are the next steps of my own quest list, in order."}, {"q": "how do I respec my stats", "before": ["Stats", "Stats and Attributes", "Rennala, Queen of the Full Moon"], "after": ["Rebirth", "Larval Tear", "Stats and Attributes"], "kinds": ["page", "item", "page"], "answer": "To respec your stats, you need to follow these steps:\n\n- Defeat Rennala, Queen of the Full Moon, to unlock the Rebirth mechanic [9].\n- Find and use one Larval Tear to perform Rebirth [1].", "ok": ["Rebirth", "Larval Tear"], "verdict": "correct", "why": ""}, {"q": "how does bleed work", "before": ["Stone of Gurranq", "Death Rite Bird", "Shadow Bait"], "after": ["Blood Loss", "Swordhand of Night Anna", "Stone of Gurranq"], "kinds": ["page", "search", "search"], "answer": "Blood Loss in Elden Ring is caused by serrated, thorned, extremely sharp, or bloodstained weapons, as well as spells and items affiliated with the Lord of Blood [1]. Here are the steps to understand and manage it:\n\n- Blood Loss deals a combination of flat and percentual damage when inflicted, causing humanoid or smaller enemies, and the Tarnished, to be slightly staggered [2].\n- The flat damage is usually 100, but it increases to 200 when done by Somber Smithing Stone-upgraded weapons with innate Blood Loss and Arcane-scaling or by regular Smithing Stone-upgraded weapons with innate Blood Loss and with the Blood-affinity [2].\n- The percentual damage varies by enemy type: normal ones and Tarnished take 15%, bosses and enemies that directly accompany them take 10.5%, and the Lord of Blood takes 7.5% [2].\n- Mohg's Nihil attack inflicts percentual damage only, roughly 33% on each of the first two pulses and about 66% on the final pulse. Using the Purifying Crystal Tear reduces this damage significantly [2].\n- Blood Loss can also be inflicted during invincibility frames, such as a roll, but only causes the stun and not the damage [2].", "ok": ["Blood Loss"], "verdict": "correct", "why": ""}, {"q": "where is the walking mausoleum", "before": ["Mausoleum Gauntlets", "Mausoleum Greaves", "Mausoleum Knight Gauntlets"], "after": ["Wandering Mausoleum", "Mohgwyn Dynasty Mausoleum", "Mausoleum Gauntlets"], "kinds": ["page", "page", "search"], "answer": "The Wandering Mausoleum can be found on the western side of Weeping Peninsula, south-east of the Fourth Church of Marika [6]. It can also be located outside Castle Sol in the Mountaintops of the Giants, and in Liurnia of the Lakes, north-east of the Academy of Raya Lucaria [11].", "ok": ["Wandering Mausoleum"], "verdict": "correct", "why": "Nobody types the wiki's name for it; the shorthand file maps 'walking' to 'Wandering'."}, {"q": "how do I get to leyndell", "before": ["Leyndell Knight Armor", "Leyndell Knight Gauntlets", "Leyndell Knight Helm"], "after": ["Leyndell, Royal Capital", "Leyndell, Ashen Capital", "Leyndell Catacombs"], "kinds": ["page", "page", "search"], "answer": "To get to Leyndell, Royal Capital, follow these steps:\n\n- Head to the Capital Outskirts. [1]\n- From there, travel to the Forbidden Lands. [1]\n- Proceed to the Subterranean Shunning-Grounds. [1]\n- Drop down through the open manhole cover to access the sewers. [3]", "ok": ["Leyndell, Royal Capital", "Altus Plateau"], "verdict": "wrong", "why": "Retrieval now hands over the right page, but the model invents a route through the Forbidden Lands and the sewers. The real route runs from the Altus Plateau through the Capital Outskirts, with two Great Runes."}];
+const RESULTS = [
+  {name: "Original retrieval, original corpus", p: 7, h: 4},
+  {name: "Original retrieval, widened corpus", p: 10, h: 8},
+  {name: "Rewritten retrieval, widened corpus", p: 32, h: 18},
+];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const $ = s => document.querySelector(s);
+
+// ---- explorer
+function md(text) {
+  const inline = s => esc(s).replace(/\[(\d+)\]/g, '<sup class="c">$1</sup>').replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  const out = []; let list = null;
+  for (const raw of text.split("\n")) {
+    const line = raw.trim(); let m;
+    if (!line) { if (list) { out.push(`</${list}>`); list = null; } continue; }
+    if ((m = line.match(/^(?:[-*•]|(\d+)[.)])\s+(.*)$/))) {
+      const kind = m[1] ? "ol" : "ul";
+      if (list !== kind) { if (list) out.push(`</${list}>`); out.push(`<${kind}>`); list = kind; }
+      out.push(`<li>${inline(m[2])}</li>`);
+    } else { if (list) { out.push(`</${list}>`); list = null; } out.push(`<p>${inline(line)}</p>`); }
+  }
+  if (list) out.push(`</${list}>`);
+  return out.join("");
+}
+const KIND = {quest: "quest-order steps", item: "item card", page: "wiki page", search: "keyword match"};
+function hits(list, ok, kinds) {
+  return list.map((t, i) => {
+    const y = ok.some(o => t === o || t.startsWith(o));
+    return `<li><span class="mark ${y ? "y" : "n"}" aria-label="${y ? "answers the question" : "does not answer it"}">${y ? "✓" : "–"}</span>
+      <div><div class="t">${esc(t)}</div>${kinds ? `<div class="k">${KIND[kinds[i]] || ""}</div>` : ""}</div></li>`;
+  }).join("");
+}
+function show(i) {
+  const d = DATA[i];
+  document.querySelectorAll("#chips button").forEach((b, j) => b.setAttribute("aria-pressed", j === i));
+  $("#before").innerHTML = hits(d.before, d.ok);
+  $("#after").innerHTML = hits(d.after, d.ok, d.kinds);
+  const cls = {correct: "good", incomplete: "warn", wrong: "bad"}[d.verdict];
+  const label = {correct: "Answer is correct", incomplete: "Correct but incomplete", wrong: "Right page, wrong answer"}[d.verdict];
+  $("#verdict").innerHTML = `<span class="verdict ${cls}">${label}</span>`;
+  $("#answer").innerHTML = md(d.answer) + (d.why ? `<p class="why">${esc(d.why)}</p>` : "");
+}
+$("#chips").innerHTML = DATA.map((d, i) => `<button type="button" aria-pressed="false" data-i="${i}">${esc(d.q)}</button>`).join("");
+$("#chips").addEventListener("click", e => { const b = e.target.closest("button"); if (b) show(+b.dataset.i); });
+show(0);
+
+// ---- chart: grouped horizontal bars, percent of each set so the two sets share one axis
+const plot = $("#plot"), tip = $("#tip");
+const SERIES = [{k: "p", n: 32, name: "Playthrough", color: "var(--s1)"}, {k: "h", n: 20, name: "Held-out", color: "var(--s2)"}];
+plot.innerHTML = `<div class="grid">${[0, 25, 50, 75, 100].map(v => `<b style="left:${v}%"></b><em style="left:${v}%">${v}%</em>`).join("")}</div>` +
+  RESULTS.map(r => `<div class="group"><div class="name">${esc(r.name)}</div>${SERIES.map(s => {
+    const pct = 100 * r[s.k] / s.n;
+    return `<div class="bar" tabindex="0" data-tip="${esc(r.name)} · ${s.name}: ${r[s.k]} of ${s.n} (${Math.round(pct)}%)">
+      <div class="fill" style="width:${pct}%;background:${s.color}"></div>
+      <span class="val" style="left:${pct}%">${r[s.k]}/${s.n}</span></div>`;
+  }).join("")}</div>`).join("") + `<div class="axis-space"></div>`;
+const chart = $("#chart");
+function place(e, b) {
+  tip.textContent = b.dataset.tip; tip.style.opacity = 1;
+  const cr = chart.getBoundingClientRect(), br = b.getBoundingClientRect();
+  const x = (e && e.clientX ? e.clientX : br.left + br.width / 2) - cr.left;
+  tip.style.left = Math.max(8, Math.min(x - tip.offsetWidth / 2, cr.width - tip.offsetWidth - 8)) + "px";
+  tip.style.top = (br.top - cr.top - tip.offsetHeight - 6) + "px";
+}
+plot.querySelectorAll(".bar").forEach(b => {
+  b.addEventListener("mousemove", e => place(e, b)); b.addEventListener("focus", () => place(null, b));
+  b.addEventListener("mouseleave", () => tip.style.opacity = 0); b.addEventListener("blur", () => tip.style.opacity = 0);
+});
+$("#tbody").innerHTML = RESULTS.map(r => `<tr><td>${esc(r.name)}</td><td class="n">${r.p} (${Math.round(100 * r.p / 32)}%)</td><td class="n">${r.h} (${Math.round(100 * r.h / 20)}%)</td></tr>`).join("");
+</script>
+</body>
+</html>
