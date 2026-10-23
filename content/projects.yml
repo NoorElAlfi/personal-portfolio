@@ -1,3 +1,17 @@
+- id: test-authoring-cli
+  title: Test-Authoring CLI (built at Miipe)
+  tag: Test Automation, Agentic Tooling, Playwright
+  description: "A command-line tool I built at Miipe that generates test cases for our test-automation platform from YAML instead of the web UI. In a tenant the dev team set up for me it generated 40+ test cases without opening the UI once, and Claude Code used it to write an 8-step purchase test from plain words that passed on the executor, then repaired a broken test for $0.09. playwright-cli rehearses tests in a real browser and lets the model check selectors before it writes them."
+  status: active
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: 2026-10-23
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/test-authoring-cli
 - id: elden-ring-rag
   title: errag — a local Elden Ring companion
   tag: Retrieval, Evaluation, Local LLM
