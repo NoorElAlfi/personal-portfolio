@@ -4,7 +4,7 @@ At Miipe, a test case in our test-automation platform is built by clicking it to
 
 ## What it changed
 
-- **Generating test cases is a file, not a form.** In a tenant the dev team set up for me, the tool generated 40+ test cases without my opening the UI once.
+- **Generating test cases is a file, not a form.** In a tenant the dev team set up for me, the tool generated 40+ test cases without me opening the UI once.
 - **An AI agent can build a complex test case with it.** Driving the tool, Claude Code wrote an 8-step purchase test from plain words: log in, add two products, check out through to the order confirmation, then go back to the products page and check the cart badge is gone. It ran on the platform's executor and passed in 40 seconds. Two simpler requests did the same, so three plain-words requests gave three passing tests.
 - **The same agent repaired a broken test.** It found the wrong selector with the tool's `why` command, edited the test case in place, and the run went from ERROR to PASS for $0.09.
 - **Moving a test is one previewed plan.** I once moved an 80-instruction test from one tenant to another by hand, and it took hours. The tool exports a test case to YAML, and `copy` moves a test with the variables and UI elements it needs as one plan.
