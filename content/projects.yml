@@ -1,7 +1,7 @@
 - id: test-authoring-cli
-  title: Test-Authoring CLI and Agent Rails
-  tag: Agentic Tooling, Safety Rails, Evaluation
-  description: "A command-line tool that turns a test-automation platform's undocumented authoring API into dry-run-first YAML: validate against the live catalog, preview the exact requests, write only to an allowed team, and log every write in a hash-chained audit trail. On top of it, a gated Claude Code session wrote tests from plain words, ran them on the executor and repaired a broken one ($0.09 for the repair). The write-up is mostly about where my own checks were wrong: a hole in the write guard, a scoreboard that moved when I fixed the scorer, and a rehearsal that disagreed with the real executor."
+  title: Test-Authoring CLI (built at Miipe)
+  tag: Test Automation, Agentic Tooling, Evaluation
+  description: "A command-line tool I built at Miipe that generates test cases for our test-automation platform from YAML instead of the web UI: it validates against the live instruction catalog, previews the exact requests, writes only to an approved team and logs every write. In a tenant the dev team set up for me it generated 40+ test cases without opening the UI once. A gated Claude Code session then used it to write tests from plain words, run them on the executor and repair a broken one ($0.09 for the repair)."
   status: active
   visibility: public
   repo: null

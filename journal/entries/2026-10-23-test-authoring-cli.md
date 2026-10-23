@@ -4,7 +4,7 @@ date: 2026-10-23
 project: test-authoring-cli
 kind: experiment
 visibility: public
-summary: A command-line tool that turns a test-automation platform's authoring API into dry-run-first YAML, then a gated Claude Code session that wrote, ran and repaired tests on public practice sites.
+summary: A CLI built at Miipe that generates test cases from YAML instead of the web UI (40+ in a dev-team tenant), then a gated Claude Code session that wrote, ran and repaired tests.
 links: []
 tags:
   - agents
@@ -14,13 +14,14 @@ tags:
   - test-automation
 status: pending
 sources:
-  - "repo: local, not published (B:/katsu-cli-tools); 47 commits between 2026-10-15 and 2026-10-23; the platform and employer are deliberately not named in public content"
+  - "repo: local, not published (B:/katsu-cli-tools); 47 commits between 2026-10-15 and 2026-10-23; the employer (Miipe) is named in public content, the platform itself is deliberately not"
   - "test suite: 891 passed in 16.30s (run 2026-10-23), offline, against a stateful in-memory fake of the platform API and a stubbed model"
+  - "tenant: the dev team gave me access to a tenant of my own for testing; 40+ test cases were generated in it automatically, without using the web UI once (stated by Noor, 2026-10-23)"
   - "the platform's authoring API is not publicly documented; the server validates almost nothing: it accepts invented instruction names, negative waits and a step order of 999, and wrong field names give HTTP 500, so all validation lives in the tool and is driven by the live instruction catalog"
   - "the tool encodes what the platform's web app itself sends, so an upgrade can break it; a doctor command compares response shapes (never values) with a stored baseline to turn that into a failed check"
   - "write path: validate against the catalog, plan (sends nothing), apply only with --yes, write gate (team must be on the write list; an empty list is read-only and every write method raises before a request is built), audit intent line written first, request, audit result line; POST and PATCH are never retried; a plan stops at the first failure and prints what it created"
   - "audit log: hash-chained, records method, path, body size and sha256, status and returned ids but never bodies, tokens or secret values; if the intent line cannot be written, the write is not sent; tamper-evident, not tamper-proof"
-  - "write-gate hole found 2026-10-21: two code paths (a text-only edit of a human step, and the two requests that build an if branch) called the HTTP client directly and skipped the write-list check, although the write was still audited; proved on the in-memory fake with an empty write list (one PATCH sent, no WriteNotAllowed); not seen on a real server before or after"
+  - "write-gate gap found 2026-10-21 in a review of every write path: two code paths (a text-only edit of a human step, and the two requests that build an if branch) called the HTTP client directly and skipped the write-list check, although the write was still audited; proved on the in-memory fake with an empty write list (one PATCH sent, no WriteNotAllowed); not seen on a real server before or after"
   - "fix: those calls now go through client methods that start with the write check, and a source-scan test fails if any write request in the package is made anywhere else; the test was mutation-checked (the bug was reintroduced on purpose and the test failed)"
   - "round-trip check: export every existing test case in the sandbox environment to YAML, plan an edit of that file, expect zero writes; of 134 test cases, 126 plan zero writes and 8 are refused with a stated reason (try/catch steps, half-built conditions, stale log groups, data anomalies)"
   - "draft command: a model drafts a test file from one sentence; the validator feeds problems back for up to 3 repair rounds and rejects a repair that deletes steps or assertions; the model sees only the sentence, the format description, instruction names from the catalog, two hand-written examples and what its three read-only page tools return (an allowlist of 6 public hosts, enforced inside the headless browser too); it runs through the Claude Agent SDK with every built-in tool off and an empty working directory; --show-context prints the whole prompt and stops; the call log holds sizes and hashes, never text, and if it cannot be written no call is made"
@@ -40,8 +41,8 @@ sources:
   - "limits: personal Claude login, so nothing here may be used on company data until a provider is approved; the gate is code in my repository, not enforced by the platform, and its URL check sees literal URLs only; one recorded session per mode; practice sites a model may know; one user, not reviewed by security"
 ---
 
-I wrote a command-line tool for a test-automation platform I use at work. A test case, and the reference data around it (variables, UI elements, reusable procedures), becomes a YAML file. The tool checks the file against the platform's live instruction catalog, previews the exact requests it would send, and writes only on `apply --yes` to a team on an explicit write list. It can then start the run and follow it to PASS or FAIL.
+I wrote a command-line tool for the test-automation platform we use at Miipe. A test case, and the reference data around it (variables, UI elements, reusable procedures), becomes a YAML file. The tool checks the file against the platform's live instruction catalog, previews the exact requests it would send, and writes only on `apply --yes` to a team on an explicit write list. It can then start the run and follow it to PASS or FAIL.
 
 Then I let an AI agent drive it. In a gated Claude Code session it wrote tests from plain-words requests on public practice sites, ran them on the executor, and repaired a deliberately broken one using the tool's `why` command. The recorded numbers are in `sources:`.
 
-The parts worth writing about were the places my own checks were wrong: a safety rail with a hole in it, a scoreboard that changed when I fixed the scorer, and a rehearsal that disagreed with the real executor.
+The result for Miipe: test cases can now be generated in bulk, from files or plain words, instead of being built click by click in the UI, and the write path is gated and audited so that is safe to do. The groundwork is the rest of the write-up: a write gate with a source-scan test, a round-trip check over 134 existing test cases, and a draft comparison corrected against the real executor.

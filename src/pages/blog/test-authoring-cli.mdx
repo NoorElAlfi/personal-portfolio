@@ -1,8 +1,12 @@
 import WritePathDiagram from "../../components/WritePathDiagram";
 
-I wrote a command-line tool for the test-automation platform I use at work, then let an AI agent drive it. A test case becomes a YAML file; the tool checks it, previews exactly which requests it would send, and only then writes. In a gated Claude Code session, the agent wrote tests from plain-words requests on public practice sites, ran them on the platform's executor, and repaired a deliberately broken one. Three requests produced three passing tests, and the repair went from ERROR to PASS for $0.09.
+At Miipe, a test case in our test-automation platform is built by clicking it together step by step in the web UI. I wrote a command-line tool that builds it from a YAML file instead. The tool checks the file, previews exactly which requests it would send, and only then writes. The dev team gave me a tenant of my own to try it in, and there it generated 40+ test cases without my opening the UI once.
 
-That is the demo. Most of the work was something else: deciding what the agent, and I, must not be able to do, and then measuring whether my own checks were telling the truth. In three places they were not: a safety rail with a hole in it, a scoreboard that moved when I fixed the scorer, and a rehearsal that disagreed with the real executor. Those are the parts worth writing down. Everything here ran against a practice tenant that holds only tests of public sites, on a personal Claude login. No work data went to a model, and I have left the product and employer unnamed.
+Then I put an AI agent on top of it. In a gated Claude Code session, the agent wrote tests from plain-words requests on public practice sites, ran them on the platform's executor, and repaired a deliberately broken one. Three requests produced three passing tests, and the repair went from ERROR to PASS for $0.09.
+
+What made that safe to try was the groundwork: a tool that previews every write and logs it, a hard gate on where writes can go, and checks of my own work against the real executor, which caught and fixed a write-gate gap, a mis-scored comparison and a rehearsal that disagreed with the real thing. Those are the parts below.
+
+A note on scope: the agent sessions ran against public practice sites on a personal Claude login, so no work data went to a model. I have left the platform itself unnamed.
 
 ## The server validates almost nothing
 
@@ -21,17 +25,17 @@ The rails are all things I can test for:
 - **No blind retries.** POST and PATCH are never retried, and a plan stops at the first failure and prints what it had created.
 - **An audit trail that fails closed.** Every write, and every write the gate refuses, is logged with its method, path, body size and sha256, status and returned ids. Bodies, tokens and secret values are never logged. The log is hash-chained, so editing it is detectable, though tamper-evident is not tamper-proof. The intent line is written before the request, so if the log cannot be written, the write is not sent.
 
-## A hole in my own rail
+## Closing the gaps in the write gate
 
-Reading my own code to write the architecture notes, I found two paths that skipped the write list: a text-only edit of a human step, and the two requests that build an `if` branch. Both called the HTTP client directly. The write was still audited, but the gate that should have refused it never ran.
+While writing the architecture notes I reviewed every write path and found two that skipped the write-list check: a text-only edit of a human step, and the two requests that build an `if` branch. Both called the HTTP client directly. The write was still audited, but the gate that should have refused it never ran.
 
-I proved it on the in-memory fake of the platform before touching anything real: an empty write list, a text-only edit, and one PATCH went out with no `WriteNotAllowed`. The fix moved those calls into client methods that begin with the write check. The part I trust more is the test that came with it: a source scan that fails if any write request in the package is made anywhere else. I checked that test by putting the bug back on purpose and watching it fail. I never saw the hole on a real server, before or after the fix.
+I reproduced it on the in-memory fake of the platform before touching anything real: an empty write list, a text-only edit, and one PATCH went out with no `WriteNotAllowed`. The fix moved those calls into client methods that begin with the write check. The part I trust more is the test that came with it: a source scan that fails if any write request in the package is made anywhere else. I checked that test by putting the bug back on purpose and watching it fail. I never saw the gap on a real server, before or after the fix.
 
 ## Export, then plan, must change nothing
 
 The main correctness check is a round trip. Export an existing test case to YAML, plan an edit of that file, and expect zero writes. Of 134 test cases in the sandbox environment, 126 plan zero writes. The other 8 are refused with a stated reason: try/catch steps, half-built conditions, stale log groups, data anomalies. I would rather the tool say "I can't edit this safely" than guess. The suite is 891 tests that run in about 16 seconds, against a stateful in-memory fake and a stubbed model.
 
-## Letting a model draft, and not believing the first scoreboard
+## Letting a model draft, and checking the scoreboard
 
 A `draft` command lets a model write a test file from one sentence. A validator feeds problems back for up to 3 repair rounds and rejects any repair that deletes steps or assertions. The model sees the sentence, the format description, instruction names from the catalog, two hand-written examples and what three read-only page tools return, limited to 6 public hosts. It runs with every built-in tool off and an empty working directory, `--show-context` prints the whole prompt and stops, and the call log holds sizes and hashes, never text.
 
@@ -57,13 +61,13 @@ The gate refused calls in all three sessions: 2 of 20, 2 of 9 and 3 of 26. They 
 
 The most useful sentence in any transcript was the agent's own report on the long flow. The rehearsal browser cannot run JavaScript or `set` steps, so it stopped before the item-total sum comparison. The agent said so and labelled the claim that the comparison is a real test as inferred, not proven. It had not read the executor's log of the computed value, and it told me to look.
 
-## Where the rehearsal and the executor disagreed
+## Where the rehearsal and the real executor disagreed
 
 The `Enter Value` bug was not the only one. Two more were also found only by running on the real executor. A data variable passed directly as a call argument arrives null, so it has to be copied with a `set` step first, and the validator now warns about it. And a test against a large public encyclopedia failed because the site answered the executor's browser with HTTP 429. The failure message was the same as a wrong selector's, and I found the cause from the run's screenshot, not from the tool.
 
 A rehearsal that passes tells you the names exist and the selectors match. Only the executor tells you the test works.
 
-## What this does not show
+## Scope and limits
 
 - The agent results are one recorded session per mode, on practice sites a model may already know.
 - The tool relies on an API that is not documented, has one user, and has not been reviewed by security.

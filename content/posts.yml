@@ -1,6 +1,6 @@
 - slug: test-authoring-cli
-  title: "I let an AI agent author tests in our test platform. Most of the work was the rails."
-  summary: A CLI that puts a dry run in front of every write, a gated Claude Code session that wrote, ran and repaired tests on practice sites, and the three places my own checks turned out to be wrong.
+  title: "I built a CLI that generates our test cases without the UI, then let an AI agent drive it"
+  summary: At Miipe I built a command-line tool that generates test cases for our test-automation platform without the UI, 40+ of them in a tenant the dev team gave me. Then a gated Claude Code session used it to write, run and repair tests.
   tags:
     - agents
     - safety

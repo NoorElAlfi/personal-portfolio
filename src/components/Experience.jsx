@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Section from './Section';
 import Card from './Card';
 
@@ -9,6 +10,12 @@ const experiences = [
     duration: '06/2025 - Present',
     description:
       "Earned promotion from QA Automation Analyst I to Engineer I by proactively pursuing automation opportunities beyond assigned scope. Use AI-assisted (GitHub Copilot, Google AI) selector generation to accelerate Selenium/PyAutoGUI test-script authoring across 30+ automated enterprise workflows spanning web, desktop, and API layers. Validated Amdocs and Oracle Siebel CRM for one of Canada's largest telecom providers, identifying 50+ defects prior to production release across a 100k+ customer base.",
+    feature: {
+      heading: 'Built a CLI that generates our test cases without the UI',
+      body: "Wrote a command-line tool for Miipe's test-automation platform that creates and edits test cases from YAML, so they can be generated in bulk instead of built click by click in the web UI. It checks every test against the platform's live instruction catalog, previews each change, and writes only to an approved team. In a tenant the dev team set up for me, it generated 40+ test cases without opening the UI once, and an AI agent driving it wrote, ran and repaired tests in a gated session on public practice sites.",
+      to: '/blog/test-authoring-cli',
+      label: 'Read the write-up',
+    },
   },
   {
     title: 'AI Trainer, Adversarial Prompting (Contract)',
@@ -57,6 +64,18 @@ function Experience() {
               <span className="shrink-0 text-sm font-medium text-brand-600 dark:text-brand-400">{exp.duration}</span>
             </div>
             <p className="mt-2 text-slate-600 dark:text-slate-300">{exp.description}</p>
+            {exp.feature && (
+              <div className="mt-4 rounded-lg border-l-4 border-brand-500 bg-brand-50 p-4 dark:bg-slate-800/60">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{exp.feature.heading}</p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{exp.feature.body}</p>
+                <Link
+                  to={exp.feature.to}
+                  className="mt-2 inline-block text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                >
+                  {exp.feature.label} &rarr;
+                </Link>
+              </div>
+            )}
           </Card>
         ))}
       </div>
