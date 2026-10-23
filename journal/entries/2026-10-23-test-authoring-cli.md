@@ -4,7 +4,7 @@ date: 2026-10-23
 project: test-authoring-cli
 kind: experiment
 visibility: public
-summary: A CLI built at Miipe that generates test cases from YAML instead of the web UI (40+ in a dev-team tenant), then a gated Claude Code session that wrote, ran and repaired tests.
+summary: A CLI built at Miipe that generates test cases from YAML instead of the web UI (40+ in a dev-team tenant); Claude Code used it to write an 8-step purchase test and repair a broken one.
 links: []
 tags:
   - agents
@@ -17,6 +17,8 @@ sources:
   - "repo: local, not published (B:/katsu-cli-tools); 47 commits between 2026-10-15 and 2026-10-23; the employer (Miipe) is named in public content, the platform itself is deliberately not"
   - "test suite: 891 passed in 16.30s (run 2026-10-23), offline, against a stateful in-memory fake of the platform API and a stubbed model"
   - "tenant: the dev team gave me access to a tenant of my own for testing; 40+ test cases were generated in it automatically, without using the web UI once (stated by Noor, 2026-10-23)"
+  - "outcomes stated by Noor (2026-10-23, from the demo deck): moving an 80-instruction test between tenants by hand took hours; on a previous project a run took about 40 minutes to fail on a single change; the copy command moves a test with its variables and UI elements as one dry-run plan; check rehearses a test in a real browser before a run"
+  - "playwright-cli (npm install -g @playwright/cli) is used in two places: katsu check counts what each XPath finds on the pages a test file names (--follow clicks, types, reads text and evaluates assertions) and katsu draft --browser gives the model render_page and check_selector; both are limited to 6 public practice hosts, enforced before the browser, in its allowedOrigins setting and on the final address; the check rehearsal found 3 missing selectors on the broken-selector example (id my-text versus my-text-id)"
   - "the platform's authoring API is not publicly documented; the server validates almost nothing: it accepts invented instruction names, negative waits and a step order of 999, and wrong field names give HTTP 500, so all validation lives in the tool and is driven by the live instruction catalog"
   - "the tool encodes what the platform's web app itself sends, so an upgrade can break it; a doctor command compares response shapes (never values) with a stored baseline to turn that into a failed check"
   - "write path: validate against the catalog, plan (sends nothing), apply only with --yes, write gate (team must be on the write list; an empty list is read-only and every write method raises before a request is built), audit intent line written first, request, audit result line; POST and PATCH are never retried; a plan stops at the first failure and prints what it created"
@@ -45,4 +47,4 @@ I wrote a command-line tool for the test-automation platform we use at Miipe. A 
 
 Then I let an AI agent drive it. In a gated Claude Code session it wrote tests from plain-words requests on public practice sites, ran them on the executor, and repaired a deliberately broken one using the tool's `why` command. The recorded numbers are in `sources:`.
 
-The result for Miipe: test cases can now be generated in bulk, from files or plain words, instead of being built click by click in the UI, and the write path is gated and audited so that is safe to do. The groundwork is the rest of the write-up: a write gate with a source-scan test, a round-trip check over 134 existing test cases, and a draft comparison corrected against the real executor.
+The result for Miipe: test cases can be generated in bulk, from files or plain words, instead of being built click by click in the UI. Claude Code, driving the tool, wrote an 8-step end-to-end purchase test that passed on the executor and repaired a broken test, and playwright-cli lets both the tool and the model check selectors in a real browser before a run. The write path is gated and audited so that is safe to do.

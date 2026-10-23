@@ -1,9 +1,9 @@
 - slug: test-authoring-cli
-  title: "I built a CLI that generates our test cases without the UI, then let an AI agent drive it"
-  summary: At Miipe I built a command-line tool that generates test cases for our test-automation platform without the UI, 40+ of them in a tenant the dev team gave me. Then a gated Claude Code session used it to write, run and repair tests.
+  title: "I built a CLI that generates our test cases without the UI, and Claude built a complex one with it"
+  summary: At Miipe I built a command-line tool that generates test cases from YAML instead of the web UI, 40+ of them in a tenant the dev team gave me. Claude Code used it to write an 8-step purchase test that passed on the first run, with playwright-cli checking selectors in a real browser.
   tags:
     - agents
-    - safety
+    - playwright
     - evaluation
     - claude-code
     - test-automation
