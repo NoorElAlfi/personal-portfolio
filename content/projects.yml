@@ -1,3 +1,17 @@
+- id: test-authoring-cli
+  title: Test-Authoring CLI and Agent Rails
+  tag: Agentic Tooling, Safety Rails, Evaluation
+  description: "A command-line tool that turns a test-automation platform's undocumented authoring API into dry-run-first YAML: validate against the live catalog, preview the exact requests, write only to an allowed team, and log every write in a hash-chained audit trail. On top of it, a gated Claude Code session wrote tests from plain words, ran them on the executor and repaired a broken one ($0.09 for the repair). The write-up is mostly about where my own checks were wrong: a hole in the write guard, a scoreboard that moved when I fixed the scorer, and a rehearsal that disagreed with the real executor."
+  status: active
+  visibility: public
+  repo: null
+  featured: true
+  started: null
+  last_activity: 2026-10-23
+  highlights: []
+  links:
+    - label: Read the write-up
+      to: /blog/test-authoring-cli
 - id: elden-ring-rag
   title: errag — a local Elden Ring companion
   tag: Retrieval, Evaluation, Local LLM

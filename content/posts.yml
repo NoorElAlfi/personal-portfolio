@@ -1,3 +1,18 @@
+- slug: test-authoring-cli
+  title: "I let an AI agent author tests in our test platform. Most of the work was the rails."
+  summary: A CLI that puts a dry run in front of every write, a gated Claude Code session that wrote, ran and repaired tests on practice sites, and the three places my own checks turned out to be wrong.
+  tags:
+    - agents
+    - safety
+    - evaluation
+    - claude-code
+    - test-automation
+  file: test-authoring-cli.mdx
+  date: 2026-10-23
+  project: test-authoring-cli
+  source_ids:
+    - 2026-10-23-test-authoring-cli
+  generated: true
 - slug: elden-ring-rag
   title: "My Elden Ring assistant passed its own tests and failed my questions"
   summary: A local Elden Ring assistant measured on the questions I actually ask mid-playthrough — held-out retrieval from 4 of 20 to 18 of 20 on first run, and what reading the answers found.

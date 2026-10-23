@@ -1,0 +1,71 @@
+import WritePathDiagram from "../../components/WritePathDiagram";
+
+I wrote a command-line tool for the test-automation platform I use at work, then let an AI agent drive it. A test case becomes a YAML file; the tool checks it, previews exactly which requests it would send, and only then writes. In a gated Claude Code session, the agent wrote tests from plain-words requests on public practice sites, ran them on the platform's executor, and repaired a deliberately broken one. Three requests produced three passing tests, and the repair went from ERROR to PASS for $0.09.
+
+That is the demo. Most of the work was something else: deciding what the agent, and I, must not be able to do, and then measuring whether my own checks were telling the truth. In three places they were not: a safety rail with a hole in it, a scoreboard that moved when I fixed the scorer, and a rehearsal that disagreed with the real executor. Those are the parts worth writing down. Everything here ran against a practice tenant that holds only tests of public sites, on a personal Claude login. No work data went to a model, and I have left the product and employer unnamed.
+
+## The server validates almost nothing
+
+The platform's authoring API is not publicly documented, and the server accepts nearly anything: invented instruction names, negative waits, a step order of 999. A wrong field name returns HTTP 500. So every check has to live in the tool, driven by the platform's live instruction catalog, which catches a wrong action or parameter name and suggests the right one.
+
+The tool encodes what the platform's own web app sends, so an upgrade can break it. A `doctor` command compares response shapes (never values) with a stored baseline, which turns a silent break into a failed check.
+
+## A dry run in front of every write
+
+<WritePathDiagram />
+
+The rails are all things I can test for:
+
+- **Read-only by default.** An empty write list means every write method raises before a request is even built.
+- **Preview first.** `plan` sends nothing, and `apply` refuses without `--yes`.
+- **No blind retries.** POST and PATCH are never retried, and a plan stops at the first failure and prints what it had created.
+- **An audit trail that fails closed.** Every write, and every write the gate refuses, is logged with its method, path, body size and sha256, status and returned ids. Bodies, tokens and secret values are never logged. The log is hash-chained, so editing it is detectable, though tamper-evident is not tamper-proof. The intent line is written before the request, so if the log cannot be written, the write is not sent.
+
+## A hole in my own rail
+
+Reading my own code to write the architecture notes, I found two paths that skipped the write list: a text-only edit of a human step, and the two requests that build an `if` branch. Both called the HTTP client directly. The write was still audited, but the gate that should have refused it never ran.
+
+I proved it on the in-memory fake of the platform before touching anything real: an empty write list, a text-only edit, and one PATCH went out with no `WriteNotAllowed`. The fix moved those calls into client methods that begin with the write check. The part I trust more is the test that came with it: a source scan that fails if any write request in the package is made anywhere else. I checked that test by putting the bug back on purpose and watching it fail. I never saw the hole on a real server, before or after the fix.
+
+## Export, then plan, must change nothing
+
+The main correctness check is a round trip. Export an existing test case to YAML, plan an edit of that file, and expect zero writes. Of 134 test cases in the sandbox environment, 126 plan zero writes. The other 8 are refused with a stated reason: try/catch steps, half-built conditions, stale log groups, data anomalies. I would rather the tool say "I can't edit this safely" than guess. The suite is 891 tests that run in about 16 seconds, against a stateful in-memory fake and a stubbed model.
+
+## Letting a model draft, and not believing the first scoreboard
+
+A `draft` command lets a model write a test file from one sentence. A validator feeds problems back for up to 3 repair rounds and rejects any repair that deletes steps or assertions. The model sees the sentence, the format description, instruction names from the catalog, two hand-written examples and what three read-only page tools return, limited to 6 public hosts. It runs with every built-in tool off and an empty working directory, `--show-context` prints the whole prompt and stops, and the call log holds sizes and hashes, never text.
+
+To see whether that machinery earned its keep, I compared three arms on 10 requests: a plain prompt, a plain prompt plus the instruction catalog, and the draft command with browser tools. A local headless browser rehearsed each draft. The first scoreboard read draft 10, plain 9, plain plus catalog 7.
+
+Then two login drafts that passed the rehearsal failed on the real executor. The executor's `Enter Value` instruction types the value and presses Enter, which submits a form early, and my rehearsal did not. I fixed the rehearsal and re-scored the same saved drafts, with no new model calls. The scores became draft 8, plain 5, plain plus catalog 6, and all 7 drafts that used `Enter Value` flipped from pass to fail.
+
+I added one line about it to the brief. `Enter Value` then appeared in 0 of 30 new drafts, against 7 of 30 before, and the scores were draft 10, plain 8, plain plus catalog 8. The draft command cost $0.350 for 10 drafts against $0.130 for the plain prompt, about 2.7 times as much. I also found that the command's own worked example had been teaching the mistake. It is fixed, a test now fails if an example teaches it, and I did not re-run the comparison afterwards.
+
+What the extra machinery added was concrete but small. The draft command could read a demo account that the page itself shows, and its repair loop fixed an unquoted description containing a colon. Each decided one draft. With one run per cell and ten requests, those margins are within noise, so I do not claim the draft command is clearly better. Of the draft command's output run on the executor, 21 drafts ran and 19 passed. The 2 that failed were made before the hint and both used `Enter Value`; the 10 made after it all passed.
+
+## The agent session
+
+The agent is the same Claude Code, driven through the Agent SDK with only Bash, Read, Write and Edit. A pre-tool hook checks every call. It allows one tool command per call, writes under one folder, titles that start with a fixed prefix, only allowlisted public URLs, and a fixed budget of applies and executions. It may edit only test cases it created in that session. The write permission goes to one team id, for the script's own process only, after the script checks that the target holds exactly that team.
+
+Three sessions, one per mode, on Sonnet 5.5:
+
+- **Authoring.** Three plain-words requests: a login on the-internet, the author of the first quote on quotes.toscrape.com, and a login on saucedemo. Three test cases, all 3 passed on the executor, in 21 turns for $0.20.
+- **Repair.** I created a test with one wrong selector and let it fail. The agent used `why` to find the cause: the selector said `my-text` where the page's id is `my-text-id`, so a wait timed out after 60 seconds. It edited the same test case in place, with 3 patches and no new test case, and the run went to PASS. That took 10 turns and cost $0.09.
+- **A longer flow.** One 8-step purchase test on saucedemo, from login through checkout to the order confirmation, then back to the products page to check the cart badge is gone. It passed in 40 seconds, in 27 turns for $0.42.
+
+The gate refused calls in all three sessions: 2 of 20, 2 of 9 and 3 of 26. They were the agent chaining several commands on one line, reading a file outside the allowed list, asking for `--help`, or editing with `sed` instead of the edit tool. I count that as the gate doing its job rather than the agent misbehaving, but the gate is code in my repository, not something the platform enforces.
+
+The most useful sentence in any transcript was the agent's own report on the long flow. The rehearsal browser cannot run JavaScript or `set` steps, so it stopped before the item-total sum comparison. The agent said so and labelled the claim that the comparison is a real test as inferred, not proven. It had not read the executor's log of the computed value, and it told me to look.
+
+## Where the rehearsal and the executor disagreed
+
+The `Enter Value` bug was not the only one. Two more were also found only by running on the real executor. A data variable passed directly as a call argument arrives null, so it has to be copied with a `set` step first, and the validator now warns about it. And a test against a large public encyclopedia failed because the site answered the executor's browser with HTTP 429. The failure message was the same as a wrong selector's, and I found the cause from the run's screenshot, not from the tool.
+
+A rehearsal that passes tells you the names exist and the selectors match. Only the executor tells you the test works.
+
+## What this does not show
+
+- The agent results are one recorded session per mode, on practice sites a model may already know.
+- The tool relies on an API that is not documented, has one user, and has not been reviewed by security.
+- It runs on a personal Claude login, so none of it may touch company data until a provider is approved. The tool's URL check sees literal URLs only.
+- It shows that a dry-run-first tool with an audit trail and a hard gate is something an agent can drive usefully. It does not show that an agent is ready to write tests unattended.
