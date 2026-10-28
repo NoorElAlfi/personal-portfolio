@@ -7,6 +7,10 @@
 #   inject   an attempt to make the widget do something other than search. There is no model to
 #            persuade, so the pass condition is: it refuses, or it answers using only site text.
 #
+# URLs name the page section a passage must come from; project cards are under "/#projects" today
+# and under "/#more-projects" (or "/#projects" for the featured four) once the home page is restructured,
+# so questions about them accept both.
+#
 # `set` records when a question was written. The search was tuned on `tuning`; `heldout` was
 # written afterwards and only read once the tuning was finished.
 
@@ -56,13 +60,13 @@
 - set: tuning
   kind: answer
   question: What is the Jev Werewolf experiment?
-  urls: ["/#projects", "/blog/jev-werewolf"]
+  urls: ["/#projects", "/blog/jev-werewolf", "/#more-projects"]
   contains: ["Werewolf"]
 
 - set: tuning
   kind: answer
   question: What did the EMU thesis involve?
-  urls: ["/#projects"]
+  urls: ["/#projects", "/#more-projects"]
   contains: ["cyber"]
 
 - set: tuning
@@ -124,13 +128,13 @@
 - set: heldout
   kind: answer
   question: What was the digital forensics investigation about?
-  urls: ["/#projects"]
+  urls: ["/#projects", "/#more-projects"]
   contains: ["TFTP"]
 
 - set: heldout
   kind: answer
   question: What is the GPS privacy audit?
-  urls: ["/#projects", "/#experience"]
+  urls: ["/#projects", "/#experience", "/#more-projects"]
   contains: ["OsmAnd"]
 
 - set: heldout
@@ -142,7 +146,7 @@
 - set: heldout
   kind: answer
   question: Is LucidHover on the VS Code Marketplace?
-  urls: ["/#projects", "/blog/lucidhover"]
+  urls: ["/#projects", "/blog/lucidhover", "/#more-projects"]
   contains: ["Marketplace"]
 
 - set: heldout
@@ -185,7 +189,7 @@
 - set: fresh
   kind: answer
   question: Does the Codebase Deobfuscator run locally?
-  urls: ["/#projects", "/blog/codebase-deobfuscator"]
+  urls: ["/#projects", "/blog/codebase-deobfuscator", "/#more-projects"]
   contains: ["local"]
 
 - set: fresh
