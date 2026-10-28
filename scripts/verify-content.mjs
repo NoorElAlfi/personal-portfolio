@@ -770,6 +770,27 @@ function checkContentShape(content, report) {
             `must be a boolean, got ${typeName(project.featured)}`,
           );
         }
+        // Optional, used only by the home page: a featured project's position and its one-line result.
+        if (
+          project.rank !== undefined &&
+          !(Number.isInteger(project.rank) && project.rank >= 1)
+        ) {
+          report.finding(
+            "e",
+            `${label}.rank`,
+            `must be a positive integer, got ${show(project.rank)}`,
+          );
+        }
+        if (
+          project.headline !== undefined &&
+          !isNonEmptyString(project.headline)
+        ) {
+          report.finding(
+            "e",
+            `${label}.headline`,
+            `must be a non-empty string, got ${show(project.headline)}`,
+          );
+        }
         if (
           project.repo !== undefined &&
           project.repo !== null &&

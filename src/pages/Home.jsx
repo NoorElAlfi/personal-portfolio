@@ -4,16 +4,19 @@ import Education from '../components/Education';
 import Skills from '../components/Skills';
 import Experience from '../components/Experience';
 import Projects from '../components/Projects';
+import MoreProjects from '../components/MoreProjects';
 import CurrentlyExploring from '../components/CurrentlyExploring';
 
+// Order: who I am, what I built and the result, where I did it, then the rest.
 function Home() {
   return (
     <>
       <Hero />
-      <Education />
-      <Skills />
-      <Experience />
       <Projects />
+      <Experience />
+      <MoreProjects />
+      <Skills />
+      <Education />
       <CurrentlyExploring />
     </>
   );
