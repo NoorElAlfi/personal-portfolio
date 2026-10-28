@@ -1,6 +1,6 @@
 - slug: test-authoring-cli
-  title: "I built a CLI that generates our test cases without the UI, and Claude built a complex one with it"
-  summary: At Miipe I built a command-line tool that generates test cases from YAML instead of the web UI, 40+ of them in a tenant the dev team gave me. Claude Code used it to write an 8-step purchase test that passed on the first run, with playwright-cli checking selectors in a real browser.
+  title: "Test-authoring CLI at Miipe: 40+ test cases generated from YAML without the UI"
+  summary: "At Miipe I built a CLI that generates test cases from YAML, 40+ in a tenant of my own; Claude Code used it to write an 8-step purchase test that passed and to repair a broken test for $0.09."
   tags:
     - agents
     - playwright
