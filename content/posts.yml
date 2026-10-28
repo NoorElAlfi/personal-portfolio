@@ -14,8 +14,8 @@
     - 2026-10-23-test-authoring-cli
   generated: true
 - slug: elden-ring-rag
-  title: "My Elden Ring assistant passed its own tests and failed my questions"
-  summary: A local Elden Ring assistant measured on the questions I actually ask mid-playthrough — held-out retrieval from 4 of 20 to 18 of 20 on first run, and what reading the answers found.
+  title: "errag, a local Elden Ring assistant: held-out retrieval from 4 to 18 of 20"
+  summary: "I built errag, a local Elden Ring assistant that answers from wiki pages and my quest list; on 20 held-out questions run once, the right page reached the top three for 18, up from 4."
   tags:
     - retrieval
     - evaluation
