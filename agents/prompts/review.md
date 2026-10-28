@@ -26,8 +26,8 @@ publishes an unsourced claim on a public portfolio; a false "fail" only costs a 
     that could become public content.
   - `style_violation` — marketing voice, first person in a highlight, a summary that
     exceeds its length limit, a missing slug/id, body markdown that carries front matter
-    or an H1 title, or a bullet list outside a blog post's `## Results` and
-    `## Scope and limits` sections. For a blog post it is also a violation when: the
+    or an H1 title, or a bullet list outside a blog post's `## Results`,
+    `## Scope and limits`, `## Next steps` and `## See it` sections. For a blog post it is also a violation when: the
     title is a question or a confession, or does not state a measured outcome; the opening
     does not state what was built and its headline result; there is no `## Results`
     section (or, for a post whose result fell short, no `## Approach`, `## Results`,

@@ -69,7 +69,8 @@ who stops here has the point.
    invent a link.
 
 Headings describe a finding, not the chronology. No "Phase 1", "Session 12", "Day 3".
-Prose is paragraphs; bullets are allowed only in `## Results` and `## Scope and limits`.
+Prose is paragraphs; bullets are allowed only in `## Results`, `## Scope and limits`,
+`## Next steps` and `## See it` (a list of experiments or a list of links).
 
 **When the main result fell short** (the model, tool or experiment did not reach what it
 set out to do), use this structure instead of items 1-3, and keep items 4-6 where they
