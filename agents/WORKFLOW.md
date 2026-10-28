@@ -295,6 +295,11 @@ collected locally only; their evidence stays under the gitignored `runs/`.
   visitor regardless of render filters. Keep private project metadata in
   `agents/private-projects.yml` and private entries in `journal/private/`; the
   `private_leak` check below is the second line of defence.
+- **The site search index is built from what the site renders.** On deploy previews
+  `npm run build` also writes `dist/chat-index.json` (see the README, "Ask this site"), so a
+  merged pipeline post becomes searchable with no extra step. `scripts/build-chat-index.mjs`
+  fails the build if a private repo handle, registry entry or private journal marker shows up
+  in it; `npm run chat:check` runs that guard on its own. Production builds write no index.
 - **Private-repo refs (`private_leak`)** — severity depends on who authored the file:
   - **Hard fail (exit 1)** in the pipeline's own output: any non-private record in
     `content/*.yml`; any post with `generated: true` (its registry fields _and_ its body
