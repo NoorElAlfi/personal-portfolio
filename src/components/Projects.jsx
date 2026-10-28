@@ -41,7 +41,7 @@ function Projects() {
                     key={`${highlight.date}-${highlight.text}`}
                     className="flex gap-2"
                   >
-                    <span className="shrink-0 font-mono text-[0.7rem] text-slate-400 dark:text-slate-500">
+                    <span className="shrink-0 font-mono text-[0.7rem] text-slate-600 dark:text-slate-400">
                       {highlight.date}
                     </span>
                     <span>
@@ -58,7 +58,7 @@ function Projects() {
                     <Link
                       key={link.label}
                       to={link.to}
-                      className="font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                      className="py-1.5 font-semibold text-brand-600 hover:underline dark:text-brand-400"
                     >
                       {link.label} &rarr;
                     </Link>
@@ -68,7 +68,7 @@ function Projects() {
                       href={link.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                      className="py-1.5 font-semibold text-brand-600 hover:underline dark:text-brand-400"
                     >
                       {link.label} &rarr;
                     </a>

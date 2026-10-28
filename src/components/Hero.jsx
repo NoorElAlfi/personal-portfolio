@@ -39,7 +39,7 @@ function Hero() {
         </Link>
       </div>
 
-      <p className="pt-2 text-sm text-slate-400 dark:text-slate-500">
+      <p className="pt-2 text-sm text-slate-600 dark:text-slate-400">
         Languages: English, Arabic, German
       </p>
     </section>

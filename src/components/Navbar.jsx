@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import logo from '../assets/logo.png';
 
 const navLinkClass = ({ isActive }) =>
-  `text-sm font-medium transition-colors ${
+  `py-2 text-sm font-medium transition-colors ${
     isActive
       ? 'text-brand-600 dark:text-brand-400'
       : 'text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400'
@@ -45,7 +45,7 @@ function Navbar({ darkMode, setDarkMode }) {
           href="https://www.linkedin.com/in/noor-el-alfi-527a1a20a/"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden text-sm font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 sm:inline"
+          className="hidden py-2 text-sm font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 sm:inline"
         >
           LinkedIn
         </a>
@@ -53,13 +53,13 @@ function Navbar({ darkMode, setDarkMode }) {
           href="https://github.com/NoorElAlfi"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden text-sm font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 sm:inline"
+          className="hidden py-2 text-sm font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 sm:inline"
         >
           GitHub
         </a>
         <a
           href="mailto:noor.alfi@gmail.com"
-          className="hidden text-sm font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 sm:inline"
+          className="hidden py-2 text-sm font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-400 sm:inline"
         >
           Email
         </a>
