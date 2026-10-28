@@ -21,7 +21,7 @@ function MoreProjects() {
             <p className="text-xs font-medium uppercase tracking-wide text-brand-600 dark:text-brand-400">
               {project.tag}
             </p>
-            <p className="mt-2 line-clamp-4 flex-grow text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-2 flex-grow text-sm text-slate-600 dark:text-slate-300">
               <RichText text={project.description} />
             </p>
             <ProjectLinks links={project.links} />
