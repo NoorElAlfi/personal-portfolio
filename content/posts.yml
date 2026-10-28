@@ -43,8 +43,8 @@
     - 2026-10-12-cryptic-coach
   generated: true
 - slug: jev-werewolf
-  title: Can Jev tell who is lying in Werewolf and Mafia?
-  summary: A local judge model finds deception-like signal in LLM Werewolf and Mafia games but not in human games, and the signal turns out to look like wolf style rather than lying.
+  title: "Jev Werewolf: letting Jev pick the vote raised villager win rate from 24% to 50%"
+  summary: "Jev's top suspect voted out gave villagers 50% against 24% for random votes; on human Werewolf and Mafia games no judge was clearly useful, and the signal looks like wolf style, not lying."
   tags:
     - jev
     - werewolf
