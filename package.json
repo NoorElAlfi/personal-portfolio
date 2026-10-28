@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "verify": "node scripts/verify-content.mjs --strict-private",
     "agent:dry": "node agents/run.mjs --dry-run",
-    "agent:run": "node agents/run.mjs"
+    "agent:run": "node agents/run.mjs",
+    "postbuild": "node scripts/build-chat-index.mjs --out dist/chat-index.json",
+    "chat:index": "node scripts/build-chat-index.mjs --out public/chat-index.json --force",
+    "chat:eval": "node scripts/chat-eval.mjs",
+    "chat:check": "node scripts/build-chat-index.mjs --check"
   },
   "dependencies": {
     "react": "^18.3.1",
