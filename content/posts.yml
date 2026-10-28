@@ -29,8 +29,8 @@
     - 2026-10-12-elden-ring-rag-overhaul
   generated: true
 - slug: cryptic-coach
-  title: "I fine-tuned a small model on cryptic crosswords. It gets about 3.6% right."
-  summary: Fine-tuning a small local model to answer cryptic crossword clues, scored on answers it never saw in training — including the two reinforcement-learning runs and the distillation experiment that went backwards.
+  title: "Cryptic Coach: Qwen2.5-1.5B fine-tuned to 3.6% on unseen cryptic crossword clues"
+  summary: "I fine-tuned Qwen2.5-1.5B on cryptic clues with QLoRA, then GRPO, and scored every stage on answers it never saw: 1.0% after the first SFT, 3.6% for the best model."
   tags:
     - fine-tuning
     - qlora
