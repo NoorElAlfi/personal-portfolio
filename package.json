@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-meta.mjs",
     "preview": "vite preview",
     "verify": "node scripts/verify-content.mjs --strict-private",
     "agent:dry": "node agents/run.mjs --dry-run",

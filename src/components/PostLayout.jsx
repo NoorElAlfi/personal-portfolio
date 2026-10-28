@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import useDocumentTitle from '../lib/useDocumentTitle';
+import { pageTitle } from '../lib/siteMeta';
 
 function PostLayout({ title, subtitle, children }) {
+  useDocumentTitle(pageTitle(title));
   return (
     <article className="mx-auto max-w-3xl py-2">
       <Link to="/blog" className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
