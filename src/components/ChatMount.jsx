@@ -1,19 +1,11 @@
-import React, { Suspense, lazy, useEffect, useState } from "react";
-import { isPreviewHost } from "../lib/previewHost";
+import React, { Suspense, lazy } from "react";
 
-// The widget (and the search code behind it) is a separate chunk that is only fetched where it
-// may run: local development and Netlify previews. On the production address this renders
-// nothing and the chunk is never requested.
+// The widget (and the search code behind it) is a separate chunk, so it stays out of the main
+// bundle. The widget itself renders nothing unless the build published chat-index.json, which is
+// how the CHAT_ENABLED=false kill switch takes the button off the page.
 const ChatWidget = lazy(() => import("./ChatWidget"));
 
 function ChatMount() {
-  const [allowed, setAllowed] = useState(false);
-
-  useEffect(() => {
-    setAllowed(isPreviewHost(window.location.hostname));
-  }, []);
-
-  if (!allowed) return null;
   return (
     <Suspense fallback={null}>
       <ChatWidget />

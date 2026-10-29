@@ -10,9 +10,9 @@
  *   node scripts/build-chat-index.mjs --out dist/chat-index.json [--force]
  *   node scripts/build-chat-index.mjs --check        build in memory, print a summary, write nothing
  *
- * The index is only written when chat is enabled: CHAT_ENABLED=true|false decides if set,
- * otherwise Netlify's CONTEXT must be deploy-preview or branch-deploy. A production build, a CI
- * build and a plain local build therefore write nothing (and remove a stale file at --out).
+ * The index is written unless chat is switched off: CHAT_ENABLED=false (in Netlify's environment
+ * or netlify.toml) is the kill switch. When it is off nothing is written and a stale file at --out
+ * is removed, so the widget does not render. A plain local `vite` run never builds the index;
  * --force writes regardless (used by `npm run chat:index` for local development).
  *
  * Private material never enters the index: the script reads the private-repo list, the local
@@ -30,9 +30,7 @@ const flag = (name) => args.includes(name);
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
 
 export function chatEnabled(env = process.env) {
-  if (env.CHAT_ENABLED === "true") return true;
-  if (env.CHAT_ENABLED === "false") return false;
-  return env.CONTEXT === "deploy-preview" || env.CONTEXT === "branch-deploy";
+  return env.CHAT_ENABLED !== "false";
 }
 
 // ---------------------------------------------------------------- HTML to passages
@@ -263,7 +261,7 @@ async function main() {
   const enabled = flag("--force") || flag("--check") || chatEnabled();
   if (!enabled) {
     if (out && fs.existsSync(path.resolve(root, out))) fs.rmSync(path.resolve(root, out));
-    console.log(`build-chat-index: chat is off for this build (CONTEXT=${process.env.CONTEXT ?? "unset"}, CHAT_ENABLED=${process.env.CHAT_ENABLED ?? "unset"}); no index written.`);
+    console.log(`build-chat-index: chat is switched off for this build (CHAT_ENABLED=false); no index written.`);
     return;
   }
 

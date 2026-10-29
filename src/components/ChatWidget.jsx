@@ -146,7 +146,7 @@ function ChatWidget() {
             <div>
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Ask this site</h2>
               <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">
-                Preview feature. It searches this site&apos;s own text and shows the passages it finds. No AI model is involved.
+                It searches this site&apos;s own text and shows the passages it finds. No AI model is involved.
               </p>
             </div>
             <button

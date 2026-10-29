@@ -12,7 +12,7 @@ Quick start: `npm run verify` to check content, `node agents/run.mjs --dry-run` 
 no-write rehearsal, `node agents/run.mjs` for the full weekly run. The pipeline runs
 locally, never in CI.
 
-## Ask this site (preview feature)
+## Ask this site
 
 A small "Ask this site" button that answers questions about the projects, posts and
 background. It is a **search, not a chatbot**: there is no AI model, no API key and no
@@ -20,9 +20,9 @@ per-question cost. A question is turned into terms, the site's own text is ranke
 and the best passages are shown **verbatim** with a link to the page they came from. If
 the site does not cover a question, it says so and shows nothing.
 
-**Where it runs.** Local development and Netlify deploy previews only. On the production
-address the button never renders, the widget code is never requested, and no index is
-published. Taking it live is a deliberate change (see "Going live" below).
+**Where it runs.** Everywhere the site is built: production, deploy previews and local
+development. It is live on the public site (approved 2026-10-28). The widget code is a separate
+chunk, and the button appears only when the build published `chat-index.json`.
 
 ### How it works
 
@@ -30,15 +30,16 @@ published. Taking it live is a deliberate change (see "Going live" below).
 |---|---|---|
 | Build the corpus | `scripts/build-chat-index.mjs` | Renders the home page and every post with the site's own React components (through Vite's server-side loader), so what is indexed is exactly what a visitor can read. Splits at each heading into passages of at most about 220 words. Adds one "Contact" passage from the footer's links. Dated card "highlights" (changelog lines) are skipped. |
 | Guard against leaks | same script | Fails the build if anything private appears in the output: private repo handles (`agents/repos.txt`), the local private registry, private journal ids, commit hashes, summaries and distinctive slug words. A name the public site already uses is not a marker (the private `siem-guard` repo shares a slug with a public post). |
-| Publish the index | `npm run build` (the `postbuild` step) | Writes `dist/chat-index.json` (about 95 kB) **only** when `CONTEXT` is `deploy-preview` or `branch-deploy` (Netlify sets this), or `CHAT_ENABLED=true`. In every other build, including production and CI, nothing is written and a stale file is removed. `CHAT_ENABLED=false` forces it off. |
+| Publish the index | `npm run build` (the `postbuild` step) | Writes `dist/chat-index.json` (about 105 kB) on every build unless `CHAT_ENABLED=false` is set, in which case nothing is written, a stale file is removed and the button does not render. |
 | Search | `src/lib/chatSearch.js` | Runs in the browser. Stop words, light stemming, a small alias table, one-letter typo tolerance, BM25 with heading matches boosted. A passage is trusted only if it covers at least 60% of the question's weight; words the site never uses count against it. Questions asking for a phone number, address, salary and similar get a specific refusal. |
 | Show | `src/components/ChatWidget.jsx` | Plain React elements. Nothing from a question or a passage is ever parsed as HTML, so there is nothing to inject into. Keyboard operable, labelled dialog, polite live region. |
 
 ### Re-indexing
 
-- **Deploy previews and branch deploys:** automatic. Every build regenerates the index from
-  the site as it is, so a weekly pipeline PR's new post is searchable on its preview before
-  you merge it. There is nothing to run and no extra CI step.
+- **Production, deploy previews and branch deploys:** automatic. Every build regenerates the
+  index from the site as it is, so a weekly pipeline PR's new post is searchable on its preview
+  before you merge it, and on the live site once you do. There is nothing to run and no extra
+  CI step.
 - **Locally:** `npm run chat:index` writes `public/chat-index.json` (gitignored), then
   `npm run dev` shows the button on `localhost`. Re-run it after editing site text.
 - **Check without writing:** `npm run chat:check` builds the index in memory, runs the leak
@@ -69,11 +70,11 @@ shape, no private marker, and every number in an answer must already appear else
 When the search cannot answer a question it says so and offers the closest FAQ questions to click,
 never a passage it is not confident in.
 
-### Going live
+### Turning it off
 
-It is preview-only by decision. To make it public: set `CHAT_ENABLED=true` for the
-production context in Netlify and remove the `isPreviewHost` guard in
-`src/components/ChatMount.jsx`. Nothing else changes: still no model, key or cost.
+Set `CHAT_ENABLED=false` in the Netlify environment (or `[build.environment]` in `netlify.toml`)
+and redeploy: the build writes no index and the button disappears. Nothing else changes: there
+is no model, key or per-question cost to switch off.
 
 ### Limits
 
