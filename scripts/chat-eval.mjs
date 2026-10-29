@@ -31,11 +31,16 @@ const shown = (r) => (r.refused ? "" : [r.answer, ...r.more].flatMap((p) => p.pa
 const fromSiteText = (r) => r.refused || [r.answer, ...r.more].every((p) => p.paragraphs.every((t) => p.chunk.text.includes(t)));
 
 const rows = [];
+const suggestion = { refused: 0, helped: 0 };
 for (const q of questions) {
   const r = searcher.search(q.question);
   const notes = [];
   let ok = false;
   const answerText = r.refused ? "" : r.answer.paragraphs.join(" ").toLowerCase();
+  if (q.kind === "answer" && r.refused && r.reason !== "personal-details") {
+    suggestion.refused++;
+    if (searcher.suggest(q.question).some((s) => q.urls.includes(s.url))) suggestion.helped++;
+  }
   if (q.kind === "answer") {
     const urlOk = !r.refused && q.urls.includes(r.answer.chunk.url);
     const missing = (q.contains ?? []).filter((s) => !answerText.includes(s.toLowerCase()));
@@ -73,6 +78,7 @@ for (const r of rows) {
   if (r.ok) summary[key].pass++;
 }
 console.log("\n" + Object.entries(summary).map(([k, v]) => `${k}: ${v.pass}/${v.total}`).join("   "));
+console.log(`refused answerable questions where the right FAQ question was suggested: ${suggestion.helped}/${suggestion.refused}`);
 const failed = rows.filter((r) => !r.ok && !r.gap).length;
 const gaps = rows.filter((r) => !r.ok && r.gap).length;
 const fixed = rows.filter((r) => r.ok && r.gap).length;
