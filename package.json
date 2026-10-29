@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/build-meta.mjs",
     "preview": "vite preview",
-    "verify": "node scripts/verify-content.mjs --strict-private",
+    "verify": "node scripts/verify-content.mjs --strict-private && node scripts/check-faq.mjs",
     "agent:dry": "node agents/run.mjs --dry-run",
     "agent:run": "node agents/run.mjs",
     "postbuild": "node scripts/build-chat-index.mjs --out dist/chat-index.json",

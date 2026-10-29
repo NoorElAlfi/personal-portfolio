@@ -1,0 +1,141 @@
+# Hiring FAQ: shown on the home page and searchable through "Ask this site".
+#
+# Everything here is public (content/ is public-bundle material). Written by Noor; every figure
+# repeats one already published elsewhere on the site, and `npm run verify` checks that.
+# The question is the heading, so phrase it the way a recruiter would ask it.
+# `also_asked_as` lists other ways to ask the same thing. It is used only to match a question to its
+# entry (the search reads it); it is never shown on the page.
+
+- id: about-you
+  question: Tell me about yourself
+  also_asked_as: ["introduce yourself", "introduction", "intro", "who are you", "background", "bio", "describe yourself", "overview", "about you", "summary of you"]
+  answer: >-
+    I'm a QA Automation Engineer at Miipe, promoted from QA Analyst in December 2025, and I'm
+    finishing a research-based M.Sc. in AI and Cybersecurity at Queen's University (thesis defense
+    pending). My thesis work, EMU, is a cyber attack/defense emulation gym for training
+    reinforcement-learning agents for autonomous cyber operations. I build agentic LLM tooling, at
+    work and on my own, and report results with numbers: a test-authoring CLI an AI agent can
+    drive, a security-log pipeline, a local Elden Ring assistant and a fine-tuned crossword model.
+    Before Miipe I did adversarial red-teaming of frontier LLMs at Scale AI, and in 2023 I was a
+    Security Technology Research Student at BlackBerry, where I built a testing framework for a
+    deep-learning vulnerability detector (SySeVR).
+
+- id: projects
+  question: What projects have you worked on, and which is your best?
+  also_asked_as: ["portfolio", "best work", "favourite project", "favorite project", "most impressive project", "highlights", "accomplishments", "achievements", "work samples"]
+  answer: >-
+    Six I'd lead with. At Miipe, the Test-Authoring CLI: 40+ test cases generated from YAML, and an
+    agent-written 8-step test that passed in 40 seconds. SIEM Guard: rule-first log parsing at
+    96,000-98,000 lines/s against roughly 1 on the LLM path. errag: held-out retrieval from 4 of 20
+    to 18 of 20. Cryptic Coach: 3.6% on unseen clues, up from 1.0%. LucidHover: a VS Code extension
+    that explains a function in the context of the whole repo using a fully local LLM, published on
+    the VS Code Marketplace. EMU: my M.Sc. thesis, a cyber attack/defense emulation gym for
+    training reinforcement-learning agents, with a 200-trial experiment across 5 real CVE targets.
+    If I had to pick one, it's the CLI: it writes to a live platform behind a write gate and an
+    audit log, and an AI agent can drive it safely.
+
+- id: current-role
+  question: Where do you work now?
+  also_asked_as: ["current job", "current role", "current position", "current employer", "current company", "who do you work for", "employer", "employed", "what do you do for work", "job title", "present job", "currently working"]
+  answer: >-
+    I'm a QA Automation Engineer at Miipe, and was a QA Analyst there from June 2025. I test
+    enterprise software for one of Canada's largest telecom providers: 30+ automated workflows,
+    and 50+ defects found before production release across a 100k+ customer base.
+
+- id: work-history
+  question: What is your work history?
+  also_asked_as: ["career history", "career", "employment history", "previous jobs", "past jobs", "previous roles", "previous employers", "resume", "cv", "where have you worked", "timeline"]
+  answer: >-
+    Miipe, QA Automation Engineer (12/2025 to now) and QA Analyst (06/2025 to 12/2025). Scale AI,
+    AI Trainer in adversarial prompting, as a contractor (03/2024 to 06/2025). BlackBerry, Security
+    Technology Research Student (09/2023 to 12/2023). Queen's University, Head Teaching Assistant
+    (01/2023 to 04/2023). Queen's Centre for Advanced Computing, Software Developer Intern
+    (05/2020 to 08/2021).
+
+- id: tech-stack
+  question: What is your tech stack and what are your strongest skills?
+  also_asked_as: ["programming languages", "languages you code in", "technologies", "tools", "frameworks", "libraries", "skills", "technical skills", "software you use", "expertise", "proficient", "stack"]
+  answer: >-
+    Python, C/C++, JavaScript/TypeScript, Selenium, Playwright, Docker, AWS, VMware and React. For
+    AI/ML: PyTorch, Stable-Baselines3 and reinforcement learning. For agentic tooling: Claude Code,
+    DSPy, GEPA and Ollama. For security: Metasploit, Nmap, Wireshark, Caldera, Velociraptor, X-Ways
+    Forensics, Volatility and MITRE ATT&CK.
+
+- id: docker
+  question: Do you have experience with Docker?
+  also_asked_as: ["container", "containers", "containerization", "sandbox", "vmware"]
+  answer: >-
+    Yes. I migrated the EMU cyber-operations gym from VMware vSphere to Docker, and the Codebase
+    Deobfuscator runs candidate code only inside a Docker sandbox with networking disabled.
+
+- id: research
+  question: Have you published research?
+  also_asked_as: ["publications", "papers", "paper", "journal", "journals", "peer reviewed", "published", "thesis", "academic", "authored", "submitted"]
+  answer: >-
+    I'm credited in the acknowledgements of a peer-reviewed publication in Environment and Planning
+    F (2025/2026) for the GPS privacy audit I did at Queen's Centre for Advanced Computing. My M.Sc.
+    thesis work, EMU, is not published yet; it is being submitted to journals at the moment.
+
+- id: exploring
+  question: What are you exploring right now?
+  also_asked_as: ["interests", "currently interested", "learning now", "working on now", "at the moment", "these days", "lately", "future projects", "upcoming"]
+  answer: >-
+    AI safety and security: a project idea for a local tool that reads a coding agent's whole
+    session, not one tool call at a time, and flags multi-step, attack-shaped sequences and goal
+    drift. I'm also running experiments with the Jev model.
+
+- id: why-hire
+  question: Why should we hire you?
+  also_asked_as: ["strengths", "good candidate", "good fit", "fit for the role", "value you bring", "what you bring", "pitch", "sell yourself", "why you", "qualified", "qualifications", "what makes you", "why hire"]
+  answer: >-
+    I approach problems with safety and efficiency in mind, think them through thoroughly, and
+    enjoy a challenge. I'm always trying to learn something new. I also measure my own work and say
+    what the numbers show: my Elden Ring assistant passed 54 of 54 of its own checks and still
+    failed most real questions, so I rebuilt the evaluation and took held-out retrieval from 4 of 20
+    to 18 of 20; in SIEM Guard I dropped a model tier after measuring that it added no recall,
+    which took fitting 50,000 entities from 1,551s to 0.8s. Safety shows up in how I build with
+    agents: the CLI is read-only by default, previews before it writes, and logs every write. I'd
+    bring that mix of agentic tooling, security background and evaluation discipline.
+
+- id: roles
+  question: What roles are you looking for?
+  also_asked_as: ["position", "positions", "job you want", "looking for", "next role", "ideal role", "dream job", "career goals", "seeking", "job search", "target role", "opportunities"]
+  answer: >-
+    Agentic AI and AI-security engineering roles: building and evaluating LLM-based tooling, and
+    securing it.
+
+- id: relocation
+  question: Are you open to relocation, and do you prefer remote or hybrid work?
+  also_asked_as: ["relocate", "move", "moving", "willing to move", "location", "locations", "where are you based", "where do you live", "city", "cities", "remote", "hybrid", "onsite", "on-site", "office", "work from home", "flexible"]
+  answer: >-
+    Yes, I'm open to relocating to Toronto, Vancouver, Victoria, Ottawa or California. I prefer a
+    hybrid or remote role with flexibility.
+
+- id: availability
+  question: When can you start?
+  also_asked_as: ["start date", "earliest start", "notice", "notice period", "how soon", "availability", "available", "start", "join", "two weeks"]
+  answer: >-
+    Two weeks from an offer.
+
+- id: work-authorization
+  question: Do you need sponsorship, and are you authorized to work in Canada?
+  also_asked_as: ["visa", "work permit", "permit", "authorized", "authorised", "legally allowed", "citizen", "citizenship", "immigration", "sponsorship", "eligible to work", "right to work"]
+  answer: >-
+    I'm a Canadian citizen and do not need sponsorship to work in Canada.
+
+- id: compensation
+  question: What are your salary expectations?
+  also_asked_as: ["pay", "paid", "salary", "wage", "rate", "compensation", "expectations", "expected salary", "remuneration", "earn", "earnings", "pay range"]
+  answer: >-
+    I'd rather discuss compensation directly: noor.alfi@gmail.com.
+
+- id: why-ai-security
+  question: Why move from QA into AI and security engineering?
+  also_asked_as: ["switch", "career change", "transition", "change careers", "moving away from qa", "quality assurance", "why leave qa", "why ai", "why security", "motivation", "passion"]
+  answer: >-
+    AI and security are where my expertise and my passion are. My QA automation work is already
+    where AI agents meet real systems: at Miipe I built a CLI that lets an agent write and repair
+    tests safely. I'm always trying to stay up to date and learn everything I can about both
+    topics, and I do it by building and measuring: red-teaming frontier models at Scale AI,
+    researching autonomous cyber agents for my M.Sc., and shipping local tools like LucidHover and
+    SIEM Guard. I want to do this kind of work full time.

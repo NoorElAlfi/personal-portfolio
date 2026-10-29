@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSearcher } from "../lib/chatSearch";
+import { createSearcher, tokenize } from "../lib/chatSearch";
 
 const SUGGESTIONS = [
   "What did you build at Miipe?",
@@ -10,11 +10,26 @@ const SUGGESTIONS = [
 
 const LINK = /(https?:\/\/[^\s]+|[\w.+-]+@[\w-]+\.[\w.-]+)/g;
 
-/** Plain text with URLs and email addresses as links. Built as React elements: nothing is parsed as HTML. */
-function Linkified({ text }) {
+/** The words of a passage that match the question, marked. Built as React elements: nothing is parsed as HTML. */
+function Marked({ text, terms }) {
+  if (!terms?.length) return text;
+  const wanted = new Set(terms);
+  return text.split(/(\s+)/).map((word, i) =>
+    word.trim() && tokenize(word).some((t) => wanted.has(t)) ? (
+      <mark key={i} className="rounded bg-yellow-200 px-0.5 text-slate-900 dark:bg-yellow-400/30 dark:text-white">
+        {word}
+      </mark>
+    ) : (
+      word
+    ),
+  );
+}
+
+/** Plain text with URLs and email addresses as links, and the matched words marked. */
+function Linkified({ text, terms }) {
   const parts = text.split(LINK);
   return parts.map((part, i) => {
-    if (i % 2 === 0) return part;
+    if (i % 2 === 0) return <Marked key={i} text={part} terms={terms} />;
     const href = part.includes("@") && !part.startsWith("http") ? `mailto:${part}` : part.replace(/[.,;)]+$/, "");
     return (
       <a key={i} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="font-medium text-brand-600 underline dark:text-brand-400">
@@ -94,8 +109,8 @@ function ChatWidget() {
   // Open a cited page; a #section link needs an explicit scroll because the route may not change.
   const go = (event, url) => {
     event.preventDefault();
-    const [path, hash] = url.split("#");
-    navigate(path || "/");
+    const hash = url.split("#")[1];
+    navigate(url); // keep the #hash in the location: the FAQ opens the entry it names
     setOpen(false);
     if (hash) {
       window.setTimeout(() => {
@@ -202,13 +217,36 @@ function ChatWidget() {
                 </p>
 
                 {result.refused ? (
-                  <p className="mt-3 rounded-lg bg-slate-100 p-3 text-slate-800 dark:bg-slate-800 dark:text-slate-100">{result.message}</p>
+                  <>
+                    <p className="mt-3 rounded-lg bg-slate-100 p-3 text-slate-800 dark:bg-slate-800 dark:text-slate-100">{result.message}</p>
+                    {result.reason !== "personal-details" && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">Did you mean</p>
+                        <ul className="mt-2 flex flex-wrap gap-2">
+                          {(searcher.suggest(asked).map((s) => s.title).concat(SUGGESTIONS)).filter((t, i, all) => all.indexOf(t) === i).slice(0, 4).map((title) => (
+                            <li key={title}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQuestion(title);
+                                  ask(title);
+                                }}
+                                className="rounded-full border border-slate-300 px-3 py-1.5 text-left text-xs font-medium text-slate-700 hover:border-brand-400 hover:text-brand-700 dark:border-slate-600 dark:text-slate-200 dark:hover:border-brand-400 dark:hover:text-brand-300"
+                              >
+                                {title}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <>
                     <div className="mt-3 space-y-2">
                       {result.answer.paragraphs.map((paragraph, i) => (
                         <p key={i} className="leading-relaxed text-slate-800 dark:text-slate-100">
-                          <Linkified text={paragraph} />
+                          <Linkified text={paragraph} terms={result.answer.terms} />
                         </p>
                       ))}
                     </div>

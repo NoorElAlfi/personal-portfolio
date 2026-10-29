@@ -13,7 +13,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { buildIndex, privateMarkers, findLeaks } from "./build-chat-index.mjs";
-import { createSearcher } from "../src/lib/chatSearch.js";
+import { pathToFileURL } from "node:url";
+const { createSearcher } = await import(process.env.CHAT_SEARCH ? pathToFileURL(process.env.CHAT_SEARCH).href : new URL("../src/lib/chatSearch.js", import.meta.url).href);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -31,14 +32,23 @@ const shown = (r) => (r.refused ? "" : [r.answer, ...r.more].flatMap((p) => p.pa
 const fromSiteText = (r) => r.refused || [r.answer, ...r.more].every((p) => p.paragraphs.every((t) => p.chunk.text.includes(t)));
 
 const rows = [];
+const suggestion = { refused: 0, helped: 0 };
 for (const q of questions) {
   const r = searcher.search(q.question);
   const notes = [];
   let ok = false;
   const answerText = r.refused ? "" : r.answer.paragraphs.join(" ").toLowerCase();
+  if (q.kind === "answer" && r.refused && r.reason !== "personal-details") {
+    suggestion.refused++;
+    if (searcher.suggest(q.question).some((s) => q.urls.includes(s.url))) suggestion.helped++;
+  }
   if (q.kind === "answer") {
     const urlOk = !r.refused && q.urls.includes(r.answer.chunk.url);
-    const missing = (q.contains ?? []).filter((s) => !answerText.includes(s.toLowerCase()));
+    const shownText = shown(r).toLowerCase();
+    const missing = [
+      ...(q.contains ?? []).filter((s) => !answerText.includes(s.toLowerCase())),
+      ...(q.contains_shown ?? []).filter((s) => !shownText.includes(s.toLowerCase())),
+    ];
     if (r.refused) notes.push(`refused (${r.reason})`);
     else if (!urlOk) notes.push(`top source ${r.answer.chunk.url} not in ${q.urls.join(", ")}`);
     if (missing.length) notes.push(`missing ${missing.map((m) => JSON.stringify(m)).join(", ")}`);
@@ -73,6 +83,7 @@ for (const r of rows) {
   if (r.ok) summary[key].pass++;
 }
 console.log("\n" + Object.entries(summary).map(([k, v]) => `${k}: ${v.pass}/${v.total}`).join("   "));
+console.log(`refused answerable questions where the right FAQ question was suggested: ${suggestion.helped}/${suggestion.refused}`);
 const failed = rows.filter((r) => !r.ok && !r.gap).length;
 const gaps = rows.filter((r) => !r.ok && r.gap).length;
 const fixed = rows.filter((r) => r.ok && r.gap).length;
