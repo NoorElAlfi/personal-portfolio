@@ -50,9 +50,10 @@ published. Taking it live is a deliberate change (see "Going live" below).
 as it is now: factual questions (the answer must come from a stated page and contain stated
 text), questions that must be declined (off-topic, personal, private-project names) and
 injection attempts. The questions are in sets written at different times (`tuning`, `heldout`,
-`fresh`, `broad`, `faq-paraphrase`, `unseen`), because a set you tuned against says little about
-questions you have not seen: only `unseen` was written after the last change to the search and
-read once. Judge a new change against a new set, not an old one. Add `--verbose` to see the passage returned for each, `--set <name>` to run one set.
+`fresh`, `broad`, `faq-paraphrase`, `unseen`, `unseen2`, `unseen3`), because a set you tuned against
+says little about questions you have not seen. Judge a change against a set written before it and
+read once, not against an old one; to compare two versions of `src/lib/chatSearch.js`, point
+`CHAT_SEARCH` at a copy and run the eval for each. Add `--verbose` to see the passage returned for each, `--set <name>` to run one set.
 Questions the search cannot answer yet stay in the file with a `known_gap` reason: they are
 printed as `GAP`, do not fail the run, and are flagged when they start passing.
 

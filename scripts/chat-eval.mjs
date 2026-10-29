@@ -13,7 +13,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { buildIndex, privateMarkers, findLeaks } from "./build-chat-index.mjs";
-import { createSearcher } from "../src/lib/chatSearch.js";
+import { pathToFileURL } from "node:url";
+const { createSearcher } = await import(process.env.CHAT_SEARCH ? pathToFileURL(process.env.CHAT_SEARCH).href : new URL("../src/lib/chatSearch.js", import.meta.url).href);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
