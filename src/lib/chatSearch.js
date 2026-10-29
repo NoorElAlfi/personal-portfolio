@@ -11,7 +11,7 @@ const STOP = new Set(
     "is are was were be been being am do does did done doing have has had having " +
     "i me my mine we our you your yours he she it its they them their this that these those " +
     "what which who whom whose when where why how can could would should will shall may might must " +
-    "tell show give explain describe please let know say said get got speak speaks spoke spoken involve involved much many " +
+    "tell show give explain describe please let know say said get got speak speaks spoke spoken involve involved much many want kind bit " +
     "noor alfi el there here also very just really any some"
   ).split(/\s+/),
 );
@@ -20,7 +20,7 @@ const STOP = new Set(
 const IRREGULAR = {
   built: "build", wrote: "write", written: "write", ran: "run", made: "make", did: "do",
   found: "find", went: "go", took: "take", saw: "see", gave: "give", knew: "know",
-  better: "good", best: "good", spoke: "speak", spoken: "speak", taught: "teach",
+  used: "use", better: "good", best: "good", spoke: "speak", spoken: "speak", taught: "teach",
 };
 
 // Extra words that should find the same text. Applied to the question only.
@@ -92,14 +92,17 @@ function editDistanceAtMostOne(a, b) {
   return edits + (a.length - i) + (b.length - j) <= 1;
 }
 
-// Asking for details the site does not publish. Matching a word like "phone" in the errag post would
+// Asking for details the site does not publish (salary is answered by the FAQ, so it is not listed). Matching a word like "phone" in the errag post would
 // otherwise return an unrelated passage as if it were an answer.
 const PERSONAL_DETAILS =
-  /\b(phone|mobile|cell|telephone)\s*(number|no\b)|\b(home|street|mailing)\s*address|\bsalary|\bcompensation|\bhow old\b|\bbirth\s*(day|date)|\bdate of birth|\bsocial (insurance|security)|\bpassport/i;
+  /\b(phone|mobile|cell|telephone)\s*(number|no\b)|\b(home|street|mailing)\s*address|\bhow old\b|\bbirth\s*(day|date)|\bdate of birth|\bsocial (insurance|security)|\bpassport/i;
 
 // "How can I contact you?" is answered with the Contact passage, not whichever post happens to say "reached".
 const CONTACT_INTENT =
-  /\b(contact|get in touch|reach (you|out|noor)|e-?mail (you|noor|address)|your e-?mail|message you|talk to you|hire you)\b/i;
+  /\b(contact|get in touch|reach (you|out|noor)|e-?mail (you|noor|address)|your e-?mail|message you|talk to you)\b/i;
+
+// "Who are you?" / "about yourself" have no content words to search with: route them to the intro.
+const ABOUT_INTENT = /\b(who (are|is) (you|noor)|about (yourself|you|noor)|introduce yourself)\b/i;
 
 export const PERSONAL_REFUSAL =
   "I do not share personal details beyond what is linked on this site. You can reach Noor by email, LinkedIn or GitHub: ask \"how can I contact you?\" for the links.";
@@ -114,10 +117,11 @@ export function createSearcher(index) {
   const docs = chunks.map((chunk) => {
     // Headings carry the topic, so they count three times; the page or section name once.
     const own = tokenize(chunk.text);
-    const weighted = [...own, ...[...Array(3)].flatMap(() => tokenize(chunk.title)), ...tokenize(chunk.context)];
+    const keywords = tokenize(chunk.keywords ?? ""); // other ways to ask an FAQ question; matched, never shown
+    const weighted = [...own, ...[...Array(3)].flatMap(() => tokenize(chunk.title)), ...tokenize(chunk.context), ...keywords, ...keywords];
     const tf = new Map();
     for (const t of weighted) tf.set(t, (tf.get(t) ?? 0) + 1);
-    return { tf, length: weighted.length, title: new Set(tokenize(chunk.title)), present: new Set([...own, ...tokenize(chunk.title), ...tokenize(chunk.context)]) };
+    return { tf, length: weighted.length, title: new Set(tokenize(chunk.title)), present: new Set([...own, ...tokenize(chunk.title), ...tokenize(chunk.context), ...keywords]) };
   });
   const N = docs.length;
   const avgLength = docs.reduce((n, d) => n + d.length, 0) / Math.max(1, N);
@@ -183,6 +187,10 @@ export function createSearcher(index) {
         return { refused: false, answer: { chunk: contact, score: 1, coverage: 1, paragraphs: contact.text.split("\n\n") }, more: [] };
       }
     }
+    if (ABOUT_INTENT.test(q)) {
+      const intro = chunks.find((c) => c.url === "/#faq-about-you");
+      if (intro) return { refused: false, answer: { chunk: intro, score: 1, coverage: 1, paragraphs: intro.text.split("\n\n") }, more: [] };
+    }
     const { terms, extra } = queryTerms(q);
     if (terms.length === 0) return { refused: true, reason: "no-content-terms", message: REFUSAL };
 
@@ -225,5 +233,24 @@ export function createSearcher(index) {
     return { refused: false, answer: picks[0], more: picks.slice(1) };
   }
 
-  return { search, chunkCount: N };
+  /**
+   * The FAQ questions closest to a question, for when search cannot answer it. Suggesting a
+   * question cannot show a wrong answer: the visitor picks one, and that goes through search.
+   */
+  function suggest(question, limit = 3) {
+    const { terms, extra } = queryTerms(String(question ?? "").slice(0, MAX_QUERY_CHARS));
+    const wanted = [...terms.filter((t) => t.known), ...extra].map((t) => t.term);
+    if (wanted.length === 0) return [];
+    const scored = [];
+    docs.forEach((d, i) => {
+      if (!chunks[i].url.startsWith("/#faq-")) return;
+      let s = 0;
+      for (const t of wanted) if (d.tf.has(t)) s += idf(t);
+      if (s > 0) scored.push({ i, s });
+    });
+    scored.sort((a, b) => b.s - a.s);
+    return scored.slice(0, limit).map(({ i }) => ({ title: chunks[i].title, url: chunks[i].url }));
+  }
+
+  return { search, suggest, chunkCount: N };
 }

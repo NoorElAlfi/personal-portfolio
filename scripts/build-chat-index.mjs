@@ -50,7 +50,7 @@ const SKIP = new Set(["script", "style", "svg", "noscript"]);
 /** HTML (as written by renderToStaticMarkup) to [{tag, text, sectionId}]. */
 export function htmlToBlocks(html) {
   const blocks = [];
-  const ids = []; // stack of ids from enclosing <section id="..."> / <article id="...">
+  const ids = []; // stack of ids from enclosing <section>, <article> and <details> elements
   let skip = 0;
   let current = null;
   const token = /<(\/?)([a-z][a-z0-9]*)([^>]*?)(\/?)>|([^<]+)/gi;
@@ -64,7 +64,7 @@ export function htmlToBlocks(html) {
     const tag = rawTag.toLowerCase();
     if (SKIP.has(tag)) { skip += closing ? -1 : 1; continue; }
     if (skip) continue;
-    if (tag === "section" || tag === "article") {
+    if (tag === "section" || tag === "article" || tag === "details") {
       if (closing) ids.pop();
       else ids.push((attrs.match(/\sid="([^"]+)"/) ?? [])[1] ?? null);
       continue;
@@ -242,6 +242,15 @@ export async function buildIndex() {
       const Component = postRoutes[post.slug];
       const html = renderToStaticMarkup(React.createElement(StaticRouter, { location: `/blog/${post.slug}` }, React.createElement(Component)));
       chunks.push(...blocksToChunks(htmlToBlocks(html), { url: `/blog/${post.slug}`, title: post.title, kind: () => "post" }));
+    }
+    // Other ways to ask each FAQ question: matched against, never shown.
+    const faqPath = path.join(root, "content", "faq.yml");
+    if (fs.existsSync(faqPath)) {
+      const byUrl = new Map(parse(fs.readFileSync(faqPath, "utf8")).map((item) => [`/#faq-${item.id}`, item.also_asked_as]));
+      for (const c of chunks) {
+        const list = byUrl.get(c.url);
+        if (Array.isArray(list) && list.length) c.keywords = list.join(" ; ");
+      }
     }
     return chunks.map((c, i) => ({ id: i + 1, ...c }));
   } finally {

@@ -49,11 +49,24 @@ published. Taking it live is a deliberate change (see "Going live" below).
 `npm run chat:eval` runs `chat-eval/questions.yml` against the real search code over the site
 as it is now: factual questions (the answer must come from a stated page and contain stated
 text), questions that must be declined (off-topic, personal, private-project names) and
-injection attempts. The questions are in three sets (`tuning`, `heldout`, `fresh`) written at
-different times, because a set you tuned against says little about questions you have not
-seen. Add `--verbose` to see the passage returned for each, `--set <name>` to run one set.
+injection attempts. The questions are in sets written at different times (`tuning`, `heldout`,
+`fresh`, `broad`, `faq-paraphrase`, `unseen`), because a set you tuned against says little about
+questions you have not seen: only `unseen` was written after the last change to the search and
+read once. Judge a new change against a new set, not an old one. Add `--verbose` to see the passage returned for each, `--set <name>` to run one set.
 Questions the search cannot answer yet stay in the file with a `known_gap` reason: they are
 printed as `GAP`, do not fail the run, and are flagged when they start passing.
+
+### The Hiring FAQ
+
+`content/faq.yml` holds short answers to the usual first questions (about you, work history,
+roles sought, relocation, notice, work authorization, compensation). It is **public**: it renders
+as the "Hiring FAQ" section on the home page and is indexed like everything else, so the search
+answers from it and cites an entry directly (`/#faq-<id>`, which opens that answer). Each entry
+may list `also_asked_as` phrasings ("notice period", "visa", "paid"): they are used only to match
+a question to its entry and are never shown. `npm run verify` (and so CI) checks the FAQ: valid
+shape, no private marker, and every number in an answer must already appear elsewhere on the site.
+When the search cannot answer a question it says so and offers the closest FAQ questions to click,
+never a passage it is not confident in.
 
 ### Going live
 

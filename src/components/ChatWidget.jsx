@@ -94,8 +94,8 @@ function ChatWidget() {
   // Open a cited page; a #section link needs an explicit scroll because the route may not change.
   const go = (event, url) => {
     event.preventDefault();
-    const [path, hash] = url.split("#");
-    navigate(path || "/");
+    const hash = url.split("#")[1];
+    navigate(url); // keep the #hash in the location: the FAQ opens the entry it names
     setOpen(false);
     if (hash) {
       window.setTimeout(() => {
@@ -202,7 +202,30 @@ function ChatWidget() {
                 </p>
 
                 {result.refused ? (
-                  <p className="mt-3 rounded-lg bg-slate-100 p-3 text-slate-800 dark:bg-slate-800 dark:text-slate-100">{result.message}</p>
+                  <>
+                    <p className="mt-3 rounded-lg bg-slate-100 p-3 text-slate-800 dark:bg-slate-800 dark:text-slate-100">{result.message}</p>
+                    {result.reason !== "personal-details" && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">Did you mean</p>
+                        <ul className="mt-2 flex flex-wrap gap-2">
+                          {(searcher.suggest(asked).map((s) => s.title).concat(SUGGESTIONS)).filter((t, i, all) => all.indexOf(t) === i).slice(0, 4).map((title) => (
+                            <li key={title}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQuestion(title);
+                                  ask(title);
+                                }}
+                                className="rounded-full border border-slate-300 px-3 py-1.5 text-left text-xs font-medium text-slate-700 hover:border-brand-400 hover:text-brand-700 dark:border-slate-600 dark:text-slate-200 dark:hover:border-brand-400 dark:hover:text-brand-300"
+                              >
+                                {title}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <>
                     <div className="mt-3 space-y-2">
