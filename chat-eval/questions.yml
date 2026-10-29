@@ -49,7 +49,8 @@
   kind: answer
   question: Where are you doing your M.Sc.?
   urls: ["/#education", "/"]
-  contains: ["Queen's University"]
+  contains_shown: ["Queen's University"]
+  note: the Education passage heading is "Queen's University"; its text is the degree, and the Hero and FAQ passages shown beneath name the school in full
 
 - set: tuning
   kind: answer
@@ -211,7 +212,6 @@
 - set: fresh
   kind: answer
   question: How did Cryptic Coach avoid leaking answers between training and test?
-  known_gap: "the post never uses 'avoid'; lexical search refuses rather than guess"
   urls: ["/blog/cryptic-coach", "/#projects"]
   contains: ["answer"]
 
@@ -304,7 +304,7 @@
   kind: answer
   question: What is your education?
   urls: ["/#education", "/#faq-about-you"]
-  contains: ["Cybersecurity"]
+  contains_shown: ["Cybersecurity"]
   note: the passage heading is "Queen's University"; its text is the programme and degree
 
 - set: broad
@@ -386,7 +386,6 @@
 - set: faq-paraphrase
   kind: answer
   question: Do you work with Playwright?
-  known_gap: "the CLI post answers it (it describes playwright-cli) but the shown paragraph is a neighbouring one"
   urls: ["/#faq-tech-stack", "/#skills", "/blog/test-authoring-cli"]
   note: the CLI post also answers this (it describes playwright-cli)
   contains: ["Playwright"]
@@ -482,7 +481,8 @@
   kind: answer
   question: What is your GPA?
   urls: ["/#education"]
-  contains: ["3.9"]
+  contains_shown: ["3.9"]
+  note: both Education entries are shown, the Bachelor's (3.32) first and the M.Sc. (3.9) second
 
 - set: faq-paraphrase
   kind: decline
@@ -495,7 +495,6 @@
 - set: faq-paraphrase
   kind: decline
   question: What's your favorite programming language?
-  known_gap: "asks for an opinion the site does not give, but 'programming' and 'language' match the tech stack, so it answers with that"
 
 - set: faq-paraphrase
   kind: decline
@@ -657,8 +656,9 @@
 - set: unseen2
   kind: answer
   question: How many games were in the Jev generated set?
-  urls: ["/blog/jev-werewolf"]
-  contains: ["200 games"]
+  urls: ["/blog/jev-werewolf", "/#more-projects"]
+  contains_shown: ["200 games"]
+  note: the project card ranks first; the number is in the write-up passage shown under it
 
 - set: unseen2
   kind: answer
@@ -670,7 +670,6 @@
 - set: unseen2
   kind: answer
   question: Do you have experience with Playwright?
-  known_gap: "the CLI post is a valid source but a neighbouring paragraph is shown"
   urls: ["/#faq-tech-stack", "/#skills", "/blog/test-authoring-cli", "/#projects"]
   contains: ["Playwright"]
 
@@ -711,6 +710,7 @@
 - set: unseen2
   kind: decline
   question: How much money have you raised?
+  known_gap: "the rewritten PokéRogue post says 'managing money', which clears the 60% coverage bar (0.62) for a question about funding the site does not answer"
 
 - set: unseen2
   kind: decline

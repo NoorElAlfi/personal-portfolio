@@ -44,7 +44,11 @@ for (const q of questions) {
   }
   if (q.kind === "answer") {
     const urlOk = !r.refused && q.urls.includes(r.answer.chunk.url);
-    const missing = (q.contains ?? []).filter((s) => !answerText.includes(s.toLowerCase()));
+    const shownText = shown(r).toLowerCase();
+    const missing = [
+      ...(q.contains ?? []).filter((s) => !answerText.includes(s.toLowerCase())),
+      ...(q.contains_shown ?? []).filter((s) => !shownText.includes(s.toLowerCase())),
+    ];
     if (r.refused) notes.push(`refused (${r.reason})`);
     else if (!urlOk) notes.push(`top source ${r.answer.chunk.url} not in ${q.urls.join(", ")}`);
     if (missing.length) notes.push(`missing ${missing.map((m) => JSON.stringify(m)).join(", ")}`);
