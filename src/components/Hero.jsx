@@ -44,7 +44,7 @@ function Hero() {
         QA Automation Engineer at Miipe. Outside of work, I build local, agentic LLM tooling
         (VS Code extensions, prompt-optimization pipelines). My research sits at the
         intersection of security, reinforcement learning, and AI: I'm completing a
-        research-based M.Sc. in Cybersecurity at Queen's University (NSERC CREATE program,
+        research-based M.Sc. in AI and Cybersecurity at Queen's University (NSERC CREATE program,
         thesis defense pending), building an emulated cyber-operations gym that trains
         reinforcement-learning agents for autonomous cyber operations. Previously I did
         adversarial red-teaming against frontier LLMs at Scale AI.

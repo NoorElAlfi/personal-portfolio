@@ -5,7 +5,7 @@ import Card from './Card';
 const educationList = [
   {
     institution: "Queen's University",
-    degree: 'NSERC CREATE Cybersecurity Program, Research-Based Masters of Science',
+    degree: 'Research-Based M.Sc. in AI and Cybersecurity (NSERC CREATE Cybersecurity Program)',
     gpa: 'GPA 3.9/4.3',
     duration: '2022 - Present',
   },
