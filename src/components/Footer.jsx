@@ -20,7 +20,7 @@ function Footer() {
         </div>
       </div>
     </footer>
-    {/* Only renders on local and Netlify preview hosts; see src/lib/previewHost.js. */}
+    {/* "Ask this site" search; renders nothing when the build published no index. */}
     <ChatMount />
     </>
   );
