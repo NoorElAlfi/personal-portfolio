@@ -1,7 +1,9 @@
 import React from 'react';
+import ChatMount from './ChatMount';
 
 function Footer() {
   return (
+    <>
     <footer className="border-t border-slate-200 py-8 dark:border-slate-800">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-6 text-center text-sm text-slate-500 dark:text-slate-400 sm:flex-row sm:justify-between sm:text-left">
         <p>© {new Date().getFullYear()} Noor El Alfi</p>
@@ -18,6 +20,9 @@ function Footer() {
         </div>
       </div>
     </footer>
+    {/* Only renders on local and Netlify preview hosts; see src/lib/previewHost.js. */}
+    <ChatMount />
+    </>
   );
 }
 
