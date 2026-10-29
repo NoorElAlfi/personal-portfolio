@@ -4,6 +4,7 @@ import Education from '../components/Education';
 import Skills from '../components/Skills';
 import Experience from '../components/Experience';
 import Projects from '../components/Projects';
+import Faq from '../components/Faq';
 import CurrentlyExploring from '../components/CurrentlyExploring';
 
 function Home() {
@@ -14,6 +15,7 @@ function Home() {
       <Skills />
       <Experience />
       <Projects />
+      <Faq />
       <CurrentlyExploring />
     </>
   );

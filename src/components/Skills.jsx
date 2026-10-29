@@ -17,7 +17,7 @@ const skillGroups = [
   },
   {
     category: 'Engineering Toolkit',
-    description: 'Python, C/C++, JavaScript/TypeScript, Selenium, Docker, AWS, VMware, React.',
+    description: 'Python, C/C++, JavaScript/TypeScript, Selenium, Playwright, Docker, AWS, VMware, React.',
   },
 ];
 
