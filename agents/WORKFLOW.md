@@ -277,6 +277,12 @@ pipeline do it: `curate` emits a `blog_post` action and `write` emits
 `proposals/blog_post.json`, which `apply` turns into `src/pages/blog/<slug>.mdx`
 plus the `content/posts.yml` entry with `generated: true`.
 
+Every post, hand-written or generated, follows the house style in
+`agents/prompts/writer-blog.md` (voice, title format, opening that states the result, a
+`## Results` section, limits last, and the "approach / results / why it fell short / next
+steps" variant for results that fell short). The reviewer prompt enforces the same rules.
+Hand-written `.jsx` posts predate it and are left as they are.
+
 **Track a repo** — one line per repo in `agents/repos.txt`:
 
 ```

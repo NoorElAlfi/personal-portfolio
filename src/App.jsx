@@ -4,6 +4,8 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Blog from "./pages/Blog";
+import NotFound from "./pages/NotFound";
+import ScrollManager from "./components/ScrollManager";
 import { postRoutes } from "./data/posts";
 
 function getInitialDarkMode() {
@@ -22,6 +24,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollManager />
       <div className="relative min-h-screen bg-slate-50 text-slate-900 dark:bg-[#0b1120] dark:text-slate-100">
         {/* Decorative background gradient */}
         <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -40,6 +43,7 @@ function App() {
             {Object.entries(postRoutes).map(([slug, Post]) => (
               <Route key={slug} path={`/blog/${slug}`} element={<Post />} />
             ))}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
 

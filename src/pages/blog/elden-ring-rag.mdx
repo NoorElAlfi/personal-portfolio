@@ -1,42 +1,44 @@
-errag is a local Elden Ring assistant I use mid-playthrough: wiki pages and my own quest-order list in a SQLite file, a retriever that picks the passages that answer a question, and a small model on my own GPU that answers only from those passages and cites each claim. I built the first version in an evening with DeepSeek's help. It passed every check in its own eval set, 54 of 54, and still failed most of the questions I actually had while playing. This post is about closing that gap, and the honest headline is the held-out number: on 20 questions written after the changes and run once, the right page reached the top three retrieved blocks for 18, up from 4 with the original code.
+errag is a local Elden Ring assistant I use mid-playthrough: wiki pages and my own quest-order list in a SQLite file, a retriever that picks the passages that answer a question, and a small model on my own GPU that answers only from those passages and cites each claim. On 20 questions written after the changes and run once, the right page reached the top three retrieved blocks for 18, up from 4 with the original code.
 
-## Measuring the questions I actually ask
+## Results
 
-The original eval set was mostly item lookups ("where is Moonveil"), so it never asked the shapes of question I actually type: "how do I start Ranni's quest", "is Margit weak to anything", "how do I get to the Haligtree", "what should I do after beating Godrick". I wrote 32 of those down before measuring anything. A question passes if a page that answers it lands in the top three retrieved blocks. The original system passed 7 of 32.
+- **Held-out retrieval: 18 of 20, from 4 of 20.** The 20 questions were written after the changes and run once. The original code scores 4 of 20 on the same set, and 8 with the widened corpus alone.
+- **The set I tuned against: 32 of 32, from 7 of 32.** These are the 32 questions I wrote down before measuring anything, in the shapes I actually type. A question passes if a page that answers it lands in the top three retrieved blocks. Fetching NPC, location and system pages, 572 more cached pages, moved the original retriever from 7 to 10 of 32; the retrieval rewrite did the rest.
+- **Answers across all 52 questions: 50 passed the mechanical checks.** Every citation points at a real block, the answer has substance, and numbers appear in the context. The other 2 left out citations.
+- **A better default model.** Given the same context at temperature 0, `llama3.1:8b` answered "what should I do after beating Godrick" with one step; `qwen2.5:7b` gave the 11 steps that follow, in order, so it is now the default.
+- **Item cards with real numbers.** A confident item match shows location, requirements and scaling, which the original threw away even though the wiki's infoboxes carry them for 1,588 items.
+- **Regression coverage.** Every bug found by reading answers is now a case: the eval runs 114 checks and the unit tests 50, all passing.
 
-Running the original retriever over a widened corpus splits the two kinds of fix apart. Fetching NPC, location and system pages, 572 more cached pages, moved it from 7 to 10 of 32. The retrieval rewrite did the rest, to 32 of 32. That last number is flattering, because I tuned against that set. So after the rewrite I wrote 20 new questions and ran them once: 18 of 20. The original code scores 4 of 20 on the same set, and 8 with the widened corpus. The two misses, a plural and a boss my quest list never names, had general fixes, which makes 20 of 20 and also spends that set.
+## The problem
 
-## Why it failed
+I built the first version in an evening with DeepSeek's help. It passed every check in its own eval set, 54 of 54, and still failed most of the questions I actually had while playing. That eval set was mostly item lookups ("where is Moonveil"), so it never asked the shapes of question I type: "how do I start Ranni's quest", "is Margit weak to anything", "how do I get to the Haligtree", "what should I do after beating Godrick". So I wrote the questions I actually ask first and measured against those.
 
-The corpus had no people or places in it. "How do I start Ranni's quest" retrieved Ranni's Scroll, because the only pages with "Ranni" in the title were items.
+## Decisions and what I ruled out
 
-Even with the pages there, a name meant the wrong thing. A page only counted as a boss if "Bosses" was its first wiki category, and Margit's first is "Characters", so "is Margit weak to anything" retrieved Margit's Shackle. "How do I get to the Haligtree" retrieved Haligtree Gauntlets. Every page now gets a kind (boss, NPC, location, armour, item, guide) read from all of its categories, each question is read for an intent (combat, quest, travel, progression), and the intent decides which kind a name means. An item named after someone, like "Ranni's Scroll", now loses to that someone unless the question names the item.
+**Widening the corpus was not enough.** The corpus had no people or places in it. "How do I start Ranni's quest" retrieved Ranni's Scroll, because the only pages with "Ranni" in the title were items. Adding the pages helped, 7 to 10 of 32, but a name still meant the wrong thing. A page only counted as a boss if "Bosses" was its first wiki category, and Margit's first is "Characters", so "is Margit weak to anything" retrieved Margit's Shackle. "How do I get to the Haligtree" retrieved Haligtree Gauntlets. So every page now gets a kind (boss, NPC, location, armour, item, guide) read from all of its categories, each question is read for an intent (combat, quest, travel, progression), and the intent decides which kind a name means. An item named after someone, like "Ranni's Scroll", now loses to that someone unless the question names the item.
 
-The player's words are not the wiki's. Nobody types "Wandering Mausoleum", "Blood Loss" or "Rebirth"; they type "walking mausoleum", "bleed" and "respec". A hand-edited shorthand file now maps 32 nicknames to in-game names and 53 phrases to the pages that answer them.
+**The player's words are not the wiki's.** Nobody types "Wandering Mausoleum", "Blood Loss" or "Rebirth"; they type "walking mausoleum", "bleed" and "respec". A hand-edited shorthand file now maps 32 nicknames to in-game names and 53 phrases to the pages that answer them.
 
-Progression questions ignored the quest list. "What should I do after beating Godrick" returned Godrick's lore. It now leads with an ordered window of my own quest list, starting at the Godrick milestone, and the web page keeps a checklist so "what should I do next" starts at the first step I haven't ticked off.
+**Progression questions follow my quest list.** "What should I do after beating Godrick" ignored it and returned Godrick's lore. It now leads with an ordered window of my own quest list, starting at the Godrick milestone, and the web page keeps a checklist so "what should I do next" starts at the first step I haven't ticked off.
 
-## The model was the other half
+**The model was the other half.** With retrieval fixed, answers were still weak, which is why I compared models on the same context. The system prompt became a short rulebook: the direct answer first, at most six ordered bullets, a citation on every line, and the question repeated after the context. Each rule is there because a 7 to 8B model got that thing wrong without it.
 
-With retrieval fixed, answers were still weak. Given the same context at temperature 0, `llama3.1:8b` answered the Godrick question with one step; `qwen2.5:7b` gave the 11 steps that follow, in order, so it is now the default. The system prompt became a short rulebook: the direct answer first, at most six ordered bullets, a citation on every line, and the question repeated after the context. Each rule is there because a 7 to 8B model got that thing wrong without it.
+**I read the answers, because the checks cannot tell me whether an answer is true.** Reading them found that "how do I get to Leyndell" was told to defeat Maliketh, because the Royal and Ashen Capitals tied on name and the tie went alphabetically to the late-game page. Ties now go to the page the rest of the wiki mentions most, 222 passages against 52. Most of what I fixed came from asking a question and reading the reply, not from a test written in advance: stop words stripped from questions but not from page names, so "Lake of Rot" could never match by name; a nickname rule giving an item called "Dark Moon" an exact match for the Dark Moon Greatsword; spelling correction in the item card but not in chat, so "where is moonveal" showed the right card and then said nothing matched; quest progress keyed by step text, when the list repeats some lines word for word; and a web server that died whenever a browser tab closed mid-answer.
 
-Across all 52 questions, 50 answers passed the mechanical checks (every citation points at a real block, the answer has substance, numbers appear in the context) and 2 left out citations. Those checks cannot tell me whether an answer is true. Reading them did. "How do I get to Leyndell" was told to defeat Maliketh, because the Royal and Ashen Capitals tied on name and the tie went alphabetically to the late-game page. Ties now go to the page the rest of the wiki mentions most, 222 passages against 52. With the right page retrieved, the model still invents a detour through the sewers, which is the limit of a 7B model reading a few thousand characters of wiki text.
+## How it works
 
-## Bugs that only reading answers found
-
-Most of what I fixed came from asking a question and reading the reply, not from a test written in advance: stop words stripped from questions but not from page names, so "Lake of Rot" could never match by name; a nickname rule giving an item called "Dark Moon" an exact match for the Dark Moon Greatsword; spelling correction in the item card but not in chat, so "where is moonveal" showed the right card and then said nothing matched; quest progress keyed by step text, when the list repeats some lines word for word; and a web server that died whenever a browser tab closed mid-answer. Each one is now a regression case. The eval runs 114 checks and the unit tests 50, all passing.
-
-## Using it
-
-`errag serve` starts a local page I keep open on my phone while I play. Answers stream in, each citation highlights its source, and a confident item match shows a card with location, requirements and scaling. The original threw those numbers away, even though the wiki's infoboxes carry them for 1,588 items.
+`errag serve` starts a local page I keep open on my phone while I play. Answers stream in, each citation highlights its source, and a confident item match shows a card with location, requirements and scaling.
 
 ![errag answering a misspelled question with the Moonveil item card and a cited answer](/elden-ring-rag/web-ask.png)
 
 <img src="/elden-ring-rag/phone-quests.png" alt="The quest log on a phone, with progress and the next steps" style={{display: "block", width: "20rem", maxWidth: "100%", height: "auto", margin: "0 auto"}} />
 
-## What is still open
+## Scope and limits
 
-The model can still invent details the retrieval did not give it, and no retrieval check catches that; the citations are there so I can. The quest list's DLC section is truncated in the source document: 12 Shadow of the Erdtree steps with no region tags, against 270 for the base game. The question sets are small, 52 questions judged by one person, and the held-out set is spent. The intent words and the shorthand file are judgement calls that are testable now, which is not the same as correct.
+- The model can still invent details the retrieval did not give it, and no retrieval check catches that; the citations are there so I can. With the right page retrieved, it still invents a detour through the sewers, which is the limit of a 7B model reading a few thousand characters of wiki text.
+- The question sets are small, 52 questions judged by one person, and the held-out set is spent: its two misses, a plural and a boss my quest list never names, had general fixes, which makes 20 of 20 and also uses that set up.
+- The quest list's DLC section is truncated in the source document: 12 Shadow of the Erdtree steps with no region tags, against 270 for the base game.
+- The intent words and the shorthand file are judgement calls that are testable now, which is not the same as correct.
 
 ## See it
 

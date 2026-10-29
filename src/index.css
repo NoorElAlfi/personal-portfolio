@@ -25,6 +25,11 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Keep in-page anchor targets clear of the sticky header */
+section[id] {
+  scroll-margin-top: 4rem;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: #f8fafc;
@@ -128,6 +133,40 @@ body {
 .dark .prose-post code {
   background-color: rgb(99 102 241 / 0.15);
   color: var(--color-brand-300);
+}
+/* Fenced code blocks (highlighted at build time by @shikijs/rehype) */
+.prose-post pre {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background-color: #f6f8fa;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.dark .prose-post pre {
+  border-color: rgb(51 65 85);
+  background-color: #0d1117;
+}
+.prose-post pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: inherit;
+}
+.dark .prose-post pre code {
+  background: none;
+  color: inherit;
+}
+.prose-post .shiki,
+.prose-post .shiki span {
+  color: var(--shiki-light);
+}
+.dark .prose-post .shiki,
+.dark .prose-post .shiki span {
+  color: var(--shiki-dark);
 }
 .prose-post strong {
   font-weight: 600;

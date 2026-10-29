@@ -1,6 +1,6 @@
 - slug: test-authoring-cli
-  title: "I built a CLI that generates our test cases without the UI, and Claude built a complex one with it"
-  summary: At Miipe I built a command-line tool that generates test cases from YAML instead of the web UI, 40+ of them in a tenant the dev team gave me. Claude Code used it to write an 8-step purchase test that passed on the first run, with playwright-cli checking selectors in a real browser.
+  title: "Test-authoring CLI at Miipe: 40+ test cases generated from YAML without the UI"
+  summary: "At Miipe I built a CLI that generates test cases from YAML, 40+ in a tenant of my own; Claude Code used it to write an 8-step purchase test that passed and to repair a broken test for $0.09."
   tags:
     - agents
     - playwright
@@ -14,8 +14,8 @@
     - 2026-10-23-test-authoring-cli
   generated: true
 - slug: elden-ring-rag
-  title: "My Elden Ring assistant passed its own tests and failed my questions"
-  summary: A local Elden Ring assistant measured on the questions I actually ask mid-playthrough — held-out retrieval from 4 of 20 to 18 of 20 on first run, and what reading the answers found.
+  title: "errag, a local Elden Ring assistant: held-out retrieval from 4 to 18 of 20"
+  summary: "I built errag, a local Elden Ring assistant that answers from wiki pages and my quest list; on 20 held-out questions run once, the right page reached the top three for 18, up from 4."
   tags:
     - retrieval
     - evaluation
@@ -29,8 +29,8 @@
     - 2026-10-12-elden-ring-rag-overhaul
   generated: true
 - slug: cryptic-coach
-  title: "I fine-tuned a small model on cryptic crosswords. It gets about 3.6% right."
-  summary: Fine-tuning a small local model to answer cryptic crossword clues, scored on answers it never saw in training — including the two reinforcement-learning runs and the distillation experiment that went backwards.
+  title: "Cryptic Coach: Qwen2.5-1.5B fine-tuned to 3.6% on unseen cryptic crossword clues"
+  summary: "I fine-tuned Qwen2.5-1.5B on cryptic clues with QLoRA, then GRPO, and scored every stage on answers it never saw: 1.0% after the first SFT, 3.6% for the best model."
   tags:
     - fine-tuning
     - qlora
@@ -43,8 +43,8 @@
     - 2026-10-12-cryptic-coach
   generated: true
 - slug: jev-werewolf
-  title: Can Jev tell who is lying in Werewolf and Mafia?
-  summary: A local judge model finds deception-like signal in LLM Werewolf and Mafia games but not in human games, and the signal turns out to look like wolf style rather than lying.
+  title: "Jev Werewolf: letting Jev pick the vote raised villager win rate from 24% to 50%"
+  summary: "Jev's top suspect voted out gave villagers 50% against 24% for random votes; on human Werewolf and Mafia games no judge was clearly useful, and the signal looks like wolf style, not lying."
   tags:
     - jev
     - werewolf
@@ -59,8 +59,8 @@
     - 2026-09-29-jev-werewolf-blog-post
   generated: true
 - slug: siem-guard-detection-hardening
-  title: "Inside SIEM Guard: statistics decide, the model explains, and parsing is where the time went"
-  summary: "Where the LLM actually sits in a local security-log pipeline, why a median/MAD gate still leaks on a degenerate feature, the forest tier that added zero recall in 120 trials, and what rules-first parsing changed: 96,000 lines/s against roughly one."
+  title: "SIEM Guard: rules parse at 96,000 lines/s, statistics detect, the model explains"
+  summary: "In SIEM Guard, rule-first parsing runs at 96,000-98,000 lines/s against roughly 1 on the LLM path, and dropping a forest tier that added 0 recall cut fitting 50,000 entities from 1,551s to 0.8s."
   tags:
     - security
     - anomaly-detection

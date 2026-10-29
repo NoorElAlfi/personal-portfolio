@@ -1,39 +1,43 @@
-I set out to fine-tune a small model to solve cryptic crossword clues. A cryptic clue carries two halves that both point at the answer: a plain definition, and wordplay that spells the answer out. I trained Qwen2.5-1.5B-Instruct on a single 8GB GPU, first with QLoRA supervised fine-tuning, then with GRPO, a reinforcement-learning method that rewards correct answers. The best model solves about 3.6% of clues whose answers it never saw in training. That is the honest headline, and most of the value here is in the measurement rather than the score.
+I fine-tuned Qwen2.5-1.5B-Instruct to solve cryptic crossword clues on a single 8GB GPU, first with QLoRA supervised fine-tuning, then with GRPO, a reinforcement-learning method that rewards correct answers. Every stage is scored on the same 3,000-clue test set, whose answers the model never saw in training, with greedy decoding and 95% bootstrap confidence intervals. The best model solves 3.6% of those clues, up from 1.0% for the first SFT model.
 
-## Measuring honestly came first
+## Approach
 
-Most of the time went into not fooling myself. The trap is the split: divide clues at random and the same answer appears on both sides, so a model can score by remembering answers instead of solving clues. So I put every clue for a given answer on one side only. I checked it three ways: zero exact answer overlap, zero edit-distance-1 or same-stem overlap, and zero near-duplicate clues. A plain split would have leaked 398 near-identical answers, 1,378 same-stem answers and 13 near-duplicate clues into test. Every stage is scored on the same 3,000-clue test set with greedy decoding and 95% bootstrap confidence intervals.
+A cryptic clue carries two halves that both point at the answer: a plain definition, and wordplay that spells the answer out. The model replies with a definition line and then an answer tag.
 
-The contrast makes that concrete. The same recipe on a random split scored 3.4%, against 1.0% on the answer-disjoint split, so memorising answers is worth several times the honest number for the first SFT model.
+Most of the time went into the evaluation, not the training. The trap is the split: divide clues at random and the same answer appears on both sides, so a model can score by remembering answers instead of solving clues. So I put every clue for a given answer on one side only, and checked it three ways: zero exact answer overlap, zero edit-distance-1 or same-stem overlap, and zero near-duplicate clues. A plain split would have leaked 398 near-identical answers, 1,378 same-stem answers and 13 near-duplicate clues into test.
 
-## SFT learns the shape, not the skill
+The definition line comes from the dataset's annotation: 418,508 of the 578,443 training clues carry one I could match verbatim in the clue. That line is a template, not reasoning. It teaches where the definition sits in the clue and nothing about how the wordplay works.
 
-The model replies with a definition line and then an answer tag. That definition comes from the dataset's annotation: 418,508 of the 578,443 training clues carry one I could match verbatim in the clue. This line is a template, not reasoning. It teaches where the definition sits in the clue and nothing about how the wordplay works.
+GRPO only learns if some answers in a sampled group are better than others. I ran three GRPO attempts.
 
-SFT on 40,000 clues reached 1.0% on test. Four times the data, 160,000 clues, reached 2.1%, a paired gain of +1.13 points (95% CI [0.6, 1.67]). The dev curve was flat after roughly 80,000 clues, so more data of the same kind looks unlikely to help much.
+## Results
 
-## GRPO failed twice, then worked once
-
-GRPO only learns if some answers in a sampled group are better than others. From the weak first SFT, about 99% of groups contained no correct answer, so there was nothing to learn from. The model optimised the small shaping bonuses instead: over 200 steps dev exact match fell from 1.8% to 0.3% while the share of answers with the right letter count rose from 43% to 81%. A second attempt removed the length bonus and added letter-position credit; it degraded more slowly but still degraded.
-
-The third attempt changed three things at once: a stronger starting model (SFT v2 at 2.1%), dynamic sampling that trains only on groups containing both a right and a wrong answer, and a reward with no shaping at all — 1.0 for the exact answer, 0.1 for a well-formed tag. Test accuracy went from 2.1% to 3.6%, +1.53 points over SFT v2 (95% CI [0.83, 2.27]). I cannot say which of the three changes mattered most, and every result here is a single seed.
-
-## The "Definition:" line is not reasoning
-
-On the test clues the model's definition line matches the dataset annotation 63% of the time (n = 2,175), but the answer is right on only 3.8% of those clues. Finding the definition is learnable pattern matching; working out the wordplay is the unsolved part. Of the wrong answers, 51% have the correct letter count, but on average only about 12% of the letters sit in the correct position. The model has learned the enumeration, not the word.
-
-I tried to fix that with real reasoning. I paid a strong teacher to write wordplay explanations for training clues and trained the student on them. Every explanation-trained model was worse than a matched control, with confidence intervals excluding zero: -1.5 to -1.9 points at 483 clues and -0.6 points at 3,699. The student learned to write fluent wordplay that does not add up, then derived an answer from the invented working; right-length answers fell from about 55% to about 25%.
-
-## Two more measurements
-
-The final adapter was exported to a 986 MB Q4_K_M GGUF. Against the merged fp16 model it scored 3.4% versus 3.8%, a difference of -0.40 points (paired CI [-0.87, +0.10]), so deployment does not change the story. For scale, a large reasoning model, DeepSeek V4.1 Flash, scores 66.3% on the shared 300-clue subset — a lower bound, since 86 of those clues hit the token limit — for $2.07 of API spend. That gap is the difference between reciting a genre and solving it.
+- **SFT on more data helped, then flattened.** 40,000 clues reached 1.0% on test. Four times the data, 160,000 clues, reached 2.1%, a paired gain of +1.13 points (95% CI [0.6, 1.67]). The dev curve was flat after roughly 80,000 clues, so more data of the same kind looks unlikely to help much.
+- **GRPO took the best model from 2.1% to 3.6%.** That is +1.53 points over SFT v2 (95% CI [0.83, 2.27]), from the third attempt, which used a stronger starting model (SFT v2 at 2.1%), dynamic sampling that trains only on groups containing both a right and a wrong answer, and a reward with no shaping at all: 1.0 for the exact answer, 0.1 for a well-formed tag.
+- **The split matters.** The same recipe on a random split scored 3.4%, against 1.0% on the answer-disjoint split, so memorising answers is worth several times the score on unseen answers for the first SFT model.
+- **Deployment does not change the story.** The final adapter was exported to a 986 MB Q4_K_M GGUF. Against the merged fp16 model it scored 3.4% versus 3.8%, a difference of -0.40 points (paired CI [-0.87, +0.10]).
+- **For scale,** a large reasoning model, DeepSeek V4.1 Flash, scores 66.3% on the shared 300-clue subset, a lower bound since 86 of those clues hit the token limit, for $2.07 of API spend.
 
 ![Accuracy by stage](/cryptic-coach/results_chart.png)
 
-## What is still open
+## Why it fell short
 
-I changed several things at once in the successful GRPO run and ran one seed along a single chain, so I cannot credit any single change. The honest reading is that this model learned the format of the task and a little of the substance, and that it solves about 3.6% of clues rather than anything more.
+**Supervised fine-tuning learned the shape of the task, not the skill.** On the test clues the model's definition line matches the dataset annotation 63% of the time (n = 2,175), but the answer is right on only 3.8% of those clues. Finding the definition is learnable pattern matching; working out the wordplay is the unsolved part. Of the wrong answers, 51% have the correct letter count, but on average only about 12% of the letters sit in the correct position. The model has learned the enumeration, not the word.
+
+**The first two GRPO runs had nothing to learn from.** From the weak first SFT, about 99% of groups contained no correct answer. The model optimised the small shaping bonuses instead: over 200 steps dev exact match fell from 1.8% to 0.3% while the share of answers with the right letter count rose from 43% to 81%. A second attempt removed the length bonus and added letter-position credit; it degraded more slowly but still degraded. The third attempt changed three things at once, described under Results, and it worked; I cannot say which of the three mattered.
+
+**Distilling explanations from a stronger model went backwards.** I paid a strong teacher to write wordplay explanations for training clues and trained the student on them. Every explanation-trained model was worse than a matched control, with confidence intervals excluding zero: -1.5 to -1.9 points at 483 clues and -0.6 points at 3,699. The student learned to write fluent wordplay that does not add up, then derived an answer from the invented working; right-length answers fell from about 55% to about 25%.
+
+The model learned the format of the task and a little of the substance.
+
+## Next steps
+
+These follow from what the results above cannot separate.
+
+- The successful GRPO run changed three things at once: the starting model, dynamic sampling and the reward. Running each change on its own would show which one mattered.
+- Every result here is a single seed along a single chain. More seeds would show how much of the 2.1% to 3.6% step is noise.
+- Any new route to reasoning has to beat a matched control, as the explanation-trained models failed to.
 
 ## See it
 
-The interactive overview — the pipeline, the leakage checks, the accuracy table and the failure breakdown — is on its own page: [open the Cryptic Coach overview](/cryptic-coach/overview.html).
+The interactive overview, with the pipeline, the leakage checks, the accuracy table and the failure breakdown, is on its own page: [open the Cryptic Coach overview](/cryptic-coach/overview.html).

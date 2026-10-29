@@ -1,4 +1,6 @@
+<html lang="en">
 <title>Jev Werewolf Experiment</title>
+<meta name="description" content="Full results of the Jev Werewolf experiment: per-round curves for every judge across all the sources, the reliability plots, live-game outcomes and the ablations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
@@ -508,3 +510,4 @@ let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() 
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
 new MutationObserver(renderAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 </script>
+<script src="/site-bar.js" data-post="/blog/jev-werewolf" defer></script>

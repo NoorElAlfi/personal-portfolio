@@ -5,11 +5,16 @@ import Card from './Card';
 
 const experiences = [
   {
-    title: 'QA Automation Engineer I',
+    title: 'QA Automation Engineer',
     org: 'Miipe',
-    duration: '06/2025 - Present',
+    duration: '12/2025 - Present',
+    promotion: {
+      from: 'QA Analyst',
+      fromDuration: '06/2025 - 12/2025',
+      text: 'Promoted to QA Automation Engineer within six months of joining, by proactively pursuing automation opportunities beyond assigned scope.',
+    },
     description:
-      "Earned promotion from QA Automation Analyst I to Engineer I by proactively pursuing automation opportunities beyond assigned scope. Use AI-assisted (GitHub Copilot, Google AI) selector generation to accelerate Selenium/PyAutoGUI test-script authoring across 30+ automated enterprise workflows spanning web, desktop, and API layers. Validated Amdocs and Oracle Siebel CRM for one of Canada's largest telecom providers, identifying 50+ defects prior to production release across a 100k+ customer base.",
+      "Use AI-assisted (GitHub Copilot, Google AI) selector generation to accelerate Selenium/PyAutoGUI test-script authoring across 30+ automated enterprise workflows spanning web, desktop, and API layers. Validated Amdocs and Oracle Siebel CRM for one of Canada's largest telecom providers, identifying 50+ defects prior to production release across a 100k+ customer base.",
     feature: {
       heading: 'Built a CLI that generates our test cases without the UI',
       body: "Wrote a command-line tool for Miipe's test-automation platform that creates and edits test cases from YAML, so they can be generated in bulk instead of built click by click in the web UI. In a tenant the dev team set up for me, it generated 40+ test cases without opening the UI once. Claude Code, driving the tool, wrote an 8-step end-to-end purchase test from plain words that passed on the platform's executor, and repaired a broken test. playwright-cli rehearses tests in a real browser, so a wrong selector is caught before a long run.",
@@ -63,6 +68,17 @@ function Experience() {
               </h3>
               <span className="shrink-0 text-sm font-medium text-brand-600 dark:text-brand-400">{exp.duration}</span>
             </div>
+            {exp.promotion && (
+              <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-slate-700 dark:text-slate-200">
+                <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+                  Promoted
+                </span>
+                <span>{exp.promotion.text}</span>
+                <span className="text-slate-600 dark:text-slate-400">
+                  Previously {exp.promotion.from}, {exp.promotion.fromDuration}.
+                </span>
+              </p>
+            )}
             <p className="mt-2 text-slate-600 dark:text-slate-300">{exp.description}</p>
             {exp.feature && (
               <div className="mt-4 rounded-lg border-l-4 border-brand-500 bg-brand-50 p-4 dark:bg-slate-800/60">
@@ -70,7 +86,7 @@ function Experience() {
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{exp.feature.body}</p>
                 <Link
                   to={exp.feature.to}
-                  className="mt-2 inline-block text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                  className="mt-1 inline-block py-1 text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400"
                 >
                   {exp.feature.label} &rarr;
                 </Link>
