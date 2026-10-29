@@ -54,6 +54,11 @@ export function stem(word) {
   return IRREGULAR[w] || w;
 }
 
+// Words that name a kind of section ("experience with Docker", "skills in security") rather than a
+// topic. When the question also names a topic they stop counting, so the passage that mentions
+// Docker is not penalised for not saying "experience".
+const SECTION_WORDS = new Set(["experience", "skill", "expertise", "knowledge", "familiar", "proficient", "proficiency"]);
+
 // Queries are stemmed before lookup, so the alias table must be keyed by stem too.
 const ALIAS_BY_STEM = new Map(Object.entries(ALIASES).map(([word, extra]) => [stem(word), extra]));
 
@@ -133,13 +138,16 @@ export function createSearcher(index) {
 
   function queryTerms(question) {
     const raw = tokenize(question);
-    const terms = [];
+    let terms = [];
     for (const t of raw) {
       if (df.has(t)) { terms.push({ term: t, known: true }); continue; }
       // A typo ("moonveal") still finds its word; anything else is a term the site never uses.
       const near = t.length >= 5 ? vocabulary.find((v) => v.length >= 5 && editDistanceAtMostOne(t, v)) : undefined;
       terms.push(near ? { term: near, known: true } : { term: t, known: false });
     }
+    // Drop section words when another term remains: "experience with Ollama" is about Ollama.
+    const rest = terms.filter((t) => !SECTION_WORDS.has(t.term));
+    if (rest.length > 0 && rest.length < terms.length) terms = rest;
     // Aliases add recall but never count against coverage.
     const extra = [];
     for (const t of raw) for (const a of ALIAS_BY_STEM.get(t) ?? []) {
@@ -227,7 +235,7 @@ export function createSearcher(index) {
       const key = c.id + "|" + c.text;
       if (seen.has(key)) continue;
       seen.add(key);
-      picks.push({ chunk: c, score: r.score, coverage: r.coverage, paragraphs: pickParagraphs(c, [...terms, ...extra]) });
+      picks.push({ chunk: c, score: r.score, coverage: r.coverage, paragraphs: pickParagraphs(c, [...terms, ...extra]), terms: [...terms, ...extra].map((t) => t.term) });
       if (picks.length === 4) break;
     }
     return { refused: false, answer: picks[0], more: picks.slice(1) };

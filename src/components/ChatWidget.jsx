@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createSearcher } from "../lib/chatSearch";
+import { createSearcher, tokenize } from "../lib/chatSearch";
 
 const SUGGESTIONS = [
   "What did you build at Miipe?",
@@ -10,11 +10,26 @@ const SUGGESTIONS = [
 
 const LINK = /(https?:\/\/[^\s]+|[\w.+-]+@[\w-]+\.[\w.-]+)/g;
 
-/** Plain text with URLs and email addresses as links. Built as React elements: nothing is parsed as HTML. */
-function Linkified({ text }) {
+/** The words of a passage that match the question, marked. Built as React elements: nothing is parsed as HTML. */
+function Marked({ text, terms }) {
+  if (!terms?.length) return text;
+  const wanted = new Set(terms);
+  return text.split(/(\s+)/).map((word, i) =>
+    word.trim() && tokenize(word).some((t) => wanted.has(t)) ? (
+      <mark key={i} className="rounded bg-yellow-200 px-0.5 text-slate-900 dark:bg-yellow-400/30 dark:text-white">
+        {word}
+      </mark>
+    ) : (
+      word
+    ),
+  );
+}
+
+/** Plain text with URLs and email addresses as links, and the matched words marked. */
+function Linkified({ text, terms }) {
   const parts = text.split(LINK);
   return parts.map((part, i) => {
-    if (i % 2 === 0) return part;
+    if (i % 2 === 0) return <Marked key={i} text={part} terms={terms} />;
     const href = part.includes("@") && !part.startsWith("http") ? `mailto:${part}` : part.replace(/[.,;)]+$/, "");
     return (
       <a key={i} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="font-medium text-brand-600 underline dark:text-brand-400">
@@ -231,7 +246,7 @@ function ChatWidget() {
                     <div className="mt-3 space-y-2">
                       {result.answer.paragraphs.map((paragraph, i) => (
                         <p key={i} className="leading-relaxed text-slate-800 dark:text-slate-100">
-                          <Linkified text={paragraph} />
+                          <Linkified text={paragraph} terms={result.answer.terms} />
                         </p>
                       ))}
                     </div>
