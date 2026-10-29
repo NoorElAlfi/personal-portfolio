@@ -71,7 +71,7 @@
 - id: lucidhover
   title: LucidHover
   tag: VS Code Extension, Published
-  description: A VS Code extension that hovers any function and explains it in the context of the whole repo (role, callers/callees, blast radius) via a fully local LLM through Ollama. Python sidecar parses with tree-sitter, builds a call graph, ranks functions by PageRank importance, and caches explanations in SQLite. Published to the VS Code Marketplace under Apache-2.0.
+  description: A VS Code extension that hovers any function and explains it in the context of the whole repo (role, callers/callees, blast radius) via a fully local LLM through Ollama. Python sidecar parses with tree-sitter, builds a call graph, ranks functions by PageRank importance, and caches explanations in SQLite. Published to the VS Code Marketplace under Apache-2.0, with 117 installs to date, 31 of them in the last 30 days, and one 5-star rating (Marketplace publisher report, 2026-10-28).
   status: shipped
   visibility: public
   repo: NoorElAlfi/lucidHover
@@ -122,6 +122,8 @@
   links:
     - label: Read the write-up
       to: /blog/lucidhover
+    - label: VS Code Marketplace
+      href: https://marketplace.visualstudio.com/items?itemName=lucidhover.lucidhover
     - label: GitHub
       href: https://github.com/NoorElAlfi/lucidHover
 - id: codebase-deobfuscator

@@ -1,69 +1,52 @@
 import WritePathDiagram from "../../components/WritePathDiagram";
 
-At Miipe, a test case in our test-automation platform is built by clicking it together in the web UI: add a test case, add a step, pick an instruction, fill in each parameter, repeat. I wrote a command-line tool that does the same job from a plain YAML file, and it changed how quickly test cases get made.
+At Miipe I wrote a command-line tool that creates test cases for our test-automation platform from a plain YAML file instead of the web UI. In a tenant the dev team set up for me, it generated 40+ test cases without my opening the UI once. Driving the tool, Claude Code wrote an 8-step purchase test from plain words that passed on the platform's executor in 40 seconds, and it repaired a broken test, taking the run from ERROR to PASS for $0.09.
 
-## What it changed
+## Results
 
-- **Generating test cases is a file, not a form.** In a tenant the dev team set up for me, the tool generated 40+ test cases without me opening the UI once.
-- **An AI agent can build a complex test case with it.** Driving the tool, Claude Code wrote an 8-step purchase test from plain words: log in, add two products, check out through to the order confirmation, then go back to the products page and check the cart badge is gone. It ran on the platform's executor and passed in 40 seconds. Two simpler requests did the same, so three plain-words requests gave three passing tests.
-- **The same agent repaired a broken test.** It found the wrong selector with the tool's `why` command, edited the test case in place, and the run went from ERROR to PASS for $0.09.
+- **40+ test cases generated, none built in the UI.** A test case used to be clicked together: add a test case, add a step, pick an instruction, fill in each parameter, repeat. Now it is a file.
+- **An agent-written 8-step purchase test passed in 40 seconds.** From plain words, Claude Code logged in, added two products, checked out through to the order confirmation, then went back to the products page and checked the cart badge was gone. It took 27 turns and cost $0.42.
+- **Three more plain-words requests gave three passing tests.** A login on the-internet, the author of the first quote on quotes.toscrape.com, and a login on saucedemo: all 3 passed on the executor, in 21 turns for $0.20.
+- **A broken test was repaired in place.** The agent found the wrong selector with the tool's `why` command and edited the test case with 3 patches and no new test case. The run went from ERROR to PASS in 10 turns for $0.09.
 - **Moving a test is one previewed plan.** I once moved an 80-instruction test from one tenant to another by hand, and it took hours. The tool exports a test case to YAML, and `copy` moves a test with the variables and UI elements it needs as one plan.
 - **Mistakes show up before the run.** On a previous project, a run took about 40 minutes to fail on a single change I had made. The tool's `check` command now rehearses a test in a real browser first and reports a selector that matches nothing before the executor is involved.
+- **Reliability.** I exported all 134 test cases in the sandbox environment to YAML and planned an edit of each: 126 plan zero writes, and the other 8 are refused with a stated reason. The suite is 891 tests and runs in about 16 seconds.
 
-The agent sessions ran against public practice sites on a personal Claude login, so no work data went to a model. I have left the platform itself unnamed.
+## The problem
 
-## A test case as a file
+Building a test case in the UI is slow to repeat, hard to review and hard to move between tenants. Putting a tool in front of the platform has its own difficulty: the authoring API is not publicly documented, and its server accepts nearly anything, including invented instruction names, negative waits and a step order of 999. Whatever writes to it has to do its own checking.
+
+## Decisions and what I ruled out
+
+The server validates almost nothing, so the tool validates every file against the platform's live instruction catalog. That catches a wrong action or parameter name and suggests the right one.
+
+The catalog proves an instruction exists. It cannot prove that an XPath finds an element on the page, so I added a rehearsal in a real browser using `playwright-cli`, a command-line browser built for coding agents. `check` opens the pages a test file names in a headless browser, using the Chrome or Edge already on the machine, and counts what each XPath finds. With `--follow` it clicks, types, reads text into variables and evaluates the assertions. On a test with one wrong id (`my-text` where the page's id is `my-text-id`), it reports three selectors as missing and fails, a mistake that would otherwise cost a full executor run. `draft --browser` gives the model two read-only tools, `render_page` and `check_selector`: a page like the Sauce Demo shop is an empty shell until its JavaScript runs, so `render_page` shows what a tester would see and `check_selector` lets the model test an XPath before writing it into the file. Both are limited to 6 public practice sites, enforced in three places: before the browser is asked to go anywhere, inside the browser itself, and on the address it ends up at.
+
+I treated the rehearsal as an approximation of the executor, not a replacement, and the executor proved why. `Enter Value` presses Enter after typing, which submits a form early, and two login drafts that passed the rehearsal failed on the executor. I fixed the rehearsal and re-scored the same saved drafts, then added one line to the model's brief. `Enter Value` then appeared in 0 of 30 new drafts, against 7 of 30 before.
+
+I measured the `draft` command, which has a model write a file from one sentence, against a plain prompt and a plain prompt plus the instruction catalog on 10 requests. It scored 10 against 8 and 8, at about 2.7 times the cost, which is within noise for one run per cell. Of the draft command's output run on the executor, 21 drafts ran and 19 passed. The 2 that failed were made before the `Enter Value` hint and both used it; the 10 made after it all passed.
+
+A review of my own code found two write paths that skipped the write-list check. I fixed them and added a test that fails if any write request is made outside the gate, then checked that test by putting the bug back on purpose.
+
+The most useful sentence in any agent transcript was its own report on the long flow. The rehearsal browser cannot run JavaScript or `set` steps, so it stopped before the item-total sum comparison. The agent said so and labelled the claim that the comparison is a real test as inferred, not proven. It had not read the executor's log of the computed value, and it told me to look.
+
+## How it works
 
 An exported test case is about 40 lines of YAML: a title, steps with expected results, instructions named exactly as in the UI with their parameters, and assertions. A colleague can read it, diff it, paste it into a ticket or a pull request, or create the same test in another tenant from it. A template, a script or a model can write one; nothing has to click through a form.
 
-Seven commands do most of the work:
-
-- `ls` lists what is in the tenant, and `export` turns an existing test case into a file.
-- `clone` makes a new file from an existing test, ready to edit.
-- `apply` shows the plan, then creates or changes the test with `--yes`, and with `--run` also runs it.
-- `check` rehearses the file in a real browser.
-- `draft` turns plain words into a checked file.
-- `run` starts the test on the executor and follows it, and `why` explains a failure.
-
-The platform's authoring API is not publicly documented, and its server accepts nearly anything: invented instruction names, negative waits, a step order of 999. So the tool validates every file against the platform's live instruction catalog, which catches a wrong action or parameter name and suggests the right one.
-
-## Playwright-cli: checking selectors in a real browser
-
-Validating against the catalog proves an instruction exists. It cannot prove that an XPath finds an element on the page. I use `playwright-cli`, a command-line browser built for coding agents, in two places:
-
-- **`check`** opens the pages a test file names in a headless browser, using the Chrome or Edge already on the machine, and counts what each XPath finds. With `--follow` it is a rehearsal: it clicks, types, reads text into variables and evaluates the assertions. On a test with one wrong id (`my-text` where the page's id is `my-text-id`), it reports three selectors as missing and fails, a mistake that would otherwise cost a full executor run.
-- **`draft --browser`** gives the model two read-only tools, `render_page` and `check_selector`. A page like the Sauce Demo shop is an empty shell until its JavaScript runs, so `render_page` shows the model what a tester would see, and `check_selector` lets it test an XPath before writing it into the file. Both are limited to 6 public practice sites, in three places: before the browser is asked to go anywhere, inside the browser itself, and on the address it ends up at.
-
-A rehearsal is an approximation of the executor, not a replacement. Running on the real executor found what the browser missed: `Enter Value` presses Enter after typing, which submits a form early, and two login drafts that passed the rehearsal failed on the executor. I fixed the rehearsal and re-scored the same saved drafts, added one line to the model's brief, and `Enter Value` then appeared in 0 of 30 new drafts, against 7 of 30 before.
-
-## The agent sessions
-
-Three sessions, one per mode, on Sonnet 5.5:
-
-- **A longer flow.** The 8-step purchase test passed in 40 seconds, in 27 turns for $0.42.
-- **Authoring.** Three plain-words requests: a login on the-internet, the author of the first quote on quotes.toscrape.com, and a login on saucedemo. Three test cases, all 3 passed on the executor, in 21 turns for $0.20.
-- **Repair.** A test with one wrong selector was repaired in place with 3 patches and no new test case, in 10 turns for $0.09.
-
-The most useful sentence in any transcript was the agent's own report on the long flow. The rehearsal browser cannot run JavaScript or `set` steps, so it stopped before the item-total sum comparison. The agent said so and labelled the claim that the comparison is a real test as inferred, not proven. It had not read the executor's log of the computed value, and it told me to look.
-
-The `draft` command, which has a model write a file from one sentence, was compared with a plain prompt and a plain prompt plus the instruction catalog on 10 requests. It scored 10 against 8 and 8, at about 2.7 times the cost, which is within noise for one run per cell. Of the draft command's output run on the executor, 21 drafts ran and 19 passed. The 2 that failed were made before the `Enter Value` hint and both used it; the 10 made after it all passed.
-
-## Built to be handed to an agent
+Seven commands do most of the work. `ls` lists what is in the tenant, and `export` turns an existing test case into a file. `clone` makes a new file from an existing test, ready to edit. `apply` shows the plan, then creates or changes the test with `--yes`, and with `--run` also runs it. `check` rehearses the file in a real browser. `draft` turns plain words into a checked file. `run` starts the test on the executor and follows it, and `why` explains a failure.
 
 An agent is only useful if I can let it near a real system, so the tool is built to be safe to hand over:
 
 <WritePathDiagram />
 
-- **Read-only by default.** An empty write list means every write method raises before a request is even built.
-- **Preview first.** `plan` sends nothing, and `apply` refuses without `--yes`.
-- **Every write is logged.** The audit log is hash-chained and records the method, path, body size and hash, status and returned ids, never bodies, tokens or secret values.
-- **A gated agent.** A pre-tool hook lets the agent use one command per call, write under one folder, touch only allowlisted public URLs, edit only test cases it created in that session, and stay inside a fixed budget of applies and executions.
+Every write method raises before a request is even built unless the team is on the write list, so an empty list means read-only. `plan` sends nothing, and `apply` refuses without `--yes`. The audit log is hash-chained and records the method, path, body size and hash, status and returned ids, never bodies, tokens or secret values. For the agent, a pre-tool hook lets it use one command per call, write under one folder, touch only allowlisted public URLs, edit only test cases it created in that session, and stay inside a fixed budget of applies and executions.
 
-A review of my own code found two write paths that skipped the write-list check. I fixed them and added a test that fails if any write request is made outside the gate, and checked that test by putting the bug back on purpose. The suite is 891 tests that run in about 16 seconds. As a reliability check, I exported all 134 test cases in the sandbox environment to YAML and planned an edit of each: 126 plan zero writes, and the other 8 are refused with a stated reason.
+The agent results come from three sessions, one per mode, on Sonnet 5.5: authoring, repair, and a longer flow.
 
 ## Scope and limits
 
-- The agent results are one recorded session per mode, on practice sites a model may already know.
+- The agent results are one recorded session per mode, on practice sites a model may already know. The sessions ran on a personal Claude login against public practice sites, so no work data went to a model, and none of this may touch company data until a provider is approved. I have left the platform itself unnamed.
 - The tool relies on an API that is not documented, has one user, and has not been reviewed by security.
-- It runs on a personal Claude login, so none of it may touch company data until a provider is approved.
-- It shows that a dry-run-first tool is something an agent can drive usefully, and that test cases can be generated instead of clicked together. It does not show that an agent is ready to write tests unattended.
+- It shows that a dry-run-first tool is something an agent can drive usefully, and that test cases can be generated instead of clicked together.
+- It does not show that an agent is ready to write tests unattended.

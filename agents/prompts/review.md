@@ -26,7 +26,16 @@ publishes an unsourced claim on a public portfolio; a false "fail" only costs a 
     that could become public content.
   - `style_violation` — marketing voice, first person in a highlight, a summary that
     exceeds its length limit, a missing slug/id, body markdown that carries front matter
-    or an H1 title, or a bullet list where the contract asks for prose.
+    or an H1 title, or a bullet list outside a blog post's `## Results`,
+    `## Scope and limits`, `## Next steps` and `## See it` sections. For a blog post it is also a violation when: the
+    title is a question or a confession, or does not state a measured outcome; the opening
+    does not state what was built and its headline result; there is no `## Results`
+    section (or, for a post whose result fell short, no `## Approach`, `## Results`,
+    `## Why it fell short` and `## Next steps`); the limits come before the results; a
+    heading narrates chronology ("Phase 2", "Session 12"); the voice is not first person
+    singular; a "Next steps" item claims a plan, schedule or intent that no cited entry
+    states; or a highlight records only a chore, fix or version bump with no stated
+    effect.
   - `duplicate` — the same fact is emitted twice inside one artifact, or a highlight
     repeats a highlight that already exists for that project.
   - `schema_invalid` — a required field is missing, has the wrong type, or has a value
