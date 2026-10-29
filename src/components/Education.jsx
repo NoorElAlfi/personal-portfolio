@@ -5,7 +5,7 @@ import Card from './Card';
 const educationList = [
   {
     institution: "Queen's University",
-    degree: 'NSERC CREATE Cybersecurity Program, Research-Based Masters of Science',
+    degree: 'Research-Based M.Sc. in AI and Cybersecurity (NSERC CREATE Cybersecurity Program)',
     gpa: 'GPA 3.9/4.3',
     duration: '2022 - Present',
   },
@@ -26,7 +26,7 @@ function Education() {
             <div>
               <h3 className="font-semibold text-slate-900 dark:text-white">{edu.institution}</h3>
               <p className="mt-1 text-slate-600 dark:text-slate-300">{edu.degree}</p>
-              <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">{edu.gpa}</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{edu.gpa}</p>
             </div>
             <span className="shrink-0 text-sm font-medium text-brand-600 dark:text-brand-400">{edu.duration}</span>
           </Card>

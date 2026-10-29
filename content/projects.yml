@@ -6,6 +6,8 @@
   visibility: public
   repo: null
   featured: true
+  rank: 1
+  headline: "40+ test cases generated from YAML without the UI; an agent-written 8-step test passed in 40 seconds."
   started: null
   last_activity: 2026-10-23
   highlights: []
@@ -20,6 +22,8 @@
   visibility: public
   repo: null
   featured: true
+  rank: 3
+  headline: "Held-out retrieval from 4 of 20 to 18 of 20 on questions written after the changes."
   started: null
   last_activity: 2026-10-12
   highlights: []
@@ -34,6 +38,8 @@
   visibility: public
   repo: null
   featured: true
+  rank: 4
+  headline: "3.6% on 3,000 unseen clues, up from 1.0% for the first SFT model, scored with 95% bootstrap confidence intervals."
   started: null
   last_activity: 2026-10-12
   highlights: []
@@ -47,7 +53,7 @@
   status: active
   visibility: public
   repo: NoorElAlfi/jev-werewolf
-  featured: true
+  featured: false
   started: null
   last_activity: 2026-09-27
   highlights: []
@@ -63,7 +69,7 @@
   status: shipped
   visibility: public
   repo: null
-  featured: true
+  featured: false
   started: null
   last_activity: null
   highlights: []
@@ -75,7 +81,7 @@
   status: shipped
   visibility: public
   repo: NoorElAlfi/lucidHover
-  featured: true
+  featured: false
   started: null
   last_activity: 2026-09-18
   highlights:
@@ -133,7 +139,7 @@
   status: shipped
   visibility: public
   repo: null
-  featured: true
+  featured: false
   started: null
   last_activity: null
   highlights: []
@@ -147,7 +153,9 @@
   status: active
   visibility: public
   repo: NoorElAlfi/siem-guard-code
-  featured: false
+  featured: true
+  rank: 2
+  headline: "Rule-first parsing at 96,000-98,000 lines/s against roughly 1 on the LLM path; ssh gate leak cut from 1.6-2.2% to 0.00%."
   started: null
   last_activity: 2026-09-20
   highlights:

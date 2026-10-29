@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cryptic Coach — project tour</title>
+<meta name="description" content="Interactive overview of Cryptic Coach: the pipeline, the leakage checks, the accuracy table and the failure breakdown.">
 <style>
 /* Layout concept: a long report page. A crossword-grid masthead, then sections that each pair one decision with the
    evidence for it. Charts are plain HTML/SVG with direct values; the palette is the validated default (blue = the
@@ -560,5 +561,6 @@ rowChart($("ggufChart"), [{ label: "GGUF minus fp16", v: G.diff_b_minus_a_points
 $("ggufNote").textContent = `fp16 ${f2(100 * G.acc_a)}% and GGUF ${f2(100 * G.acc_b)}%. The interval stays above -1.5, so the check passes. Correctness agrees on ${f1(100 * G.correctness_agreement)}% of clues (${G.a_only_correct} solved only by fp16, ${G.b_only_correct} only by the GGUF). The extracted answers agree only ${f1(100 * G.answer_agreement)}% of the time, which is expected for a model that is wrong on 96% of clues.`;
 $("hash").textContent = sp.hash;
 </script>
+<script src="/site-bar.js" data-post="/blog/cryptic-coach" defer></script>
 </body>
 </html>

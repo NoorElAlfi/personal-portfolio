@@ -86,7 +86,7 @@ function Experience() {
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{exp.feature.body}</p>
                 <Link
                   to={exp.feature.to}
-                  className="mt-2 inline-block text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                  className="mt-1 inline-block py-1 text-sm font-semibold text-brand-600 hover:underline dark:text-brand-400"
                 >
                   {exp.feature.label} &rarr;
                 </Link>

@@ -1,8 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { posts } from "../data/posts";
+import useDocumentTitle from "../lib/useDocumentTitle";
+import { BLOG_TITLE } from "../lib/siteMeta";
 
 function Blog() {
+  useDocumentTitle(BLOG_TITLE);
   return (
     <section className="py-2">
       <div className="mb-10 text-center">

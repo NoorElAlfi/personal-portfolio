@@ -55,7 +55,7 @@ function WritePathDiagram() {
             className={`rounded-lg border px-4 py-3 ${TONES[step.tone]}`}
           >
             <div className="flex items-baseline gap-2">
-              <span className="font-mono text-xs text-slate-400 dark:text-slate-500">
+              <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
                 {index + 1}
               </span>
               <span className="font-semibold text-slate-900 dark:text-white">
